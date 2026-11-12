@@ -1,26 +1,81 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Дизайн-система «школьная тетрадь»:
+ * бумага, сетка в клетку, красная линия полей, синие чернила.
+ * Цвета режимов урока: синий — с учителем, песочная штриховка — самостоятельно, чернила — вместе.
+ */
+@theme {
+  --color-paper: #f5f1e8;
+  --color-paper-deep: #ebe4d4;
+  --color-card: #fffdf7;
+  --color-ink: #1b1d24;
+  --color-ink-soft: #565963;
+  --color-ink-faint: #8a8c93;
+  --color-rule: #e3dbcb;
+  --color-blue: #2a46c2;
+  --color-blue-deep: #1f3699;
+  --color-blue-soft: #e1e6f9;
+  --color-margin: #cf4a32;
+  --color-sand: #ece2c9;
+  --color-sand-line: #c2a872;
+
+  --radius-sheet: 6px;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-golos), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-literata), ui-serif, Georgia, serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "tnum" 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-blue-soft);
+  color: var(--color-ink);
+}
+
+/* Тетрадная клетка */
+@utility bg-notebook {
+  background-color: var(--color-card);
+  background-image:
+    linear-gradient(var(--color-rule) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-rule) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: -1px -1px;
+}
+
+/* Штриховка — «класс работает сам» */
+@utility bg-hatch {
+  background-color: var(--color-sand);
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--color-sand-line) 0 1.25px,
+    transparent 1.25px 6px
+  );
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Печать: только карточки, без интерфейса */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  body {
+    background: white;
+  }
 }

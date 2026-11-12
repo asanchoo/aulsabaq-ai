@@ -44,36 +44,52 @@ SPEC → PLAN → IMPLEMENT → REVIEW.
 - Никаких персональных данных учеников: ученик входит по коду урока и имени/номеру, без почты и телефона.
 - Секреты в `.env.local`, в репозитории только `.env.example`.
 
-## Структура (целевая)
+## Next.js 16 — важно
+Версия новее, чем в обучающих данных моделей. Перед кодом страниц читай гайды в
+`node_modules/next/dist/docs/`. Включены `cacheComponents` и `partialPrefetching`:
+- `params` в страницах — Promise; данные, зависящие от адреса (`lessonId`), читать внутри `<Suspense>`;
+- вместо `middleware.ts` — `proxy.ts` (у нас он подставляет язык в адрес);
+- `PageProps<"/route">` / `LayoutProps` генерирует `next typegen` (входит в `npm run typecheck`).
+
+## Структура
+Язык — первый сегмент адреса (`/ru/...`, `/kk/...`): ссылку можно отправить, и она откроется
+на нужном языке, а страницы собираются статически. `proxy.ts` перенаправляет `/` на нужный язык.
 ```
 app/
-  page.tsx                 # лендинг + «Создать урок» + «Демо-урок»
-  teacher/new/page.tsx     # форма совмещённого урока
-  teacher/[lessonId]/page.tsx  # таймлайн урока, карточки, код для учеников, статус учеников
-  join/page.tsx            # ученик вводит код урока
-  student/[lessonId]/page.tsx  # карточки + кнопка «Подсказка» + «Мне нужна помощь»
+  globals.css              # дизайн-система «тетрадь»: цвета, шрифты, клетка, штриховка
+  [lang]/layout.tsx        # корневой layout: шрифты, шапка, <html lang>
+  [lang]/page.tsx          # лендинг + «Демо-урок» (+ «Создать урок» в День 3)
+  [lang]/teacher/new/page.tsx       # форма совмещённого урока (День 3)
+  [lang]/teacher/[lessonId]/page.tsx  # таймлайн, карточки, печать; код и статус учеников — позже
+  [lang]/join/page.tsx              # ученик вводит код урока (этап 2)
+  [lang]/student/[lessonId]/page.tsx  # карточки + «Подсказка» + «Мне нужна помощь» (этап 2)
   api/lessons/route.ts     # POST: генерация урока
   api/hint/route.ts        # POST: подсказка ученику
   api/progress/route.ts    # POST/GET: статусы учеников
+components/
+  LessonScore.tsx          # «партитура» урока с ползунком (лендинг)
+  LessonTimeline.tsx       # таймлайн: колонки на компьютере, промежутки на телефоне
+  TaskCards.tsx            # карточки, print CSS (ответ печатается вверх ногами)
+  LessonActions.tsx        # «Распечатать» / «Скопировать»
+  SiteHeader.tsx, LangSwitch.tsx
 lib/
-  schema.ts                # Zod-схемы LessonPlan, TaskCard, StudentStatus
-  validate.ts              # validateLessonPlan(): инварианты таймлайна
-  prompts.ts               # системные промпты (генерация урока, подсказка)
-  openai.ts                # клиент, вызов со structured output
-  i18n.ts
-fixtures/
-  demo-lesson.ru.json      # готовый урок для демо-режима
-tests/
-  validate.test.ts
-  hint-guard.test.ts
-supabase/
-  schema.sql
+  schema.ts                # Zod-схемы: ФОРМА данных
+  validate.ts              # validateLessonPlan(): СМЫСЛ — инварианты 1–6 (коды INV-1…6)
+  lesson.ts                # чистые помощники: segmentAt, timeSlots, lessonToText
+  demo.ts                  # демо-урок (проходит те же проверки при сборке)
+  i18n.ts                  # словарь ru/kk
+  prompts.ts, openai.ts    # День 3
+proxy.ts                   # / → /ru или /kk по Accept-Language
+fixtures/demo-lesson.ru.json
+tests/validate.test.ts, tests/hint-guard.test.ts (этап 2)
+supabase/schema.sql        # День 4
 ```
 
 ## Команды
 ```
-npm run dev        # локально
+npm run dev        # локально, http://localhost:3000
 npm run lint
-npm run typecheck  # tsc --noEmit
+npm run typecheck  # next typegen && tsc --noEmit
 npm test           # vitest run
+npm run build
 ```

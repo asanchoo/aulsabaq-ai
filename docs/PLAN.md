@@ -5,14 +5,14 @@
 
 ## Этап 1. MVP (сдача 12–16 ноября)
 ### День 1 — 12 ноября
-- [ ] Создать репозиторий `aulsabaq-ai` на GitHub, скопировать эту папку.
-- [ ] Агент: инициализировать Next.js + TS + Tailwind + Vitest + Zod, скрипты `lint/typecheck/test`, `.env.example`.
-- [ ] Агент: `lib/schema.ts` + `lib/validate.ts` + `tests/validate.test.ts` на `fixtures/demo-lesson.ru.json`. Тесты зелёные.
+- [x] Создать репозиторий `aulsabaq-ai` на GitHub, скопировать эту папку.
+- [x] Агент: инициализировать Next.js + TS + Tailwind + Vitest + Zod, скрипты `lint/typecheck/test`, `.env.example`.
+- [x] Агент: `lib/schema.ts` + `lib/validate.ts` + `tests/validate.test.ts` на `fixtures/demo-lesson.ru.json`. Тесты зелёные.
 - [ ] Деплой пустой версии на Vercel (сразу, чтобы потом не бороться с деплоем в последний день).
 
 ### День 2 — 13 ноября
-- [ ] Агент: страница урока `/teacher/[lessonId]` — таймлайн колонками по группам + карточки + печать. Сначала на демо-фикстуре.
-- [ ] Кнопка «Демо-урок» на главной открывает фикстуру без вызова модели.
+- [x] Агент: страница урока `/teacher/[lessonId]` — таймлайн колонками по группам + карточки + печать. Сначала на демо-фикстуре.
+- [x] Кнопка «Демо-урок» на главной открывает фикстуру без вызова модели.
 
 ### День 3 — 14 ноября
 - [ ] Агент: `lib/openai.ts` + `lib/prompts.ts` + `POST /api/lessons` (structured output → Zod → validate → 1 повтор → ошибка).

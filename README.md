@@ -5,11 +5,15 @@
 
 Заявка на Codex Challenge (Bilim AI × OpenAI, ChatGPT Edu).
 
-## Как начать (для автора)
-1. Создай репозиторий и положи в него содержимое этой папки.
-2. Открой папку в Claude Code или Codex.
-3. Вставь промпт из `prompts/01-kickoff.md`.
-4. Дальше — по `docs/PLAN.md`, промпты на каждый день в `prompts/02-next-days.md`.
+## Запуск
+```bash
+npm install
+cp .env.example .env.local   # для демо ключи не нужны
+npm run dev                  # http://localhost:3000
+```
+Проверки: `npm run lint && npm run typecheck && npm test`.
+
+Дальше — по `docs/PLAN.md`, промпты на каждый день в `prompts/02-next-days.md`.
 
 ## Файлы
 | Файл | Зачем |
