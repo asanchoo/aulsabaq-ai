@@ -47,10 +47,14 @@ export async function generateLesson(input: LessonRequest): Promise<LessonPlan> 
     try {
       if (text === null) throw new Error("incomplete");
       const parsed = parseLessonPlan(normalizeGeneratedPlan(JSON.parse(text)));
-      if (!parsed.ok) { feedback = parsed.errors; continue; }
-      feedback = requestMismatch(parsed.plan, input);
-      if (!feedback.length) return parsed.plan;
+      if (!parsed.ok) feedback = parsed.errors;
+      else {
+        feedback = requestMismatch(parsed.plan, input);
+        if (!feedback.length) return parsed.plan;
+      }
     } catch { feedback = ["Return a complete JSON object matching the required schema."]; }
+    // Только коды проверок (INV-1, REQUEST…), без текста урока.
+    console.warn(`[ai] ${provider.name}: attempt ${attempt + 1} rejected: ${feedback.map((e) => e.split(":")[0]).join(", ")}`);
   }
   throw new GenerationError("invalid_plan");
 }

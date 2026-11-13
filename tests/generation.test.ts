@@ -113,6 +113,7 @@ describe("gemini", () => {
     const schema = JSON.stringify(JSON.parse(init.body).generationConfig.responseJsonSchema);
     expect(schema).not.toContain("$schema"); expect(schema).not.toContain('"const"');
     expect(JSON.parse(init.body).generationConfig.responseMimeType).toBe("application/json");
+    expect(JSON.parse(init.body).generationConfig.thinkingConfig).toEqual({ thinkingLevel: "low" });
   });
   it("turns const into a one-value enum", () => {
     expect(toGeminiSchema({ $schema: "x", anyOf: [{ type: "number", const: 1 }] })).toEqual({ anyOf: [{ type: "number", enum: [1] }] });

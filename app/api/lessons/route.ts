@@ -3,7 +3,7 @@ import { LessonRequestSchema } from "@/lib/generation-schema";
 import { generateLesson, GenerationError } from "@/lib/ai";
 import { checkGenerationLimit } from "@/lib/rate-limit";
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 export async function POST(request: Request) {
   // Only trust the platform-owned IP header; on other hosts use a conservative shared bucket.

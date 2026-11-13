@@ -22,7 +22,8 @@ export class ProviderError extends Error {
   constructor() { super("provider"); }
 }
 
-const TIMEOUT_MS = 50_000;
+// Урок — длинный JSON; две попытки по 100 секунд укладываются в maxDuration роута (300).
+const TIMEOUT_MS = 100_000;
 
 /**
  * Какого провайдера использовать. AI_PROVIDER задаёт его явно; если не задан,
@@ -39,7 +40,11 @@ export function resolveProvider(env: Record<string, string | undefined> = proces
   return openai ?? gemini;
 }
 
-async function post(url: string, headers: Record<string, string>, body: unknown): Promise<unknown> {
+/**
+ * В логи Vercel пишем только причину сбоя: тип ошибки, HTTP-код и сообщение провайдера.
+ * Ни ключа, ни текста запроса и ответа там не будет.
+ */
+async function post(name: ProviderName, url: string, headers: Record<string, string>, body: unknown): Promise<unknown> {
   let response: Response;
   try {
     response = await fetch(url, {
@@ -48,8 +53,15 @@ async function post(url: string, headers: Record<string, string>, body: unknown)
       signal: AbortSignal.timeout(TIMEOUT_MS),
       body: JSON.stringify(body),
     });
-  } catch { throw new ProviderError(); }
-  if (!response.ok) throw new ProviderError();
+  } catch (error) {
+    console.error(`[ai] ${name}: request failed (${error instanceof Error ? error.name : "unknown"})`);
+    throw new ProviderError();
+  }
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    console.error(`[ai] ${name}: HTTP ${response.status} ${detail.replace(/\s+/g, " ").slice(0, 300)}`);
+    throw new ProviderError();
+  }
   try { return await response.json(); } catch { throw new ProviderError(); }
 }
 
@@ -66,12 +78,15 @@ function openaiProvider(apiKey: string, model: string): Provider {
   return {
     name: "openai",
     async call({ instructions, input, schemaName, schema }) {
-      const json = await post("https://api.openai.com/v1/responses", { Authorization: `Bearer ${apiKey}` }, {
+      const json = await post("openai", "https://api.openai.com/v1/responses", { Authorization: `Bearer ${apiKey}` }, {
         model, store: false, max_output_tokens: 10000, instructions, input,
         text: { format: { type: "json_schema", name: schemaName, strict: true, schema } },
       });
       const result = OpenAIResponse.safeParse(json);
-      if (!result.success || result.data.status !== "completed") return null;
+      if (!result.success || result.data.status !== "completed") {
+        console.warn(`[ai] openai: response not completed (${result.success ? result.data.status : "unexpected shape"})`);
+        return null;
+      }
       const text = result.data.output.flatMap((o) => o.type === "message" ? o.content ?? [] : [])
         .filter((c) => c.type === "output_text").map((c) => c.text ?? "").join("");
       return text || null;
@@ -81,6 +96,7 @@ function openaiProvider(apiKey: string, model: string): Provider {
 
 // Gemini generateContent: JSON-ответ по схеме через responseJsonSchema.
 const GeminiResponse = z.object({
+  promptFeedback: z.object({ blockReason: z.string().optional() }).optional(),
   candidates: z.array(z.object({
     finishReason: z.string().optional(),
     content: z.object({ parts: z.array(z.object({ text: z.string().optional(), thought: z.boolean().optional() })).optional() }).optional(),
@@ -109,15 +125,25 @@ function geminiProvider(apiKey: string, model: string): Provider {
     name: "gemini",
     async call({ instructions, input, schema }) {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
-      const json = await post(url, { "x-goog-api-key": apiKey }, {
+      const json = await post("gemini", url, { "x-goog-api-key": apiKey }, {
         systemInstruction: { parts: [{ text: instructions }] },
         contents: [{ role: "user", parts: [{ text: input }] }],
-        // У моделей с «размышлением» лимит включает и его, поэтому запас больше, чем у OpenAI.
-        generationConfig: { responseMimeType: "application/json", responseJsonSchema: toGeminiSchema(schema), maxOutputTokens: 16000 },
+        // Модели Gemini 3 по умолчанию долго «размышляют»; для урока по готовой схеме хватает короткого
+        // размышления. Лимит токенов включает и его, поэтому запас больше, чем у OpenAI.
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseJsonSchema: toGeminiSchema(schema),
+          maxOutputTokens: 16000,
+          thinkingConfig: { thinkingLevel: "low" },
+        },
       });
       const result = GeminiResponse.safeParse(json);
       const candidate = result.success ? result.data.candidates?.[0] : undefined;
-      if (!candidate || candidate.finishReason !== "STOP") return null;
+      if (!candidate || candidate.finishReason !== "STOP") {
+        const reason = !result.success ? "unexpected shape" : candidate?.finishReason ?? result.data.promptFeedback?.blockReason ?? "no candidates";
+        console.warn(`[ai] gemini: answer not finished (${reason})`);
+        return null;
+      }
       const text = (candidate.content?.parts ?? []).filter((p) => !p.thought).map((p) => p.text ?? "").join("");
       return text || null;
     },
