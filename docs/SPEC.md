@@ -79,6 +79,7 @@ interface TaskCard {
   answer?: string;                // для closed — эталон для самопроверки
   successCriteria: string;        // как ученик поймёт, что справился
   difficulty: 1 | 2 | 3;
+  purpose: 'review' | 'practice'; // повторение известного или задание по новой теме
 }
 ```
 
@@ -90,6 +91,9 @@ interface TaskCard {
 4. Каждая `cardIds` в `independent` существует в карточках этой группы.
 5. У `closed`-карточек есть `answer`.
 6. `groups.length` 2–3, `cards.length` 3–5, `durationMin` 30–90.
+7. Пока группа ещё не работала с учителем, в её `independent` только карточки `review`: новую тему ей ещё не
+   объяснили. У каждой группы хотя бы одна карточка `practice`. (Добавлен после первых живых уроков: модель
+   подписывала такой этап «повторение», но давала задания по новой теме.)
 
 Функция возвращает `{ ok: true } | { ok: false, errors: string[] }`.
 

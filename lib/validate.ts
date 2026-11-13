@@ -1,14 +1,14 @@
 import { LessonPlanSchema, type LessonPlan, type Segment } from "./schema";
 
 /**
- * validateLessonPlan — проверка СМЫСЛА урока (SPEC §5, инварианты 1–6).
+ * validateLessonPlan — проверка СМЫСЛА урока (SPEC §5, инварианты 1–7).
  *
  * Zod уже гарантировал, что поля на месте и нужного типа. Но модель может вернуть
  * аккуратный JSON, по которому урок физически невозможно провести: учитель в одну
  * минуту с двумя классами, дыра в таймлайне, самостоятельная работа без карточек.
  * Эта функция ловит такие планы. Она чистая (без сети и БД), поэтому легко тестируется.
  *
- * Каждая ошибка начинается с кода (INV-1 … INV-6, REF), чтобы тесты и повторный
+ * Каждая ошибка начинается с кода (INV-1 … INV-7, REF), чтобы тесты и повторный
  * запрос к модели могли понять, что именно не так.
  */
 
@@ -30,6 +30,7 @@ export function validateLessonPlan(plan: LessonPlan): ValidationResult {
   checkTeacherLoad(plan, errors);
   checkModesPresent(plan, byGroup, errors);
   checkCards(plan, byGroup, errors);
+  checkCardOrder(plan, byGroup, errors);
 
   return errors.length === 0 ? { ok: true } : { ok: false, errors };
 }
@@ -186,6 +187,34 @@ function checkCards(plan: LessonPlan, byGroup: Map<string, Segment[]>, errors: s
       if (card.type === "closed" && !card.answer?.trim()) {
         errors.push(`INV-5: у закрытой карточки ${card.id} нет ответа для самопроверки`);
       }
+    }
+  }
+}
+
+/**
+ * Инвариант 7: новая тема не раньше объяснения учителя.
+ * Пока класс ещё не работал с учителем, он может делать только карточки повторения (review).
+ * И у каждого класса есть хотя бы одна карточка по новой теме (practice), иначе урок не про тему.
+ */
+function checkCardOrder(plan: LessonPlan, byGroup: Map<string, Segment[]>, errors: string[]) {
+  for (const group of plan.groups) {
+    const segments = byGroup.get(group.id) ?? [];
+    const firstTeacher = segments.find((s) => s.mode === "with_teacher");
+    if (firstTeacher) {
+      const purposeOf = new Map(group.cards.map((c) => [c.id, c.purpose]));
+      for (const seg of segments) {
+        if (seg.mode !== "independent" || seg.startMin >= firstTeacher.startMin) continue;
+        const early = (seg.cardIds ?? []).filter((id) => purposeOf.get(id) === "practice");
+        if (early.length) {
+          errors.push(
+            `INV-7: у группы ${group.id} на ${range(seg)} карточки по новой теме (${early.join(", ")}) до объяснения учителя ` +
+              `(${firstTeacher.startMin} мин); до него можно только повторение (purpose: review)`,
+          );
+        }
+      }
+    }
+    if (!group.cards.some((c) => c.purpose === "practice")) {
+      errors.push(`INV-7: у группы ${group.id} нет ни одной карточки по новой теме (purpose: practice)`);
     }
   }
 }

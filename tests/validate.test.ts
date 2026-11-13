@@ -127,3 +127,29 @@ describe("parseLessonPlan", () => {
     }
   });
 });
+
+describe("инвариант 7: новая тема не раньше объяснения учителя", () => {
+  it("ловит карточку по новой теме, которую класс делает до работы с учителем", () => {
+    const plan = demo();
+    // 4 класс работает сам на 5–15 мин, а учитель придёт к нему только в 15. Даём ему деление столбиком.
+    segment(plan, "g2", 5).cardIds = ["g2-c1", "g2-c3"];
+
+    expect(errorsOf(plan)).toEqual([
+      "INV-7: у группы g2 на 5–15 мин карточки по новой теме (g2-c3) до объяснения учителя (15 мин); до него можно только повторение (purpose: review)",
+    ]);
+  });
+
+  it("разрешает повторение и после объяснения учителя", () => {
+    const plan = demo();
+    segment(plan, "g2", 25).cardIds = ["g2-c1", "g2-c3"];
+
+    expect(errorsOf(plan)).toEqual([]);
+  });
+
+  it("ловит класс без единой карточки по новой теме", () => {
+    const plan = demo();
+    for (const card of plan.groups[0].cards) card.purpose = "review";
+
+    expect(errorsOf(plan)).toEqual(["INV-7: у группы g1 нет ни одной карточки по новой теме (purpose: practice)"]);
+  });
+});

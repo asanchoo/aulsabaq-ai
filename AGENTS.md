@@ -79,7 +79,7 @@ components/
   SiteHeader.tsx, LangSwitch.tsx
 lib/
   schema.ts                # Zod-схемы: ФОРМА данных
-  validate.ts              # validateLessonPlan(): СМЫСЛ — инварианты 1–6 (коды INV-1…6)
+  validate.ts              # validateLessonPlan(): СМЫСЛ — инварианты 1–7 (коды INV-1…7)
   lesson.ts                # чистые помощники: segmentAt, timeSlots, lessonToText
   demo.ts                  # демо-урок (проходит те же проверки при сборке)
   i18n.ts                  # словарь ru/kk

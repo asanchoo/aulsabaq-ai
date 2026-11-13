@@ -6,6 +6,8 @@ import { t, type Dict } from "@/lib/i18n";
  * На экране ответ спрятан под «Показать ответ».
  * При печати ответ печатается вверх ногами внизу карточки: классический приём
  * для самопроверки, ученик решает, потом переворачивает лист.
+ * Метка «Повторение» / «Новая тема» подсказывает учителю, какие карточки можно дать
+ * до объяснения (инвариант 7 в lib/validate.ts).
  */
 export function TaskCards({ groups, dict }: { groups: Group[]; dict: Dict }) {
   return (
@@ -31,7 +33,14 @@ export function TaskCards({ groups, dict }: { groups: Group[]; dict: Dict }) {
                     {t(dict.common.card, { n: i + 1 })}
                     <span className="print:hidden"> · {t(dict.common.gradeShort, { n: g.grade })}</span>
                   </span>
-                  <Difficulty level={card.difficulty} label={t(dict.lesson.difficulty, { n: card.difficulty })} />
+                  <span className="flex items-center gap-3">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[0.72rem] font-semibold ${card.purpose === "review" ? "bg-surface text-muted" : "bg-mint-soft text-ink"}`}
+                    >
+                      {dict.lesson.purpose[card.purpose]}
+                    </span>
+                    <Difficulty level={card.difficulty} label={t(dict.lesson.difficulty, { n: card.difficulty })} />
+                  </span>
                 </div>
 
                 <p className="mt-3 text-[1.15rem] leading-snug font-medium tracking-[-0.01em]">{card.prompt}</p>

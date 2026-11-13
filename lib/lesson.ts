@@ -87,7 +87,7 @@ export function lessonToText(plan: LessonPlan, dict: Dict): string {
   for (const g of plan.groups) {
     lines.push("", `${dict.lesson.cardsTitle} — ${t(dict.common.grade, { n: g.grade })}`);
     g.cards.forEach((c, i) => {
-      lines.push(`${t(dict.common.card, { n: i + 1 })}. ${c.prompt}`);
+      lines.push(`${t(dict.common.card, { n: i + 1 })} (${dict.lesson.purpose[c.purpose]}). ${c.prompt}`);
       if (c.answer) lines.push(`   ${dict.lesson.answer}: ${c.answer}`);
     });
   }

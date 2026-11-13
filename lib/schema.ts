@@ -18,6 +18,11 @@ export const TaskCardSchema = z.object({
   answer: z.string().optional(),
   successCriteria: z.string().min(1),
   difficulty: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  /**
+   * review: повторение того, что класс уже знает (можно делать до объяснения учителя);
+   * practice: задание по новой теме (только после объяснения). Порядок проверяет инвариант 7.
+   */
+  purpose: z.enum(["review", "practice"]),
 });
 
 export const SegmentModeSchema = z.enum(["with_teacher", "independent", "joint"]);
@@ -53,6 +58,7 @@ export const LessonPlanSchema = z.object({
 
 export type Lang = z.infer<typeof LangSchema>;
 export type TaskCard = z.infer<typeof TaskCardSchema>;
+export type CardPurpose = TaskCard["purpose"];
 export type SegmentMode = z.infer<typeof SegmentModeSchema>;
 export type Segment = z.infer<typeof SegmentSchema>;
 export type Group = z.infer<typeof GroupSchema>;
