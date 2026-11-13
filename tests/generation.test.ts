@@ -3,7 +3,7 @@ import { POST } from "@/app/api/lessons/route";
 import { demoLesson } from "@/lib/demo";
 import { GeneratedPlanSchema, LessonRequestSchema } from "@/lib/generation-schema";
 import { generateLesson } from "@/lib/ai";
-import { resolveProvider, toGeminiSchema } from "@/lib/providers";
+import { resolveProvider, retryTiming, toGeminiSchema } from "@/lib/providers";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { z } from "zod";
 
@@ -26,6 +26,8 @@ function setupGemini() { clearEnv(); vi.stubEnv("GEMINI_API_KEY", "gemini-key");
 function gemini(plan: unknown, finishReason = "STOP") {
   return Response.json({ candidates: [{ finishReason, content: { role: "model", parts: [{ text: JSON.stringify(plan) }] } }] });
 }
+// Повторы при перегрузке провайдера в тестах без пауз.
+retryTiming.delaysMs = [0, 0];
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
 
 describe("generation request", () => {
@@ -129,8 +131,24 @@ describe("gemini", () => {
     setupGemini();
     vi.stubGlobal("fetch", vi.fn().mockImplementation(() => Promise.resolve(Response.json({ promptFeedback: { blockReason: "SAFETY" } }))));
     await expect(generateLesson(input)).rejects.toMatchObject({ code: "invalid_plan" });
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("quota", { status: 429 })));
+    const busy = vi.fn().mockImplementation(() => Promise.resolve(new Response("quota", { status: 429 }))); vi.stubGlobal("fetch", busy);
     await expect(generateLesson(input)).rejects.toMatchObject({ code: "provider" });
+    expect(busy).toHaveBeenCalledTimes(3); // первый запрос и два повтора
+  });
+  it("retries a temporary overload and still returns the lesson", async () => {
+    setupGemini();
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(new Response("high demand", { status: 503 }))
+      .mockResolvedValueOnce(gemini(generated()));
+    vi.stubGlobal("fetch", fetch);
+    await expect(generateLesson(input)).resolves.toEqual(demoLesson);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+  it("does not retry a broken request", async () => {
+    setupGemini();
+    const fetch = vi.fn().mockImplementation(() => Promise.resolve(new Response("bad field", { status: 400 }))); vi.stubGlobal("fetch", fetch);
+    await expect(generateLesson(input)).rejects.toMatchObject({ code: "provider" });
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });
 

@@ -41,28 +41,42 @@ export function resolveProvider(env: Record<string, string | undefined> = proces
 }
 
 /**
+ * Временные ошибки провайдера: перегрузка (503 «high demand» у Gemini бывает часто), лимит (429), сбой (500, 504).
+ * Такой запрос повторяем с паузой; ошибки в самом запросе (400, 401, 404) не повторяем: повтор не поможет.
+ * Паузы вынесены в объект, чтобы тесты могли их обнулить.
+ */
+const TRANSIENT = new Set([429, 500, 503, 504]);
+export const retryTiming = { delaysMs: [1500, 4000] };
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
  * В логи Vercel пишем только причину сбоя: тип ошибки, HTTP-код и сообщение провайдера.
  * Ни ключа, ни текста запроса и ответа там не будет.
  */
 async function post(name: ProviderName, url: string, headers: Record<string, string>, body: unknown): Promise<unknown> {
-  let response: Response;
-  try {
-    response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...headers },
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-      body: JSON.stringify(body),
-    });
-  } catch (error) {
-    console.error(`[ai] ${name}: request failed (${error instanceof Error ? error.name : "unknown"})`);
-    throw new ProviderError();
-  }
-  if (!response.ok) {
+  for (let retry = 0; ; retry++) {
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers },
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+        body: JSON.stringify(body),
+      });
+    } catch (error) {
+      console.error(`[ai] ${name}: request failed (${error instanceof Error ? error.name : "unknown"})`);
+      throw new ProviderError();
+    }
+    if (response.ok) {
+      try { return await response.json(); } catch { throw new ProviderError(); }
+    }
     const detail = await response.text().catch(() => "");
-    console.error(`[ai] ${name}: HTTP ${response.status} ${detail.replace(/\s+/g, " ").slice(0, 300)}`);
-    throw new ProviderError();
+    const delay = retryTiming.delaysMs[retry];
+    const willRetry = TRANSIENT.has(response.status) && delay !== undefined;
+    console.error(`[ai] ${name}: HTTP ${response.status}${willRetry ? `, retry ${retry + 1}` : ""} ${detail.replace(/\s+/g, " ").slice(0, 300)}`);
+    if (!willRetry) throw new ProviderError();
+    await sleep(delay);
   }
-  try { return await response.json(); } catch { throw new ProviderError(); }
 }
 
 // OpenAI Responses API со строгими Structured Outputs.
