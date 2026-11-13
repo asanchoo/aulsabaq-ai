@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cardNumbers, segmentAt } from "@/lib/lesson";
 import type { LessonPlan, SegmentMode } from "@/lib/schema";
 import { t, type Dict } from "@/lib/i18n";
 import { modeFill } from "./modes";
+import { useInView, useReducedMotion } from "./motion";
 
 /**
  * «Партитура» урока: каждый класс на своей дорожке, время идёт слева направо.
@@ -18,16 +19,28 @@ type Props = {
   /** Показывать текст этапа, только если язык урока совпадает с языком интерфейса. */
   showActivity: boolean;
   initialMinute?: number;
+  /** Курсор сам идёт по минутам, пока блок на экране и пользователь его не тронул. */
+  autoplay?: boolean;
 };
 
-export function LessonScore({ plan, dict, showActivity, initialMinute = 12 }: Props) {
+export function LessonScore({ plan, dict, showActivity, initialMinute = 12, autoplay = false }: Props) {
   const [minute, setMinute] = useState(initialMinute);
+  const [touched, setTouched] = useState(false);
+  const box = useRef<HTMLElement>(null);
+  const visible = useInView(box, { threshold: 0.4 });
+  const reduced = useReducedMotion();
+
+  useEffect(() => {
+    if (!autoplay || touched || reduced || !visible) return;
+    const id = setInterval(() => setMinute((m) => (m + 1) % plan.durationMin), 380);
+    return () => clearInterval(id);
+  }, [autoplay, touched, reduced, visible, plan.durationMin]);
   const duration = plan.durationMin;
   const pct = (m: number) => `${(m / duration) * 100}%`;
   const ticks = [0, 15, 30, duration].filter((m, i, all) => m <= duration && all.indexOf(m) === i);
 
   return (
-    <figure className="select-none">
+    <figure ref={box} className="select-none" onPointerDown={() => setTouched(true)}>
       <div className="grid grid-cols-[auto_1fr] gap-x-4">
         <div className="flex flex-col gap-2.5 pt-9">
           {plan.groups.map((g) => (
@@ -88,7 +101,11 @@ export function LessonScore({ plan, dict, showActivity, initialMinute = 12 }: Pr
             max={duration - 1}
             step={1}
             value={minute}
-            onChange={(e) => setMinute(Number(e.target.value))}
+            onChange={(e) => {
+              setTouched(true);
+              setMinute(Number(e.target.value));
+            }}
+            onFocus={() => setTouched(true)}
             aria-label={dict.score.scrubLabel}
             aria-valuetext={t(dict.score.minuteNow, { n: minute + 1 })}
             className="absolute inset-0 h-full w-full cursor-ew-resize opacity-0"
@@ -97,7 +114,7 @@ export function LessonScore({ plan, dict, showActivity, initialMinute = 12 }: Pr
       </div>
 
       {/* Что происходит в эту минуту: часть интерфейса, а не подпись под картинкой */}
-      <div aria-live="polite" className="mt-6 grid gap-3 border-t border-line pt-5">
+      <div aria-live="polite" className="mt-6 grid min-h-[8.5rem] content-start gap-3 border-t border-line pt-5">
         {plan.groups.map((g) => {
           const seg = segmentAt(plan, g.id, minute);
           if (!seg) return null;

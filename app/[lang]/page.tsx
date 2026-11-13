@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CountUp } from "@/components/CountUp";
+import { HintChat } from "@/components/HintChat";
 import { LessonScore, ModeLegend } from "@/components/LessonScore";
+import { Reveal } from "@/components/Reveal";
 import { LogoMark } from "@/components/Logo";
-import { StudentPhone } from "@/components/StudentPhone";
+import { HeroDemo } from "@/components/HeroDemo";
 import { DEMO_LESSON_ID, demoLesson } from "@/lib/demo";
 import { getDict, isLocale, t } from "@/lib/i18n";
 
@@ -40,23 +43,7 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
             <p className="mt-5 text-[0.85rem] text-muted">{dict.hero.note}</p>
           </div>
 
-          <div
-            role="img"
-            aria-label={dict.phone.label}
-            className="enter-late relative grid justify-items-center overflow-hidden rounded-frame bg-stage py-8 lg:col-span-6 lg:col-start-7 lg:min-h-[600px] lg:place-items-center lg:py-0 xl:justify-items-end xl:pr-16"
-          >
-            <StudentPhone dict={dict} className="w-[240px] sm:w-[270px] lg:w-[290px]" />
-            <div aria-hidden className="absolute bottom-6 left-6 hidden w-[236px] rounded-card border border-line bg-white p-4 xl:block">
-              <div className="flex items-center justify-between text-[0.8rem] text-muted">
-                <span className="flex items-center gap-1.5">
-                  <span className="size-2 rounded-full bg-[#22c55e]" />
-                  {dict.phone.live}
-                </span>
-                <span className="font-mono">{dict.phone.liveTime}</span>
-              </div>
-              <p className="mt-2 text-[0.95rem] leading-snug font-medium">{dict.phone.liveText}</p>
-            </div>
-          </div>
+          <HeroDemo dict={dict} className="enter-late relative grid justify-items-center overflow-hidden rounded-frame bg-stage py-8 lg:col-span-6 lg:col-start-7 lg:min-h-[600px] lg:place-items-center lg:py-0 xl:justify-items-end xl:pr-16" />
         </div>
       </section>
 
@@ -81,18 +68,26 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
             </ol>
           </div>
 
-          <div className="rounded-frame bg-surface p-5 sm:p-8 lg:col-span-6 lg:col-start-7 lg:p-10">
-            <div className="mb-6 flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-              <div>
-                <p className="text-[1.1rem] font-semibold">{dict.score.title}</p>
-                <p className="mt-1 text-[0.85rem] text-muted">{dict.score.hint}</p>
+          {/* Окно приложения с настоящим демо-уроком: курсор сам идёт по минутам, пока его не тронут */}
+          <Reveal className="lg:col-span-6 lg:col-start-7">
+            <div className="overflow-hidden rounded-frame border border-line bg-white shadow-[0_30px_70px_-40px_rgb(0_0_0/0.35)]">
+              <div className="flex items-center gap-3 border-b border-line bg-surface px-4 py-3">
+                <span aria-hidden className="flex gap-1.5">
+                  <i className="size-2.5 rounded-full bg-line-strong" />
+                  <i className="size-2.5 rounded-full bg-line-strong" />
+                  <i className="size-2.5 rounded-full bg-line-strong" />
+                </span>
+                <span className="truncate text-[0.8rem] text-muted">AulSabaq · {dict.score.title}</span>
               </div>
-              <ModeLegend dict={dict} />
+              <div className="p-5 sm:p-7">
+                <div className="mb-6 flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+                  <p className="text-[0.88rem] text-muted">{dict.score.hint}</p>
+                  <ModeLegend dict={dict} />
+                </div>
+                <LessonScore plan={demoLesson} dict={dict} showActivity={demoLesson.language === lang} autoplay />
+              </div>
             </div>
-            <div className="rounded-card bg-white p-5 sm:p-6">
-              <LessonScore plan={demoLesson} dict={dict} showActivity={demoLesson.language === lang} />
-            </div>
-          </div>
+          </Reveal>
         </div>
       </section>
 
@@ -118,35 +113,13 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
             </ul>
           </div>
 
-          <div aria-hidden className="grid content-start gap-3 rounded-frame bg-white/[0.06] p-5 sm:p-8 lg:col-span-6 lg:col-start-7">
-            <div className="rounded-card bg-white p-5 text-ink">
-              <p className="text-[0.8rem] text-muted">{t(dict.common.card, { n: 2 })} · {t(dict.common.grade, { n: 2 })}</p>
-              <p className="mt-1.5 text-[1.6rem] font-medium tracking-[-0.02em]">{dict.students.task}</p>
-            </div>
-            <p className="ml-auto max-w-[75%] rounded-card rounded-br-md bg-white/12 px-4 py-2.5 text-[0.95rem]">{dict.students.ask}</p>
-            {dict.students.hints.map((hint, i) => (
-              <div key={hint} className="max-w-[88%] rounded-card rounded-bl-md bg-mint px-4 py-3 text-ink">
-                <small className="block text-[0.75rem] font-semibold text-[#3f5a4b]">{t(dict.students.hintLabel, { n: i + 1 })}</small>
-                <p className="mt-0.5 text-[0.95rem] leading-snug">{hint}</p>
-              </div>
-            ))}
-            <div className="mt-3 flex items-center gap-3 rounded-card bg-white p-4 text-ink">
-              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-help-soft text-help">
-                <svg viewBox="0 0 24 24" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 11V6a2 2 0 0 0-4 0M14 10V4a2 2 0 0 0-4 0v2M10 10.5V6a2 2 0 0 0-4 0v8" />
-                  <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
-                </svg>
-              </span>
-              <div className="min-w-0">
-                <p className="font-semibold">{dict.students.alertTitle}</p>
-                <p className="text-[0.88rem] text-muted">{dict.students.alertText}</p>
-              </div>
-            </div>
+          <div className="lg:col-span-6 lg:col-start-7">
+            <HintChat dict={dict} />
           </div>
         </div>
       </section>
 
-      {/* --- Почему это важно: цифры с источниками --- */}
+      {/* --- Почему это важно --- */}
       <section id="why" aria-labelledby="why-h" className="py-20 lg:min-h-svh lg:pt-[120px] lg:pb-24">
         <div className="wrap">
         <div className="grid items-start gap-6 lg:grid-cols-12 lg:gap-x-6">
@@ -159,13 +132,10 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
           {dict.why.items.map((f) => (
             <div key={f.label}>
               <dt className="sr-only">{f.label}</dt>
-              <dd className="tabular text-[3.5rem] leading-none font-medium tracking-[-0.04em] lg:text-[5rem]">{f.value}</dd>
-              <dd className="mt-4 max-w-[18rem] leading-snug text-muted">
-                {f.label}
-                <a href="#sources" className="ml-1 align-super font-mono text-[0.7rem] text-ink hover:underline">
-                  [{f.source}]
-                </a>
+              <dd className="text-[3.5rem] leading-none font-medium tracking-[-0.04em] lg:text-[4.5rem]">
+                <CountUp value={f.value} suffix={f.suffix} locale={lang} />
               </dd>
+              <dd className="mt-4 max-w-[18rem] leading-snug text-muted">{f.label}</dd>
             </div>
           ))}
         </dl>
@@ -175,7 +145,8 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
       {/* --- Финал и подвал --- */}
       <footer className="closing bg-stage pt-20 pb-10 lg:flex lg:min-h-svh lg:pt-[120px]">
         <div className="wrap flex flex-col justify-between gap-16">
-        <div>
+        <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-x-6">
+        <div className="lg:col-span-6">
           <h2 className="display max-w-[16ch] text-[2.2rem] sm:text-[2.8rem] lg:text-[3.6rem]">{dict.closing.title}</h2>
           <p className="mt-5 max-w-[34rem] text-[1.05rem] leading-relaxed text-ink/85">{dict.closing.lead}</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -189,33 +160,42 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
           </div>
         </div>
 
-        <div id="sources" className="grid gap-8 border-t border-ink/10 pt-10 text-[0.88rem] text-ink/75 sm:grid-cols-2 lg:grid-cols-12 lg:gap-x-6">
-          <div className="lg:col-span-4">
-            <Link href={`/${lang}`} className="inline-flex min-h-11 items-center gap-2.5 text-ink">
+        {/* Карточки из демо-урока: так их получает учитель для печати */}
+        <div aria-hidden className="relative hidden h-[420px] lg:col-span-5 lg:col-start-8 lg:block">
+          {demoLesson.groups[0].cards.slice(0, 3).map((card, i) => (
+            <Reveal
+              key={card.id}
+              delay={i * 140}
+              className="absolute w-[300px] rounded-card bg-white p-5 shadow-[0_24px_50px_-28px_rgb(0_0_0/0.35)]"
+              style={{ left: `${i * 18}%`, top: `${i * 22}%` }}
+            >
+              <p className="font-mono text-[0.75rem] text-muted">
+                {t(dict.common.card, { n: i + 1 })} · {t(dict.common.gradeShort, { n: demoLesson.groups[0].grade })}
+              </p>
+              <p className="mt-2 text-[1.1rem] leading-snug font-medium">{card.prompt}</p>
+              <div className="mt-4 grid gap-2.5">
+                <i className="h-px bg-line" />
+                <i className="h-px bg-line" />
+              </div>
+            </Reveal>
+          ))}
+        </div>
+        </div>
+
+        <div className="flex flex-col gap-6 border-t border-ink/10 pt-8 text-[0.9rem] text-ink/75 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <Link href={`/${lang}`} aria-label={dict.nav.home} className="inline-flex min-h-11 items-center gap-2.5 text-ink">
               <LogoMark />
               <span className="text-[1.1rem] font-semibold tracking-[-0.03em]">AulSabaq</span>
             </Link>
-            <p className="mt-2">{dict.closing.project}</p>
+            <span>{dict.closing.tagline}</span>
           </div>
-          <nav aria-label={dict.nav.how} className="flex flex-col gap-1 lg:col-span-3">
-            <Link className="link py-1.5" href={`/${lang}#how`}>{dict.nav.how}</Link>
-            <Link className="link py-1.5" href={`/${lang}#students`}>{dict.nav.students}</Link>
-            <Link className="link py-1.5" href={demo}>{dict.nav.demo}</Link>
-            <Link className="link py-1.5" href={create}>{dict.nav.create}</Link>
+          <nav aria-label={dict.nav.how} className="flex flex-wrap gap-x-6 gap-y-1">
+            <Link className="link py-2" href={`/${lang}#how`}>{dict.nav.how}</Link>
+            <Link className="link py-2" href={`/${lang}#students`}>{dict.nav.students}</Link>
+            <Link className="link py-2" href={demo}>{dict.nav.demo}</Link>
           </nav>
-          <div className="sm:col-span-2 lg:col-span-5">
-            <p className="font-semibold text-ink">{dict.why.sourcesTitle}</p>
-            <ol className="mt-2 grid gap-2">
-              {dict.why.sources.map((s, i) => (
-                <li key={s.href}>
-                  <span className="font-mono text-ink">[{i + 1}]</span>{" "}
-                  <a href={s.href} target="_blank" rel="noreferrer" className="link">
-                    {s.label}
-                  </a>
-                </li>
-              ))}
-            </ol>
-          </div>
+          <span>{dict.closing.rights}</span>
         </div>
         </div>
       </footer>

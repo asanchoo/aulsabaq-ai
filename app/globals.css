@@ -220,6 +220,76 @@ body {
   animation: enter 700ms 120ms var(--ease-out) both;
 }
 
+/* Телефон на первом экране: экран листается к следующей карточке */
+@keyframes phone-in {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+.phone-enter {
+  animation: phone-in 450ms var(--ease-out) both;
+}
+.phone-leave {
+  opacity: 0;
+  transform: translateX(-28px);
+  transition:
+    opacity 400ms var(--ease-out),
+    transform 400ms var(--ease-out);
+}
+
+/* Подсказка, «Верно!» и галочка появляются с лёгким подъёмом */
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+.pop {
+  animation: pop 320ms var(--ease-out) both;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+.fade-in {
+  animation: fade 400ms var(--ease-out) both;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+.caret {
+  animation: blink 1s steps(1) infinite;
+}
+
+@keyframes live {
+  0% {
+    box-shadow: 0 0 0 0 rgb(34 197 94 / 0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 7px rgb(34 197 94 / 0);
+  }
+}
+.live-dot {
+  animation: live 1.6s ease-out infinite;
+}
+
+/* Блок проявляется, когда до него доскроллили. Без JS и при «уменьшить движение» виден сразу. */
+.reveal {
+  transition:
+    opacity 700ms var(--ease-out),
+    transform 700ms var(--ease-out);
+}
+.reveal[data-shown="false"] {
+  opacity: 0;
+  transform: translateY(24px);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
