@@ -1,0 +1,69 @@
+import Link from "next/link";
+import { LessonActions } from "./LessonActions";
+import { ModeLegend } from "./LessonScore";
+import { LessonTimeline } from "./LessonTimeline";
+import { TaskCards } from "./TaskCards";
+import { t, type Dict, type Locale } from "@/lib/i18n";
+import { lessonToText } from "@/lib/lesson";
+import type { LessonPlan } from "@/lib/schema";
+
+/** Страница урока для учителя: шапка с действиями, ход урока, советы, карточки. */
+export function LessonView({ plan, lang, dict, badge }: { plan: LessonPlan; lang: Locale; dict: Dict; badge: string }) {
+  const grades = plan.groups.map((g) => t(dict.common.grade, { n: g.grade })).join(" · ");
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-3 text-[0.9rem] print:hidden">
+        <Link href={`/${lang}/teacher/new`} className="link inline-flex min-h-11 items-center text-muted hover:text-ink">
+          ← {dict.lesson.backCreate}
+        </Link>
+        <span className="rounded-full bg-mint px-3 py-1 text-[0.8rem] font-semibold">{badge}</span>
+      </div>
+
+      <header className="mt-4 flex flex-col gap-6 border-b border-line pb-10 lg:flex-row lg:items-end lg:justify-between print:mt-0 print:pb-4">
+        <div>
+          <h1 className="display text-[2.6rem] sm:text-[3.4rem] print:text-2xl">{plan.subject}</h1>
+          <p className="tabular mt-3 text-[1.02rem] text-muted">
+            {grades} · {t(dict.lesson.duration, { n: plan.durationMin })}
+          </p>
+        </div>
+        <LessonActions text={lessonToText(plan, dict)} labels={{ print: dict.lesson.print, copy: dict.lesson.copy, copied: dict.lesson.copied }} />
+      </header>
+
+      <div className="mt-12 grid gap-10 lg:grid-cols-12 lg:gap-8 print:hidden">
+        <section aria-labelledby="timeline" className="lg:col-span-8">
+          <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+            <div>
+              <h2 id="timeline" className="text-[1.6rem] font-semibold tracking-[-0.02em]">
+                {dict.lesson.timelineTitle}
+              </h2>
+              <p className="mt-1 max-w-lg text-[0.9rem] text-muted">{dict.lesson.timelineHint}</p>
+            </div>
+            <ModeLegend dict={dict} />
+          </div>
+          <div className="mt-6 rounded-frame border border-line bg-white px-3 pt-5 pb-3 sm:px-5">
+            <LessonTimeline plan={plan} dict={dict} />
+          </div>
+        </section>
+
+        <aside aria-labelledby="notes" className="lg:col-span-4 lg:pt-[4.75rem]">
+          <div className="rounded-frame bg-stage p-6 lg:sticky lg:top-24">
+            <h2 id="notes" className="text-[1.1rem] font-semibold">
+              {dict.lesson.notesTitle}
+            </h2>
+            <p className="mt-3 text-[0.95rem] leading-[1.65] text-ink/85">{plan.teacherNotes}</p>
+          </div>
+        </aside>
+      </div>
+
+      <section aria-labelledby="cards" className="mt-20 print:mt-4">
+        <h2 id="cards" className="text-[1.6rem] font-semibold tracking-[-0.02em] print:hidden">
+          {dict.lesson.cardsTitle}
+        </h2>
+        <div className="mt-6 print:mt-0">
+          <TaskCards groups={plan.groups} dict={dict} />
+        </div>
+      </section>
+    </>
+  );
+}

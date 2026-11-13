@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ru" data-type="software" data-radius="soft" data-ground="sage" data-buttons="tonal" data-motion>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AulSabaq AI: совмещённые уроки для малокомплектных школ</title>
+<meta name="description" content="Урок на 45 минут для двух или трёх классов в одном кабинете: с кем учитель, кто решает карточки сам. Подсказки ученикам без готовых ответов.">
+<meta name="site-kind" content="software">
+<meta name="page-type" content="software">
+<meta name="theme-color" content="#161c1a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wdth,wght@85..100,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/system.css">
+<link rel="stylesheet" href="assets/ui/cards.css">
+<link rel="stylesheet" href="assets/motion/motion.css">
+<link rel="stylesheet" href="assets/backgrounds/backgrounds.css">
+<link rel="stylesheet" href="assets/layout/layout.css">
+<link rel="stylesheet" href="assets/icons/icon.css">
+<style>
+:root {
+  --p-bg: #161c1a; --p-surface: #1f2725; --p-ink: #e3e2da; --p-muted: #8e948d;
+  --p-accent: #9fc7b8; --p-accent-ink: #161c1a; --p-action: #9fc7b8; --p-action-ink: #161c1a;
+  --p-inv-bg: #e3e2da; --p-inv-surface: #d3d2cb; --p-inv-ink: #161c1a; --p-inv-muted: #555a55;
+  --p-inv-accent: #161c1a; --p-inv-accent-ink: #e3e2da; --p-inv-action: #161c1a; --p-inv-action-ink: #e3e2da;
+  --font-display: "IBM Plex Sans", system-ui, sans-serif;
+  --font-text: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --display-weight: 500;
+  --display-tracking: -0.025em;
+  --display-tracking-xl: -0.035em;
+  --ly-scale: 0.98;
+}
+</style>
+<link rel="stylesheet" href="assets/ui/base.css">
+<link rel="stylesheet" href="lesson-ui.css">
+<script>document.documentElement.classList.add('m-enter');setTimeout(()=>document.documentElement.classList.add('m-enter-done'),700)</script>
+<script src="assets/backgrounds/backgrounds.js"></script>
+<style>
+  /* куски коллажа: светлая «кость» на тёмном, текст в единицах контейнера, телефон показывает ту же картинку меньше */
+  .ly-collage { container-type: inline-size; }
+  .ly-collage .ly-piece { background: #f1f0ea; color: #161c1a; box-shadow: 0 1px 2px rgb(0 0 0 / .2), 0 24px 50px -24px rgb(0 0 0 / .7); }
+  .ly-collage .lu { --lu-t: #24463c; --lu-s: #b9d6cb; --lu-j: #161c1a; --lu-gap: #f1f0ea; --lu-cursor: #161c1a; --lu-muted: #6d736c; }
+  .pc-pad { padding: 4cqw 4.4cqw; }
+  .pc-title { display: flex; justify-content: space-between; align-items: baseline; margin: 0 0 3cqw; font: 500 max(13px, 2.4cqw)/1.2 var(--font-text); }
+  .pc-title span { font: 400 max(11px, 1.8cqw)/1.2 var(--font-mono); color: #6d736c; }
+  .ly-collage .lu-score { --lab: 9cqw; gap: 1.6cqw; }
+  .ly-collage .lu-lane > b { font-size: max(11px, 1.9cqw); }
+  .ly-collage .lu-track { height: 4cqw; }
+  .ly-collage .lu-axis { font-size: max(10px, 1.6cqw); }
+  .ly-collage .lu-plan__row { grid-template-columns: 6cqw repeat(3, minmax(0, 1fr)); }
+  .ly-collage .lu-cell { font-size: max(10.5px, 1.75cqw); min-height: 0; padding: 1.2cqw 1.4cqw; }
+  .ly-collage .lu-people li { padding: 1.2cqw 1.4cqw; }
+  .ly-collage .lu-people li.is-help { background: #f6e2cf; }
+  .ly-collage .lu-flag { background: #9a3d12; }
+  .ly-collage .lu-paper { background: #fbfaf5; height: 100%; }
+  .ly-collage .pc-phone { background: #0e1110; border-radius: 6cqw; padding: 1.4cqw; }
+  .pc-phone .lu-phone__screen { border-radius: 4.8cqw; padding: 7cqw 3cqw 3cqw; gap: 2cqw; }
+  .pc-phone .lu-phone__top, .pc-phone .lu-phone__label, .pc-phone .lu-phone__help { font-size: max(10px, 1.7cqw); }
+  .pc-phone .lu-progress i { width: 3.4cqw; }
+  .pc-phone .lu-phone__task { font-size: 3.8cqw; }
+  .pc-phone .lu-phone__answer { height: 7.4cqw; font-size: 3.4cqw; padding: 0 2.4cqw; border-radius: 2cqw; }
+  .pc-phone .lu-phone__answer i { height: 4cqw; }
+  .pc-phone .lu-hint { font-size: max(10.5px, 2cqw); padding: 2cqw; border-radius: 2.2cqw; }
+  .pc-phone .lu-hint small { font-size: max(9px, 1.6cqw); }
+  .pc-phone .lu-phone__btns span { height: 6.6cqw; font-size: max(10.5px, 2cqw); border-radius: 2cqw; }
+  .pc-phone .lu-phone__screen { --lu-t: #24463c; --lu-s: #b9d6cb; }
+  .ly-collage .pc-now { background: #24463c; color: #f1f0ea; padding: 4.4cqw; display: grid; align-content: space-between; }
+  .pc-now small { font: 400 max(11px, 1.9cqw)/1.2 var(--font-mono); opacity: .75; }
+  .pc-now strong { font: 500 5.4cqw/1.05 var(--font-display); letter-spacing: -0.02em; }
+  .pc-now span { font-size: max(11px, 1.9cqw); opacity: .85; }
+  .hero__lead { margin-top: var(--s-4); }
+</style>
+</head>
+<body>
+<!-- type: software
+     deal: hero triptych, palette green-black-bone (зелёно-чёрный и цвет кости: школьная доска и бумага, тихо и
+     серьёзно), type plex (кириллица и казахские буквы), buttons tonal, mark arc -->
+<header class="nav">
+  <div class="wrap nav__bar">
+    <a class="skip-link" href="#top">К содержанию</a>
+    <a class="nav__logo" href="#top"><span class="mark" data-mark="arc" aria-hidden="true"></span>AulSabaq</a>
+    <nav class="nav__links" aria-label="Главное">
+      <div class="nav__item"><a class="nav__link" href="#top">Как это работает</a></div>
+      <div class="nav__item"><a class="nav__link" href="#top">Для учеников</a></div>
+      <div class="nav__item"><a class="nav__link" href="#top">Демо-урок</a></div>
+    </nav>
+    <div class="nav__actions">
+      <a class="nav__link" href="#top" hreflang="kk" lang="kk">Қазақша</a>
+      <a class="btn btn--primary" href="#top">Открыть демо</a>
+    </div>
+    <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Меню">
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5h14M2 13h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+<main id="top">
+  <section class="hero hero--triptych" data-enter aria-labelledby="hero-h">
+    <div class="wrap"><div class="hero-text grid hero__grid">
+      <div class="span-3">
+        <h1 id="hero-h">Уроки для класса-комплекта</h1>
+        <p class="hero__lead">Ход урока по минутам, карточки и подсказки для двух или трёх классов в одном кабинете.</p>
+      </div>
+      <div class="ly-collage span-6 start-4" role="img" aria-label="Ход совмещённого урока, ученики, карточка для печати и телефон ученицы с подсказкой">
+        <div class="ly-collage__set is-on">
+          <div class="ly-piece lu pc-pad" style="left: 4%; top: 5%; width: 66%">
+            <p class="pc-title">Ход урока <span>2, 3, 4 класс</span></p>
+            <div class="lu-score">
+              <div class="lu-lane"><b>2 кл.</b><div class="lu-track"><i class="j" style="--a:0;--b:5"></i><i class="t" style="--a:5;--b:13"></i><i class="s" style="--a:13;--b:29"></i><i class="t" style="--a:29;--b:35"></i><i class="s" style="--a:35;--b:40"></i><i class="j" style="--a:40;--b:45"></i></div></div>
+              <div class="lu-lane"><b>3 кл.</b><div class="lu-track"><i class="j" style="--a:0;--b:5"></i><i class="s" style="--a:5;--b:13"></i><i class="t" style="--a:13;--b:21"></i><i class="s" style="--a:21;--b:40"></i><i class="j" style="--a:40;--b:45"></i></div></div>
+              <div class="lu-lane"><b>4 кл.</b><div class="lu-track"><i class="j" style="--a:0;--b:5"></i><i class="s" style="--a:5;--b:21"></i><i class="t" style="--a:21;--b:29"></i><i class="s" style="--a:29;--b:35"></i><i class="t" style="--a:35;--b:40"></i><i class="j" style="--a:40;--b:45"></i></div></div>
+              <div class="lu-axis"><span></span><div><span style="--m:0">0</span><span style="--m:15">15</span><span style="--m:30">30</span><span style="--m:45">45</span></div></div>
+              <div class="lu-now" style="--m:12.6"><span>12:40</span></div>
+            </div>
+          </div>
+          <div class="ly-piece" style="left: 60%; top: 42%; width: 36%; height: 46%">
+            <div class="lu-paper">
+              <small>Карточка 1 · 2 класс</small>
+              <strong>Вычисли: 47 + 25</strong>
+              <div class="lines"><i></i><i></i><i></i></div>
+              <p class="ans">Ответ: 72</p>
+            </div>
+          </div>
+          <div class="ly-piece lu pc-pad" style="left: 4%; top: 52%; width: 52%">
+            <p class="pc-title">Ученики <span>9 онлайн</span></p>
+            <ul class="lu-people">
+              <li class="is-help"><i>Д</i><b>Даша</b><small>4 класс · карточка 2</small><span class="lu-flag">Помощь</span></li>
+              <li><i>А</i><b>Айгерім</b><small>3 класс · карточка 2</small><span class="lu-dots"><i class="on"></i><i></i><i></i></span></li>
+              <li><i>Н</i><b>Нурлан</b><small>4 класс · карточка 1</small><span class="lu-dots"><i></i><i></i><i></i></span></li>
+            </ul>
+          </div>
+        </div>
+        <div class="ly-collage__set" aria-hidden="true">
+          <div class="ly-piece lu pc-pad" style="left: 4%; top: 8%; width: 54%">
+            <p class="pc-title">Ход урока <span>45 мин</span></p>
+            <div class="lu-plan">
+              <div class="lu-plan__row"><span class="lu-num">00</span><span class="lu-cell j">Вместе: устный счёт</span></div>
+              <div class="lu-plan__row"><span class="lu-num">05</span><span class="lu-cell t">С учителем</span><span class="lu-cell s">Карт. 1, 2</span><span class="lu-cell s">Карт. 1, 2</span></div>
+              <div class="lu-plan__row"><span class="lu-num">13</span><span class="lu-cell s">Карт. 1, 2</span><span class="lu-cell t">С учителем</span><span class="lu-cell s">Карт. 3</span></div>
+              <div class="lu-plan__row"><span class="lu-num">21</span><span class="lu-cell s">Карт. 3</span><span class="lu-cell s">Карт. 3</span><span class="lu-cell t">С учителем</span></div>
+              <div class="lu-plan__row"><span class="lu-num">40</span><span class="lu-cell j">Вместе: рефлексия</span></div>
+            </div>
+          </div>
+          <div class="ly-piece pc-phone" style="left: 62%; top: 5%; width: 34%; height: 91%">
+            <div class="lu-phone__screen">
+              <div class="lu-phone__top"><span>4 класс · Даша</span><span class="lu-progress"><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+              <p class="lu-phone__label">Карточка 2 из 4</p>
+              <p class="lu-phone__task">Раздели столбиком: 735&nbsp;:&nbsp;5</p>
+              <div class="lu-phone__answer">14<i></i></div>
+              <div class="lu-hint"><small>Подсказка 1 из 3</small>Сколько раз 5 помещается в 7? Что останется?</div>
+              <div class="lu-phone__btns"><span class="p">Проверить</span><span>Ещё подсказка</span></div>
+            </div>
+          </div>
+          <div class="ly-piece pc-now" style="left: 4%; top: 62%; width: 54%; height: 30%">
+            <small>12:40 · урок идёт</small>
+            <strong>Сейчас вы со 2 классом</strong>
+            <span>Через 20 секунд переход к 3 классу</span>
+          </div>
+        </div>
+        <div class="ly-collage__set" aria-hidden="true">
+          <div class="ly-piece" style="left: 4%; top: 6%; width: 44%; height: 56%">
+            <div class="lu-paper"><small>Карточка 2 · 3 класс</small><strong>Найди периметр квадрата со стороной 6 см</strong><div class="lines"><i></i><i></i><i></i></div><p class="ans">Ответ: 24 см</p></div>
+          </div>
+          <div class="ly-piece" style="left: 52%; top: 6%; width: 44%; height: 56%">
+            <div class="lu-paper"><small>Карточка 1 · 4 класс</small><strong>Раздели столбиком: 864 : 4</strong><div class="lines"><i></i><i></i><i></i></div><p class="ans">Ответ: 216</p></div>
+          </div>
+          <div class="ly-piece lu pc-pad" style="left: 4%; top: 68%; width: 92%">
+            <p class="pc-title">Печать <span>12 карточек на 3 листах A4</span></p>
+            <div class="lu-legend"><span><i class="t"></i>С учителем</span><span><i class="s"></i>Сами по карточкам</span><span><i class="j"></i>Все вместе</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="span-3 start-10 hero__cta"><a class="btn btn--primary" href="#top">Создать урок</a></div>
+    </div></div>
+  </section>
+</main>
+<script type="module" src="assets/system.js"></script>
+<script type="module" src="assets/motion/motion.js"></script>
+<script type="module" src="assets/layout/layout.js"></script>
+</body>
+</html>

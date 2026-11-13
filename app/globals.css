@@ -1,72 +1,233 @@
 @import "tailwindcss";
 
 /*
- * Дизайн-система «школьная тетрадь»:
- * бумага, сетка в клетку, красная линия полей, синие чернила.
- * Цвета режимов урока: синий — с учителем, песочная штриховка — самостоятельно, чернила — вместе.
+ * Дизайн-система AulSabaq AI, версия 3: белый, графит и один мятный.
+ * Мята появляется только там, где ученик работает сам или ему помогают.
+ * Цвета режимов урока:
+ *   with_teacher  графит (bg-ink)   учитель с этим классом
+ *   independent   мята   (bg-mint)  класс решает карточки сам
+ *   joint         серый  (bg-joint) все классы вместе
  */
 @theme {
-  --color-paper: #f5f1e8;
-  --color-paper-deep: #ebe4d4;
-  --color-card: #fffdf7;
-  --color-ink: #1b1d24;
-  --color-ink-soft: #565963;
-  --color-ink-faint: #8a8c93;
-  --color-rule: #e3dbcb;
-  --color-blue: #2a46c2;
-  --color-blue-deep: #1f3699;
-  --color-blue-soft: #e1e6f9;
-  --color-margin: #cf4a32;
-  --color-sand: #ece2c9;
-  --color-sand-line: #c2a872;
+  --color-bg: #ffffff;
+  --color-surface: #f4f4f2;
+  --color-ink: #232323;
+  --color-muted: #616161;
+  --color-faint: #8a8a8a;
+  --color-line: #e5e5e2;
+  --color-line-strong: #cfcfcb;
+  --color-mint: #a1ffcb;
+  --color-mint-soft: #e6fbef;
+  --color-mint-deep: #bff3d6;
+  --color-joint: #d9d9d5;
+  --color-help: #b4410c;
+  --color-help-soft: #fff1e6;
+  --color-danger: #b42318;
+  --color-danger-soft: #fef3f2;
 
-  --radius-sheet: 6px;
+  --radius-btn: 8px;
+  --radius-card: 14px;
+  --radius-frame: 24px;
+
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 @theme inline {
-  --font-sans: var(--font-golos), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-literata), ui-serif, Georgia, serif;
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 
 :root {
   color-scheme: light;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
-  background: var(--color-paper);
+  background: var(--color-bg);
   color: var(--color-ink);
   font-family: var(--font-sans);
-  font-feature-settings: "tnum" 0;
   -webkit-font-smoothing: antialiased;
 }
 
 ::selection {
-  background: var(--color-blue-soft);
+  background: var(--color-mint);
   color: var(--color-ink);
 }
 
-/* Тетрадная клетка */
-@utility bg-notebook {
-  background-color: var(--color-card);
-  background-image:
-    linear-gradient(var(--color-rule) 1px, transparent 1px),
-    linear-gradient(90deg, var(--color-rule) 1px, transparent 1px);
-  background-size: 20px 20px;
-  background-position: -1px -1px;
+:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 3px;
 }
 
-/* Штриховка — «класс работает сам» */
-@utility bg-hatch {
-  background-color: var(--color-sand);
-  background-image: repeating-linear-gradient(
-    135deg,
-    var(--color-sand-line) 0 1.25px,
-    transparent 1.25px 6px
-  );
+/* Один контейнер на весь сайт: равные края слева и справа (112px на 1440, 16px на телефоне) */
+.wrap {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+@media (min-width: 640px) {
+  .wrap {
+    padding-inline: 24px;
+  }
+}
+@media (min-width: 1024px) {
+  .wrap {
+    padding-inline: 32px;
+  }
+}
+
+/* Крупные заголовки: плотный трекинг, как в выбранном макете */
+.display {
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+  text-wrap: balance;
 }
 
 @utility tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* Мятная подложка для иллюстраций продукта: один мягкий свет сверху слева */
+@utility bg-stage {
+  background:
+    radial-gradient(60% 50% at 20% 10%, #f4fff9, transparent 70%),
+    linear-gradient(160deg, var(--color-mint-soft), var(--color-mint-deep));
+}
+
+/*
+ * Кнопки: одна пара на весь сайт. Наведение приподнимает, нажатие опускает,
+ * фокус с клавиатуры виден, disabled и busy приглушены.
+ */
+@layer components {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0 1.25rem;
+    border-radius: var(--radius-btn);
+    font-weight: 600;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    transition:
+      transform 160ms var(--ease-out),
+      background-color 160ms var(--ease-out),
+      border-color 160ms var(--ease-out),
+      color 160ms var(--ease-out);
+  }
+  .btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+  .btn:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
+  }
+  .btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+  .btn[aria-busy="true"] {
+    cursor: progress;
+  }
+  .btn-primary {
+    background: var(--color-ink);
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: #000;
+  }
+  .btn-secondary {
+    background: var(--color-bg);
+    color: var(--color-ink);
+    border: 1px solid var(--color-line-strong);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    border-color: var(--color-ink);
+  }
+  .btn-sm {
+    min-height: 40px;
+    padding: 0 1rem;
+    font-size: 0.875rem;
+  }
+  .btn .arrow {
+    transition: transform 160ms var(--ease-out);
+  }
+  .btn:hover .arrow {
+    transform: translateX(2px);
+  }
+
+  /* Поля ввода */
+  .field-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+  .field {
+    width: 100%;
+    min-height: 48px;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-btn);
+    background: #fff;
+    font-size: 1rem;
+    transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+  }
+  .field::placeholder {
+    color: var(--color-faint);
+  }
+  .field:hover:not(:disabled) {
+    border-color: var(--color-faint);
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--color-ink);
+    box-shadow: 0 0 0 3px var(--color-mint);
+  }
+  .field[aria-invalid="true"] {
+    border-color: var(--color-danger);
+  }
+
+  /* Ссылка с подчёркиванием, которое проявляется при наведении */
+  .link {
+    text-decoration: underline;
+    text-decoration-color: var(--color-line-strong);
+    text-underline-offset: 4px;
+    transition: text-decoration-color 160ms var(--ease-out);
+  }
+  .link:hover {
+    text-decoration-color: currentColor;
+  }
+}
+
+/* Первый экран появляется один раз при загрузке */
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+.enter {
+  animation: enter 600ms var(--ease-out) both;
+}
+.enter-late {
+  animation: enter 700ms 120ms var(--ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Печать: только карточки, без интерфейса */

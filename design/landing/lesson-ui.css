@@ -1,0 +1,83 @@
+/*
+ * Интерфейс AulSabaq AI внутри макетов первого экрана.
+ * Цвета режимов урока задаёт каждая страница:
+ *   --lu-t  учитель с этим классом
+ *   --lu-s  класс работает сам по карточкам
+ *   --lu-j  все классы вместе
+ *   --lu-gap  цвет зазора между отрезками (фон окна)
+ */
+.lu { --lu-gap: #fff; font: 400 13px/1.4 var(--font-text); }
+.lu-num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* --- Легенда --- */
+.lu-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--lu-muted, #6b7075); }
+.lu-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.lu-legend i { width: 10px; height: 10px; border-radius: 3px; }
+.lu-legend .t { background: var(--lu-t); } .lu-legend .s { background: var(--lu-s); } .lu-legend .j { background: var(--lu-j); }
+
+/* --- Партитура: дорожка на класс, время слева направо --- */
+.lu-score { position: relative; display: grid; gap: 8px; --lab: 64px; }
+.lu-lane { display: grid; grid-template-columns: var(--lab) 1fr; align-items: center; gap: 12px; }
+.lu-lane > b { font-weight: 500; font-size: 13px; white-space: nowrap; }
+.lu-track { position: relative; height: 26px; border-radius: 6px; overflow: hidden; background: color-mix(in oklab, currentColor 7%, transparent); }
+.lu-track > i { position: absolute; inset-block: 0; left: calc(var(--a) / 45 * 100%); width: calc((var(--b) - var(--a)) / 45 * 100%); box-shadow: inset -2px 0 0 var(--lu-gap); }
+.lu-track > i.t { background: var(--lu-t); }
+.lu-track > i.s { background: var(--lu-s); }
+.lu-track > i.j { background: var(--lu-j); }
+.lu-axis { display: grid; grid-template-columns: var(--lab) 1fr; gap: 12px; font-size: 11px; color: var(--lu-muted, #8a8f94); }
+.lu-axis > div { position: relative; height: 14px; }
+.lu-axis > div > span { position: absolute; left: calc(var(--m) / 45 * 100%); transform: translateX(-50%); }
+.lu-axis > div > span:first-child { transform: none; } .lu-axis > div > span:last-child { transform: translateX(-100%); }
+.lu-now { position: absolute; top: -4px; bottom: 18px; width: 2px; border-radius: 2px; background: var(--lu-cursor, currentColor);
+  left: calc(var(--lab) + 12px + (100% - var(--lab) - 12px) * var(--m) / 45); }
+.lu-now span { position: absolute; bottom: 100%; left: 50%; transform: translate(-50%, -4px); padding: 2px 6px; border-radius: 4px;
+  background: var(--lu-cursor, currentColor); color: var(--lu-gap); font: 500 11px/1.4 var(--font-mono); white-space: nowrap; }
+
+/* --- Ход урока: строки по времени, колонка на класс --- */
+.lu-plan { display: grid; gap: 4px; }
+.lu-plan__row { display: grid; grid-template-columns: 34px repeat(3, minmax(0, 1fr)); gap: 4px; align-items: stretch; }
+.lu-plan__head { font-size: 12px; color: var(--lu-muted, #7b8086); padding-bottom: 2px; }
+.lu-plan__head span { padding: 0 8px; }
+.lu-plan__row > .lu-num { font-size: 12px; color: var(--lu-muted, #7b8086); padding-top: 8px; }
+.lu-cell { min-height: 34px; padding: 7px 9px; border-radius: 7px; font-size: 12.5px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lu-cell.t { background: var(--lu-t); color: var(--lu-t-ink, #fff); font-weight: 500; }
+.lu-cell.s { background: var(--lu-s); color: var(--lu-s-ink, inherit); }
+.lu-cell.j { background: var(--lu-j); color: var(--lu-j-ink, #fff); grid-column: 2 / -1; }
+.lu-plan__row.is-now > .lu-num { color: var(--lu-cursor, currentColor); font-weight: 500; }
+
+
+/* --- Ученики --- */
+.lu-people { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.lu-people li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 1px 10px; align-items: center; padding: 7px 8px; border-radius: 8px; }
+.lu-people li > i { grid-row: 1 / span 2; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+  font: 600 12px/1 var(--font-text); font-style: normal; background: color-mix(in oklab, currentColor 10%, transparent); }
+.lu-people b { font-weight: 500; font-size: 13px; }
+.lu-people small { grid-column: 2; font-size: 12px; color: var(--lu-muted, #7b8086); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lu-people li > span { grid-column: 3; grid-row: 1 / span 2; }
+.lu-dots { display: flex; gap: 3px; } .lu-dots i { width: 6px; height: 6px; border-radius: 50%; background: color-mix(in oklab, currentColor 18%, transparent); }
+.lu-dots i.on { background: currentColor; }
+.lu-people li.is-help { background: var(--lu-help-bg, #fff1e6); }
+.lu-flag { font-size: 11.5px; font-weight: 600; padding: 3px 8px; border-radius: 99px; background: var(--lu-help, #c2410c); color: #fff; white-space: nowrap; }
+
+/* --- Телефон ученика --- */
+.lu-phone { width: 300px; aspect-ratio: 300 / 610; border-radius: 44px; background: #111; padding: 10px; box-shadow: 0 30px 60px -30px rgb(0 0 0 / .45); }
+.lu-phone__screen { height: 100%; border-radius: 35px; background: #fff; color: #16181a; padding: 46px 20px 22px; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+.lu-phone__top { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; color: #6b7075; }
+.lu-progress { display: flex; gap: 4px; } .lu-progress i { width: 22px; height: 4px; border-radius: 4px; background: #e6e7e9; } .lu-progress i.on { background: var(--lu-t); }
+.lu-phone__label { margin: 8px 0 0; font-size: 12.5px; color: #6b7075; }
+.lu-phone__task { margin: 0; font: 500 27px/1.12 var(--font-display); letter-spacing: -0.02em; }
+.lu-phone__answer { display: flex; align-items: center; height: 52px; padding: 0 16px; border-radius: 12px; border: 1.5px solid #d4d6d9; font: 500 22px/1 var(--font-mono); }
+.lu-phone__answer i { width: 2px; height: 26px; margin-left: 3px; background: var(--lu-t); }
+.lu-hint { border-radius: 14px; padding: 12px 14px; background: var(--lu-s); font-size: 14px; line-height: 1.4; }
+.lu-hint small { display: block; font-size: 11.5px; color: #5d6268; margin-bottom: 3px; }
+.lu-phone__btns { display: grid; gap: 8px; margin-top: auto; }
+.lu-phone__btns span { height: 46px; border-radius: 12px; display: grid; place-items: center; font-weight: 600; font-size: 14px; background: #f1f2f3; }
+.lu-phone__btns span.p { background: var(--lu-t); color: var(--lu-t-ink, #fff); }
+.lu-phone__help { text-align: center; font-size: 12.5px; color: #5d6268; text-decoration: underline; text-underline-offset: 3px; }
+
+/* --- Бумажная карточка для печати --- */
+.lu-paper { background: #fdfcf8; color: #1b1b1b; padding: 7cqw 6cqw; display: grid; align-content: start; gap: 2.4cqw; font-family: var(--font-text); }
+.lu-paper small { font: 600 max(11px, 2cqw)/1.2 var(--font-text); letter-spacing: .04em; text-transform: uppercase; color: #7a7a74; }
+.lu-paper strong { font: 500 max(15px, 4.4cqw)/1.15 var(--font-display); letter-spacing: -0.02em; }
+.lu-paper .lines { display: grid; gap: 3.6cqw; margin-top: 2cqw; } .lu-paper .lines i { height: 1px; background: #d8d6cf; }
+.lu-paper .ans { margin-top: 3cqw; transform: rotate(180deg); text-align: right; font-size: max(11px, 1.9cqw); color: #8a8a84; }

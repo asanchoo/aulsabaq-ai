@@ -4,54 +4,54 @@ import { t, type Dict } from "@/lib/i18n";
 /**
  * Карточки для самостоятельной работы.
  * На экране ответ спрятан под «Показать ответ».
- * При печати ответ печатается вверх ногами внизу карточки — классический приём
- * для самопроверки: ученик решает, потом переворачивает лист.
+ * При печати ответ печатается вверх ногами внизу карточки: классический приём
+ * для самопроверки, ученик решает, потом переворачивает лист.
  */
 export function TaskCards({ groups, dict }: { groups: Group[]; dict: Dict }) {
   return (
-    <div className={`grid gap-10 print:block ${groups.length === 3 ? "lg:grid-cols-3" : "md:grid-cols-2"} md:gap-8`}>
+    <div className={`grid gap-12 print:block ${groups.length === 3 ? "lg:grid-cols-3" : "md:grid-cols-2"} md:gap-8`}>
       {groups.map((g) => (
         <section key={g.id} className="print:mb-6 print:break-after-page last:print:break-after-auto">
-          <header className="border-b-2 border-ink pb-3">
-            <h3 className="font-serif text-2xl font-medium text-ink">{t(dict.common.grade, { n: g.grade })}</h3>
-            <p className="mt-1 font-medium text-ink">{g.topic}</p>
-            <p className="mt-2 text-[0.88rem] leading-snug text-ink-soft">
-              <span className="font-semibold text-ink-soft">{dict.lesson.goal}:</span> {g.learningGoal}
+          <header className="border-b border-ink pb-4">
+            <h3 className="text-[1.5rem] font-semibold tracking-[-0.02em]">{t(dict.common.grade, { n: g.grade })}</h3>
+            <p className="mt-1 font-medium">{g.topic}</p>
+            <p className="mt-2 text-[0.9rem] leading-snug text-muted">
+              <span className="font-semibold text-ink">{dict.lesson.goal}:</span> {g.learningGoal}
             </p>
           </header>
 
-          <ol className="mt-4 space-y-3 print:grid print:grid-cols-2 print:gap-3 print:space-y-0">
+          <ol className="mt-4 grid gap-3 print:grid-cols-2">
             {g.cards.map((card, i) => (
               <li
                 key={card.id}
-                className="relative flex flex-col rounded-sheet border border-rule bg-card p-4 print:break-inside-avoid print:rounded-none print:border-dashed print:border-ink-faint"
+                className="flex flex-col rounded-card border border-line bg-white p-5 transition-colors hover:border-line-strong print:break-inside-avoid print:rounded-none print:border-dashed print:border-faint"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-[0.72rem] font-semibold tracking-[0.06em] text-margin uppercase">
+                  <span className="font-mono text-[0.78rem] font-medium text-muted">
                     {t(dict.common.card, { n: i + 1 })}
-                    <span className="ml-1.5 text-ink-faint print:hidden">· {t(dict.common.gradeShort, { n: g.grade })}</span>
+                    <span className="print:hidden"> · {t(dict.common.gradeShort, { n: g.grade })}</span>
                   </span>
                   <Difficulty level={card.difficulty} label={t(dict.lesson.difficulty, { n: card.difficulty })} />
                 </div>
 
-                <p className="mt-2.5 font-serif text-[1.12rem] leading-snug text-ink">{card.prompt}</p>
-                {card.type === "open" && (
-                  <p className="mt-1.5 text-[0.75rem] font-medium text-ink-faint">{dict.lesson.openTask}</p>
-                )}
-                <p className="mt-3 text-[0.84rem] leading-snug text-ink-soft">
-                  <span className="font-semibold">{dict.lesson.criteria}:</span> {card.successCriteria}
+                <p className="mt-3 text-[1.15rem] leading-snug font-medium tracking-[-0.01em]">{card.prompt}</p>
+                {card.type === "open" && <p className="mt-1.5 text-[0.78rem] font-semibold text-muted">{dict.lesson.openTask}</p>}
+                <p className="mt-3 text-[0.88rem] leading-snug text-muted">
+                  <span className="font-semibold text-ink">{dict.lesson.criteria}:</span> {card.successCriteria}
                 </p>
 
                 {card.answer && (
                   <>
-                    <details className="group mt-3 print:hidden">
-                      <summary className="cursor-pointer list-none text-[0.82rem] font-medium text-blue select-none hover:text-blue-deep [&::-webkit-details-marker]:hidden">
-                        <span className="mr-1 inline-block transition-transform group-open:rotate-90">›</span>
+                    <details className="group mt-4 print:hidden">
+                      <summary className="inline-flex min-h-10 cursor-pointer list-none items-center gap-1.5 rounded-btn bg-mint-soft px-3 text-[0.86rem] font-semibold select-none hover:bg-mint [&::-webkit-details-marker]:hidden">
+                        <svg aria-hidden viewBox="0 0 16 16" className="size-3.5 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="m6 4 4 4-4 4" />
+                        </svg>
                         {dict.lesson.showAnswer}
                       </summary>
-                      <p className="mt-1.5 font-serif text-lg text-ink tabular">{card.answer}</p>
+                      <p className="tabular mt-2 font-mono text-[1.1rem] font-medium">{card.answer}</p>
                     </details>
-                    <p className="mt-auto hidden rotate-180 pt-4 text-right text-[0.75rem] text-ink-soft print:block">
+                    <p className="mt-auto hidden rotate-180 pt-4 text-right text-[0.75rem] text-muted print:block">
                       {dict.lesson.answer}: <span className="font-semibold text-ink">{card.answer}</span>
                     </p>
                   </>
@@ -69,7 +69,7 @@ function Difficulty({ level, label }: { level: 1 | 2 | 3; label: string }) {
   return (
     <span role="img" aria-label={label} title={label} className="flex gap-0.5">
       {[1, 2, 3].map((n) => (
-        <span key={n} className={`h-1.5 w-3 rounded-full ${n <= level ? "bg-ink" : "bg-rule"}`} />
+        <span key={n} className={`h-1.5 w-3.5 rounded-full ${n <= level ? "bg-ink" : "bg-line"}`} />
       ))}
     </span>
   );

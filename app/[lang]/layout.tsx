@@ -1,21 +1,23 @@
-import type { Metadata } from "next";
-import { Golos_Text, Literata } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { JetBrains_Mono, Manrope } from "next/font/google";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getDict, isLocale, locales } from "@/lib/i18n";
 import "../globals.css";
 
-// Оба шрифта поддерживают казахские буквы (ә, ғ, қ, ң, ө, ұ, ү, һ, і) — для этого cyrillic-ext.
-const golos = Golos_Text({
-  variable: "--font-golos",
+// Оба шрифта поддерживают казахские буквы (ә, ғ, қ, ң, ө, ұ, ү, һ, і): для этого cyrillic-ext.
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin", "cyrillic", "cyrillic-ext"],
 });
 
-const literata = Literata({
-  variable: "--font-literata",
+const jetbrains = JetBrains_Mono({
+  variable: "--font-jetbrains",
   subsets: ["latin", "cyrillic", "cyrillic-ext"],
-  axes: ["opsz"],
+  weight: ["400", "500"],
 });
+
+export const viewport: Viewport = { themeColor: "#ffffff" };
 
 export function generateStaticParams() {
   return locales.map((lang) => ({ lang }));
@@ -33,7 +35,7 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
   if (!isLocale(lang)) notFound();
 
   return (
-    <html lang={lang} className={`${golos.variable} ${literata.variable} h-full`}>
+    <html lang={lang} className={`${manrope.variable} ${jetbrains.variable} h-full`}>
       <body className="flex min-h-full flex-col">
         <SiteHeader lang={lang} dict={getDict(lang)} />
         {children}

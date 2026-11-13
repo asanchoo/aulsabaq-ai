@@ -12,7 +12,7 @@ export function LangSwitch({ current, label }: { current: Locale; label: string 
   const rest = pathname.split("/").slice(2).join("/");
 
   return (
-    <div role="group" aria-label={label} className="flex rounded-full border border-rule bg-card p-0.5 text-[0.8rem]">
+    <div role="group" aria-label={label} className="flex rounded-btn border border-line p-0.5 text-[0.82rem]">
       {[...locales].reverse().map((locale) => {
         const active = locale === current;
         return (
@@ -20,9 +20,10 @@ export function LangSwitch({ current, label }: { current: Locale; label: string 
             key={locale}
             href={`/${locale}${rest ? `/${rest}` : ""}`}
             hrefLang={locale}
+            lang={locale}
             aria-current={active ? "true" : undefined}
-            className={`rounded-full px-3 py-1 font-medium transition-colors ${
-              active ? "bg-ink text-paper" : "text-ink-soft hover:text-ink"
+            className={`grid min-h-9 min-w-11 place-items-center rounded-[6px] px-2.5 font-semibold transition-colors ${
+              active ? "bg-ink text-white" : "text-muted hover:bg-surface hover:text-ink"
             }`}
           >
             {names[locale]}

@@ -1,0 +1,32 @@
+{
+ "url": "http://127.0.0.1:5300/v3.html",
+ "views": {
+  "mobile": {
+   "width": 390,
+   "height": 844,
+   "navH": 56,
+   "scrollHeight": 844,
+   "screens": 1,
+   "sections": [
+    {
+     "n": 1,
+     "tag": "section",
+     "id": "",
+     "cls": "hero hero--split is-still is-entered",
+     "top": 0,
+     "h": 844,
+     "hScreens": 1,
+     "offGrid": 0,
+     "tiles": [
+      {
+       "file": "mobile-sec-01-a.jpg",
+       "scrollY": 0
+      }
+     ]
+    }
+   ],
+   "consoleErrors": []
+  }
+ },
+ "at": "2026-11-13T11:25:52.871Z"
+}

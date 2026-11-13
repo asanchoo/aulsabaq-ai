@@ -40,6 +40,7 @@ SPEC → PLAN → IMPLEMENT → REVIEW.
   одна повторная попытка, затем понятная ошибка пользователю.
 - Rate limit на API-роуты генерации (по IP, например 10 запросов/час) — бережём ключ.
 - Языки интерфейса и контента: казахский и русский (`kk`, `ru`). Все строки UI — в словаре `lib/i18n.ts`, не в JSX.
+- Дизайн: макет первого экрана — `design/landing/v3.html`. В UI-текстах без длинных тире и эмодзи; одна пара кнопок (`.btn-primary`, `.btn-secondary`); цвет режима урока только из `components/modes.ts`.
 - ИИ для ученика **никогда не даёт готовый ответ** — только наводящие вопросы и подсказки. Это проверяется промптом и тестом.
 - Никаких персональных данных учеников: ученик входит по коду урока и имени/номеру, без почты и телефона.
 - Секреты в `.env.local`, в репозитории только `.env.example`.
@@ -56,10 +57,11 @@ SPEC → PLAN → IMPLEMENT → REVIEW.
 на нужном языке, а страницы собираются статически. `proxy.ts` перенаправляет `/` на нужный язык.
 ```
 app/
-  globals.css              # дизайн-система «тетрадь»: цвета, шрифты, клетка, штриховка
+  globals.css              # дизайн-система v3: белый, графит, мята; кнопки .btn, поля .field
   [lang]/layout.tsx        # корневой layout: шрифты, шапка, <html lang>
-  [lang]/page.tsx          # лендинг + «Демо-урок» (+ «Создать урок» в День 3)
-  [lang]/teacher/new/page.tsx       # форма совмещённого урока (День 3)
+  [lang]/page.tsx          # лендинг: первый экран, как это работает, для учеников, цифры, финал
+  [lang]/teacher/new/page.tsx       # форма совмещённого урока + предпросмотр
+  [lang]/teacher/preview/page.tsx   # созданный урок из sessionStorage (до Supabase)
   [lang]/teacher/[lessonId]/page.tsx  # таймлайн, карточки, печать; код и статус учеников — позже
   [lang]/join/page.tsx              # ученик вводит код урока (этап 2)
   [lang]/student/[lessonId]/page.tsx  # карточки + «Подсказка» + «Мне нужна помощь» (этап 2)
@@ -68,6 +70,8 @@ app/
   api/progress/route.ts    # POST/GET: статусы учеников
 components/
   LessonScore.tsx          # «партитура» урока с ползунком (лендинг)
+  modes.ts                 # цвета режимов урока: графит / мята / серый
+  StudentPhone.tsx, Logo.tsx, LessonForm.tsx, LessonView.tsx, LessonPreview.tsx
   LessonTimeline.tsx       # таймлайн: колонки на компьютере, промежутки на телефоне
   TaskCards.tsx            # карточки, print CSS (ответ печатается вверх ногами)
   LessonActions.tsx        # «Распечатать» / «Скопировать»
@@ -78,7 +82,7 @@ lib/
   lesson.ts                # чистые помощники: segmentAt, timeSlots, lessonToText
   demo.ts                  # демо-урок (проходит те же проверки при сборке)
   i18n.ts                  # словарь ru/kk
-  prompts.ts, openai.ts    # День 3
+  prompts.ts, openai.ts, generation-schema.ts, rate-limit.ts  # генерация (День 3)
 proxy.ts                   # / → /ru или /kk по Accept-Language
 fixtures/demo-lesson.ru.json
 tests/validate.test.ts, tests/hint-guard.test.ts (этап 2)
