@@ -51,7 +51,7 @@ export function LessonView({ plan, lang, dict, badge }: { plan: LessonPlan; lang
             <h2 id="notes" className="text-[1.1rem] font-semibold">
               {dict.lesson.notesTitle}
             </h2>
-            <p className="mt-3 text-[0.95rem] leading-[1.65] text-ink/85">{plan.teacherNotes}</p>
+            <p className="mt-3 text-[0.95rem] leading-[1.65] whitespace-pre-line text-ink/85">{plan.teacherNotes}</p>
           </div>
         </aside>
       </div>
