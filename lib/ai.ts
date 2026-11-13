@@ -1,20 +1,19 @@
 import { z } from "zod";
 import { GeneratedPlanSchema, normalizeGeneratedPlan, type LessonRequest } from "./generation-schema";
 import { lessonInstructions } from "./prompts";
+import { ProviderError, resolveProvider } from "./providers";
 import { parseLessonPlan } from "./validate";
 import type { LessonPlan } from "./schema";
+
+/**
+ * Генерация урока: не зависит от того, какая модель отвечает.
+ * Провайдер (OpenAI или Gemini) выбирается в lib/providers.ts по env.
+ * Ответ модели всегда проходит Zod, инварианты урока и сверку с запросом учителя.
+ */
 
 export class GenerationError extends Error {
   constructor(public code: "not_configured" | "provider" | "invalid_plan") { super(code); }
 }
-
-const ResponseSchema = z.object({
-  status: z.string(),
-  output: z.array(z.object({
-    type: z.string(),
-    content: z.array(z.object({ type: z.string(), text: z.string().optional() })).optional(),
-  })),
-});
 
 export function requestMismatch(plan: LessonPlan, input: LessonRequest): string[] {
   const errors: string[] = [];
@@ -27,32 +26,26 @@ export function requestMismatch(plan: LessonPlan, input: LessonRequest): string[
 }
 
 export async function generateLesson(input: LessonRequest): Promise<LessonPlan> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  const model = process.env.OPENAI_MODEL;
-  if (!apiKey || !model) throw new GenerationError("not_configured");
+  const provider = resolveProvider();
+  if (!provider) throw new GenerationError("not_configured");
+  const schema = z.toJSONSchema(GeneratedPlanSchema, { target: "draft-7" }) as Record<string, unknown>;
   let feedback: string[] = [];
-  // One repair attempt only, including malformed/incomplete output.
+  // Одна повторная попытка, в том числе при обрыве или неполном ответе.
   for (let attempt = 0; attempt < 2; attempt++) {
-    let response: Response;
+    let text: string | null;
     try {
-      response = await fetch("https://api.openai.com/v1/responses", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        signal: AbortSignal.timeout(50_000),
-        body: JSON.stringify({ model, store: false, max_output_tokens: 10000,
-          instructions: lessonInstructions(input.language),
-          input: JSON.stringify({ request: input, validationErrors: feedback }),
-          text: { format: { type: "json_schema", name: "lesson_plan", strict: true,
-            schema: z.toJSONSchema(GeneratedPlanSchema, { target: "draft-7" }) } },
-        }),
+      text = await provider.call({
+        instructions: lessonInstructions(input.language),
+        input: JSON.stringify({ request: input, validationErrors: feedback }),
+        schemaName: "lesson_plan",
+        schema,
       });
-    } catch { throw new GenerationError("provider"); }
-    if (!response.ok) throw new GenerationError("provider");
+    } catch (error) {
+      if (error instanceof ProviderError) throw new GenerationError("provider");
+      throw error;
+    }
     try {
-      const result = ResponseSchema.parse(await response.json());
-      if (result.status !== "completed") throw new Error("incomplete");
-      const text = result.output.flatMap((o) => o.type === "message" ? o.content ?? [] : [])
-        .filter((c) => c.type === "output_text").map((c) => c.text ?? "").join("");
+      if (text === null) throw new Error("incomplete");
       const parsed = parseLessonPlan(normalizeGeneratedPlan(JSON.parse(text)));
       if (!parsed.ok) { feedback = parsed.errors; continue; }
       feedback = requestMismatch(parsed.plan, input);

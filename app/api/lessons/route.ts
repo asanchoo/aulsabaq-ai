@@ -1,6 +1,6 @@
 import { demoLesson } from "@/lib/demo";
 import { LessonRequestSchema } from "@/lib/generation-schema";
-import { generateLesson, GenerationError } from "@/lib/openai";
+import { generateLesson, GenerationError } from "@/lib/ai";
 import { checkGenerationLimit } from "@/lib/rate-limit";
 
 export const maxDuration = 120;

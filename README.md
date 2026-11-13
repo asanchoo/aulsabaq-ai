@@ -27,9 +27,17 @@ npm run dev                  # http://localhost:3000
 | `prompts/` | Промпты для агента |
 
 ## Создание урока
-Откройте `/ru/teacher/new` или `/kk/teacher/new`. Для живой генерации заполните
-`OPENAI_API_KEY` и `OPENAI_MODEL` в `.env.local`, затем перезапустите приложение.
-Ключ используется только сервером. Поддержка Structured Outputs у выбранной модели обязательна.
+Откройте `/ru/teacher/new` или `/kk/teacher/new`. Для живой генерации нужен один провайдер модели:
+
+| Провайдер | Переменные в `.env.local` (или в Vercel) |
+|---|---|
+| OpenAI | `OPENAI_API_KEY`, `OPENAI_MODEL` |
+| Gemini | `GEMINI_API_KEY` (из Google AI Studio), `GEMINI_MODEL` |
+
+`AI_PROVIDER=openai|gemini` выбирает провайдера явно. Если он не задан, используется тот, у кого заполнены
+ключ и модель; если заполнены оба, OpenAI. После изменения перезапустите приложение (на Vercel: Redeploy).
+Ключи используются только сервером. Модель должна поддерживать JSON-ответ по схеме
+(Structured Outputs у OpenAI, `responseJsonSchema` у Gemini).
 
 `DEMO_MODE=true` позволяет проверить всю цепочку без платного запроса: форма → API → страница результата.
 При этом результат — готовый русский демо-урок, а не урок по введённым темам; интерфейс показывает это явно.
@@ -39,4 +47,7 @@ npm run dev                  # http://localhost:3000
 Лимит генерации — 10 запросов в час на IP в Vercel, вне Vercel общий лимит на процесс.
 Счётчик пока в памяти: перед масштабированием необходимо подключить общее хранилище лимитов.
 
-Интеграция основана на [официальном руководстве Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs).
+Как устроено: `lib/providers.ts` отправляет запрос нужному провайдеру и достаёт текст ответа,
+`lib/ai.ts` проверяет урок (Zod → инварианты → совпадение с запросом) и при ошибке делает одну повторную попытку.
+Документация: [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs),
+[Gemini generateContent](https://aistudio.google.com/api-reference/generate-content).

@@ -32,10 +32,11 @@ SPEC → PLAN → IMPLEMENT → REVIEW.
 
 ## Жёсткие правила
 - **Рецензент запускает продукт сам, без автора и без покупки подписки.**
-  Поэтому: никакой обязательной регистрации; ключ OpenAI только на сервере (`OPENAI_API_KEY`
+  Поэтому: никакой обязательной регистрации; ключ модели только на сервере (`OPENAI_API_KEY` или `GEMINI_API_KEY`
   в env, никогда в клиенте); есть **демо-режим** (`DEMO_MODE=true` или кнопка «Демо-урок»),
   который работает из `fixtures/` без вызова модели.
-- Модель задаётся через `OPENAI_MODEL` в env, не хардкодить.
+- Провайдер модели — OpenAI или Gemini (`AI_PROVIDER`), ключ и модель только из env
+  (`OPENAI_API_KEY`/`OPENAI_MODEL` или `GEMINI_API_KEY`/`GEMINI_MODEL`), не хардкодить.
 - Всё, что вернула модель, проходит через Zod-схему и `validateLessonPlan()`. Если невалидно —
   одна повторная попытка, затем понятная ошибка пользователю.
 - Rate limit на API-роуты генерации (по IP, например 10 запросов/час) — бережём ключ.
@@ -82,7 +83,9 @@ lib/
   lesson.ts                # чистые помощники: segmentAt, timeSlots, lessonToText
   demo.ts                  # демо-урок (проходит те же проверки при сборке)
   i18n.ts                  # словарь ru/kk
-  prompts.ts, openai.ts, generation-schema.ts, rate-limit.ts  # генерация (День 3)
+  ai.ts                    # генерация урока: проверка ответа и одна повторная попытка
+  providers.ts             # HTTP к OpenAI или Gemini, выбор провайдера по env
+  prompts.ts, generation-schema.ts, rate-limit.ts
 proxy.ts                   # / → /ru или /kk по Accept-Language
 fixtures/demo-lesson.ru.json
 tests/validate.test.ts, tests/hint-guard.test.ts (этап 2)

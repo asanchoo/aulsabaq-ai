@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/lessons/route";
 import { demoLesson } from "@/lib/demo";
 import { GeneratedPlanSchema, LessonRequestSchema } from "@/lib/generation-schema";
-import { generateLesson } from "@/lib/openai";
+import { generateLesson } from "@/lib/ai";
+import { resolveProvider, toGeminiSchema } from "@/lib/providers";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { z } from "zod";
 
@@ -19,7 +20,12 @@ function generated() {
 function provider(plan: unknown, status = "completed") {
   return Response.json({ status, output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify(plan) }] }] });
 }
-function setup() { vi.stubEnv("OPENAI_API_KEY", "test-key"); vi.stubEnv("OPENAI_MODEL", "test-model"); }
+function clearEnv() { for (const k of ["AI_PROVIDER", "OPENAI_API_KEY", "OPENAI_MODEL", "GEMINI_API_KEY", "GEMINI_MODEL"]) vi.stubEnv(k, ""); }
+function setup() { clearEnv(); vi.stubEnv("OPENAI_API_KEY", "test-key"); vi.stubEnv("OPENAI_MODEL", "test-model"); }
+function setupGemini() { clearEnv(); vi.stubEnv("GEMINI_API_KEY", "gemini-key"); vi.stubEnv("GEMINI_MODEL", "gemini-test"); }
+function gemini(plan: unknown, finishReason = "STOP") {
+  return Response.json({ candidates: [{ finishReason, content: { role: "model", parts: [{ text: JSON.stringify(plan) }] } }] });
+}
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
 
 describe("generation request", () => {
@@ -77,8 +83,53 @@ describe("generation", () => {
     expect(fetch).toHaveBeenCalledTimes(1);
   });
   it("does not contact provider without configuration", async () => {
-    vi.stubEnv("OPENAI_API_KEY", ""); const fetch = vi.fn(); vi.stubGlobal("fetch", fetch);
+    clearEnv(); const fetch = vi.fn(); vi.stubGlobal("fetch", fetch);
     await expect(generateLesson(input)).rejects.toMatchObject({ code: "not_configured" }); expect(fetch).not.toHaveBeenCalled();
+  });
+});
+
+describe("provider choice", () => {
+  const both = { OPENAI_API_KEY: "o", OPENAI_MODEL: "om", GEMINI_API_KEY: "g", GEMINI_MODEL: "gm" };
+  it("uses the configured provider and prefers OpenAI when both are set", () => {
+    expect(resolveProvider({ GEMINI_API_KEY: "g", GEMINI_MODEL: "gm" })?.name).toBe("gemini");
+    expect(resolveProvider(both)?.name).toBe("openai");
+    expect(resolveProvider({ ...both, AI_PROVIDER: "gemini" })?.name).toBe("gemini");
+  });
+  it("does not fall back silently on a typo or a missing model", () => {
+    expect(resolveProvider({ ...both, AI_PROVIDER: "gemeni" })).toBeNull();
+    expect(resolveProvider({ OPENAI_API_KEY: "o", AI_PROVIDER: "openai" })).toBeNull();
+    expect(resolveProvider({ GEMINI_API_KEY: "g" })).toBeNull();
+  });
+});
+
+describe("gemini", () => {
+  it("sends the schema Gemini understands and the key in a header, not the URL", async () => {
+    setupGemini();
+    const fetch = vi.fn().mockResolvedValueOnce(gemini(generated())); vi.stubGlobal("fetch", fetch);
+    await expect(generateLesson(input)).resolves.toEqual(demoLesson);
+    const [url, init] = fetch.mock.calls[0];
+    expect(url).toBe("https://generativelanguage.googleapis.com/v1beta/models/gemini-test:generateContent");
+    expect(init.headers["x-goog-api-key"]).toBe("gemini-key");
+    const schema = JSON.stringify(JSON.parse(init.body).generationConfig.responseJsonSchema);
+    expect(schema).not.toContain("$schema"); expect(schema).not.toContain('"const"');
+    expect(JSON.parse(init.body).generationConfig.responseMimeType).toBe("application/json");
+  });
+  it("turns const into a one-value enum", () => {
+    expect(toGeminiSchema({ $schema: "x", anyOf: [{ type: "number", const: 1 }] })).toEqual({ anyOf: [{ type: "number", enum: [1] }] });
+  });
+  it("repairs once after a cut-off answer and skips thought parts", async () => {
+    setupGemini();
+    const thought = Response.json({ candidates: [{ finishReason: "STOP", content: { parts: [{ text: "думаю…", thought: true }, { text: JSON.stringify(generated()) }] } }] });
+    const fetch = vi.fn().mockResolvedValueOnce(gemini(generated(), "MAX_TOKENS")).mockResolvedValueOnce(thought); vi.stubGlobal("fetch", fetch);
+    await expect(generateLesson(input)).resolves.toEqual(demoLesson);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+  it("reports a blocked prompt as an invalid plan and an HTTP error as a provider error", async () => {
+    setupGemini();
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(() => Promise.resolve(Response.json({ promptFeedback: { blockReason: "SAFETY" } }))));
+    await expect(generateLesson(input)).rejects.toMatchObject({ code: "invalid_plan" });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("quota", { status: 429 })));
+    await expect(generateLesson(input)).rejects.toMatchObject({ code: "provider" });
   });
 });
 
@@ -95,7 +146,7 @@ describe("HTTP boundary", () => {
     expect(await result.json()).toEqual({ plan: demoLesson, demo: true }); expect(fetch).not.toHaveBeenCalled();
   });
   it("returns a safe error when configuration is absent", async () => {
-    vi.stubEnv("DEMO_MODE", "false"); vi.stubEnv("OPENAI_API_KEY", "");
+    vi.stubEnv("DEMO_MODE", "false"); clearEnv();
     const result = await POST(new Request("http://localhost/api/lessons", { method: "POST", body: JSON.stringify(input) }));
     expect(result.status).toBe(503); expect(await result.json()).toEqual({ error: "not_configured" });
   });
