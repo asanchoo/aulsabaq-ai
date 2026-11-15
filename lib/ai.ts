@@ -12,9 +12,10 @@ import { ExplanationSchema, type Explanation, type LessonCore, type LessonPlan }
  *
  * Кто что делает:
  * - расписание по минутам считает код (lib/schedule.ts): учитель никогда не окажется с двумя классами;
- * - модель пишет содержание для всех классов: цели, карточки, тексты этапов, домашнее задание;
- * - объяснение новой темы модель пишет отдельным запросом на каждый класс.
- * Запросы идут параллельно, каждый ответ проверяется своими правилами и при ошибке повторяется.
+ * - объяснение новой темы модель пишет отдельным запросом на каждый класс, эти запросы идут параллельно;
+ * - потом модель пишет содержание для всех классов: цели, карточки, тексты этапов, домашнее задание,
+ *   уже зная разобранные примеры (этап учителя идёт по ним, карточки их не повторяют).
+ * Каждый ответ проверяется своими правилами и при ошибке повторяется.
  * Когда модель составляла и таймлайн, и всё содержание одним ответом, она путалась в минутах.
  */
 
@@ -83,7 +84,7 @@ async function generateChecked<T>(provider: Provider, job: Job<T>, startedAt: nu
 const contentSchema = () => z.toJSONSchema(GeneratedContentSchema, { target: "draft-7" }) as Record<string, unknown>;
 const explanationSchema = () => z.toJSONSchema(ExplanationSchema, { target: "draft-7" }) as Record<string, unknown>;
 
-function planJob(input: LessonRequest): Job<LessonCore> {
+function planJob(input: LessonRequest, explanations: Explanation[]): Job<LessonCore> {
   const schedule = planSchedule(input.groups.length, input.durationMin);
   return {
     name: "plan",
@@ -91,6 +92,8 @@ function planJob(input: LessonRequest): Job<LessonCore> {
     request: {
       request: input,
       cardPlan: schedule.cards.map((c, i) => ({ group: i + 1, grade: input.groups[i].grade, review: c.review, practice: c.practice })),
+      // Чтобы этап «с учителем» шёл по готовому объяснению, а карточки не повторяли разобранный пример.
+      explanations: explanations.map((e, i) => ({ group: i + 1, keyIdea: e.keyIdea, example: e.example.problem, exampleAnswer: e.example.answer })),
     },
     schemaName: "lesson_content",
     schema: contentSchema(),
@@ -126,10 +129,9 @@ export async function generateLesson(input: LessonRequest): Promise<LessonPlan> 
   const provider = resolveProvider();
   if (!provider) throw new GenerationError("not_configured");
   const startedAt = Date.now();
-  const [core, explanations] = await Promise.all([
-    generateChecked(provider, planJob(input), startedAt),
-    Promise.all(input.groups.map((_, i) => generateChecked(provider, explanationJob(input, i), startedAt))),
-  ]);
+  // Сначала объяснения всех классов (параллельно), потом содержание урока, которое на них опирается.
+  const explanations = await Promise.all(input.groups.map((_, i) => generateChecked(provider, explanationJob(input, i), startedAt)));
+  const core = await generateChecked(provider, planJob(input, explanations), startedAt);
   return {
     ...core,
     groups: core.groups.map((g, i) => ({

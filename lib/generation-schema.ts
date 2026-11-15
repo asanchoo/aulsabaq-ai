@@ -34,6 +34,11 @@ export const GeneratedContentSchema = z.object({
   opening: z.string().min(1),
   closing: z.string().min(1),
   groups: z.array(GroupCoreSchema.omit({ id: true }).extend({
+    /**
+     * Какую прошлую тему класс повторяет до объяснения. Модель пишет её до карточек: назвав тему явно,
+     * она реже даёт «повторение» по новой теме. В урок поле не попадает.
+     */
+    reviewTopic: z.string().min(1),
     cards: z.array(TaskCardSchema.omit({ id: true }).extend({ answer: z.string().nullable() })),
     stages: StagesSchema,
   })),

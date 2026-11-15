@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findWrongEquation } from "@/lib/arithmetic";
+import { findMixedScriptWord, findWrongEquation } from "@/lib/arithmetic";
 
 describe("findWrongEquation", () => {
   it("находит неверное равенство и пропускает верные", () => {
@@ -22,6 +22,17 @@ describe("findWrongEquation", () => {
       "Повтори: 36 : 4, 45 : 5", "9, 9, 7",
     ]) {
       expect(findWrongEquation(text)).toBeNull();
+    }
+  });
+});
+
+describe("findMixedScriptWord", () => {
+  it("находит слово, где смешаны алфавиты, и пропускает формулы", () => {
+    expect(findMixedScriptWord("Пропорция дегенimiz екі қатынастың теңдігі")).toBe("дегенimiz");
+    expect(findMixedScriptWord("Бүگүн біз үйренеміз")).toBe("Бүگүн");
+    expect(findMixedScriptWord("биіk тау")).toBe("биіk");
+    for (const ok of ["3x = 2250, x = 750", "D = b² - 4ac", "ax^2 + bx + c = 0 теңдеуі", "x-ті табамыз", "Wi-Fi нет"]) {
+      expect(findMixedScriptWord(ok)).toBeNull();
     }
   });
 });

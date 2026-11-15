@@ -21,7 +21,7 @@ function generated() {
     subject: demoLesson.subject, language: demoLesson.language, durationMin: demoLesson.durationMin,
     opening: "Общий настрой", closing: "Общий итог",
     groups: demoLesson.groups.map((g, i) => ({
-      grade: g.grade, topic: g.topic, learningGoal: g.learningGoal, homework: g.homework,
+      grade: g.grade, topic: g.topic, learningGoal: g.learningGoal, homework: g.homework, reviewTopic: "Прошлая тема",
       cards: g.cards.map((card, k) => {
         const c: Partial<typeof card> = { ...card };
         delete c.id;
@@ -112,6 +112,17 @@ describe("generation", () => {
     expect(body.model).toBe("test-model"); expect(body.store).toBe(false);
     expect(body.text.format.strict).toBe(true);
   });
+  it("asks for content after the explanations and passes their worked examples", async () => {
+    setup();
+    const fetch = fakeModel(provider); vi.stubGlobal("fetch", fetch);
+    await generateLesson(input);
+    const kinds = fetch.mock.calls.map(([, init]) => requestOf(init as RequestInit).kind);
+    expect(kinds).toEqual(["explain", "explain", "plan"]);
+    const request = requestOf(planCalls(fetch)[0][1] as RequestInit).data;
+    expect(request.explanations).toEqual(demoLesson.groups.map((g, i) => ({
+      group: i + 1, keyIdea: g.explanation.keyIdea, example: g.explanation.example.problem, exampleAnswer: g.explanation.example.answer,
+    })));
+  });
   it("sends validation errors on a repair attempt", async () => {
     setup(); const broken = generated(); broken.groups[0].cards.pop(); // карточек меньше, чем просит расписание
     const fetch = fakeModel(provider, [broken, generated()]); vi.stubGlobal("fetch", fetch);
@@ -147,7 +158,8 @@ describe("generation", () => {
   it("stops on provider/network errors", async () => {
     setup(); const fetch = vi.fn().mockRejectedValue(new Error("network")); vi.stubGlobal("fetch", fetch);
     await expect(generateLesson(input)).rejects.toMatchObject({ code: "provider" });
-    expect(fetch).toHaveBeenCalledTimes(1 + input.groups.length); // по одному разу, без повторных попыток
+    // Объяснения идут первыми и падают сразу, до содержания урока дело не доходит.
+    expect(fetch).toHaveBeenCalledTimes(input.groups.length);
   });
   it("does not contact provider without configuration", async () => {
     clearEnv(); const fetch = vi.fn(); vi.stubGlobal("fetch", fetch);
@@ -200,7 +212,8 @@ describe("gemini", () => {
     await expect(generateLesson(input)).rejects.toMatchObject({ code: "invalid_plan" });
     const busy = vi.fn().mockImplementation(() => Promise.resolve(new Response("quota", { status: 429 }))); vi.stubGlobal("fetch", busy);
     await expect(generateLesson(input)).rejects.toMatchObject({ code: "provider" });
-    expect(planCalls(busy)).toHaveLength(3); // первый запрос и два повтора
+    // Первое объяснение: запрос и два повтора; остальные могут не успеть до ответа об ошибке.
+    expect(busy.mock.calls.length).toBeGreaterThanOrEqual(3);
   });
   it("retries a temporary overload and still returns the lesson", async () => {
     setupGemini();
@@ -212,7 +225,7 @@ describe("gemini", () => {
     setupGemini();
     const fetch = vi.fn().mockImplementation(() => Promise.resolve(new Response("bad field", { status: 400 }))); vi.stubGlobal("fetch", fetch);
     await expect(generateLesson(input)).rejects.toMatchObject({ code: "provider" });
-    expect(fetch).toHaveBeenCalledTimes(1 + input.groups.length); // каждый запрос по одному разу
+    expect(fetch).toHaveBeenCalledTimes(input.groups.length); // каждое объяснение по одному разу, без повторов
   });
 });
 

@@ -1,4 +1,4 @@
-import { findWrongEquation } from "./arithmetic";
+import { findMixedScriptWord, findWrongEquation } from "./arithmetic";
 import { ExplanationSchema, LessonPlanSchema, type Explanation, type LessonCore, type LessonPlan, type Segment } from "./schema";
 
 /**
@@ -79,6 +79,10 @@ export function checkExplanation(e: Explanation, groupId?: string): string[] {
   for (const text of texts) {
     const wrong = findWrongEquation(text);
     if (wrong) errors.push(`EXP: в объяснении${where} неверное равенство «${wrong}»; пересчитай пример`);
+  }
+  for (const text of [...texts, ...e.mistakes]) {
+    const word = findMixedScriptWord(text);
+    if (word) errors.push(`TXT: в объяснении${where} опечатка «${word}»: в слове смешаны алфавиты`);
   }
   return errors;
 }
@@ -288,6 +292,11 @@ function checkPlanArithmetic(plan: LessonCore, errors: string[]) {
   for (const text of texts) {
     const wrong = findWrongEquation(text);
     if (wrong) errors.push(`INV-9: неверное равенство «${wrong}»; пересчитай`);
+  }
+  const allTexts = [...texts, plan.teacherNotes, ...plan.groups.flatMap((g) => [g.learningGoal, g.homework, ...g.cards.map((c) => c.answer ?? "")])];
+  for (const text of allTexts) {
+    const word = findMixedScriptWord(text);
+    if (word) errors.push(`TXT: опечатка «${word}»: в слове смешаны алфавиты`);
   }
   for (const card of plan.groups.flatMap((g) => g.cards)) {
     const expression = card.prompt.match(/^[^\d]*?(\d+(?:\s*[+\-−×·:]\s*\d+)+)\s*(?:=\s*\?)?\s*[.?]?$/);
