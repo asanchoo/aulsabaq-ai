@@ -1,27 +1,45 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/lessons/route";
 import { demoLesson } from "@/lib/demo";
-import { GeneratedPlanSchema, LessonRequestSchema } from "@/lib/generation-schema";
+import { GeneratedContentSchema, LessonRequestSchema } from "@/lib/generation-schema";
 import { generateLesson } from "@/lib/ai";
 import { resolveProvider, retryTiming, toGeminiSchema } from "@/lib/providers";
 import { createRateLimiter } from "@/lib/rate-limit";
-import { ExplanationSchema } from "@/lib/schema";
+import { ExplanationSchema, type LessonPlan } from "@/lib/schema";
+import { planSchedule } from "@/lib/schedule";
+import { validateLessonPlan } from "@/lib/validate";
 import { z } from "zod";
 
 const input = {
   subject: demoLesson.subject, language: demoLesson.language, durationMin: demoLesson.durationMin,
   groups: demoLesson.groups.map((g) => ({ grade: g.grade, topic: g.topic })),
 };
-/** Ответ модели на запрос расписания: урок без объяснений, необязательные поля — null. */
+/** Ответ модели на запрос содержания: карточки демо-урока, столько review и practice, сколько просит расписание. */
 function generated() {
-  return { ...structuredClone(demoLesson),
-    groups: demoLesson.groups.map((group) => {
-      const g: Partial<typeof group> = { ...group };
-      delete g.explanation;
-      return { ...g, cards: group.cards.map((c) => ({ ...c, answer: c.answer ?? null })) };
-    }),
-    timeline: demoLesson.timeline.map((s) => ({ ...s, cardIds: s.cardIds ?? null })),
+  const schedule = planSchedule(input.groups.length, input.durationMin);
+  return {
+    subject: demoLesson.subject, language: demoLesson.language, durationMin: demoLesson.durationMin,
+    opening: "Общий настрой", closing: "Общий итог",
+    groups: demoLesson.groups.map((g, i) => ({
+      grade: g.grade, topic: g.topic, learningGoal: g.learningGoal, homework: g.homework,
+      cards: g.cards.map((card, k) => {
+        const c: Partial<typeof card> = { ...card };
+        delete c.id;
+        return { ...c, answer: card.answer ?? null, purpose: k < schedule.cards[i].review ? "review" : "practice" };
+      }),
+      stages: { review: "Повторяют", explain: "Учитель объясняет", practice: "Решают карточки", check: "Учитель проверяет" },
+    })),
+    teacherNotes: demoLesson.teacherNotes,
   };
+}
+/** Урок собран: расписание от кода проходит все правила, объяснения на месте, карточки разложены. */
+function expectLesson(plan: LessonPlan) {
+  expect(validateLessonPlan(plan)).toEqual({ ok: true });
+  expect(plan.groups.map((g) => g.explanation)).toEqual(demoLesson.groups.map((g) => g.explanation));
+  expect(plan.groups.map((g) => g.cards.map((c) => c.id))).toEqual([
+    ["g1-c1", "g1-c2", "g1-c3", "g1-c4", "g1-c5"], ["g2-c1", "g2-c2", "g2-c3", "g2-c4", "g2-c5"],
+  ]);
+  expect(plan.timeline.find((s) => s.groupId === "g2" && s.mode === "independent")?.cardIds).toEqual(["g2-c1", "g2-c2", "g2-c3"]);
 }
 function provider(plan: unknown, status = "completed") {
   return Response.json({ status, output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify(plan) }] }] });
@@ -78,7 +96,7 @@ describe("generation request", () => {
         }
       }
     }
-    check(z.toJSONSchema(GeneratedPlanSchema, { target: "draft-7" }));
+    check(z.toJSONSchema(GeneratedContentSchema, { target: "draft-7" }));
     check(z.toJSONSchema(ExplanationSchema, { target: "draft-7" }));
   });
 });
@@ -87,8 +105,7 @@ describe("generation", () => {
   it("validates the response and uses the configured model without storing it", async () => {
     setup();
     const fetch = fakeModel(provider); vi.stubGlobal("fetch", fetch);
-    const plan = await generateLesson(input);
-    expect(plan).toEqual(demoLesson);
+    expectLesson(await generateLesson(input));
     // Одно расписание и по объяснению на каждый класс.
     expect(fetch).toHaveBeenCalledTimes(1 + input.groups.length);
     const body = JSON.parse(planCalls(fetch)[0][1].body);
@@ -96,9 +113,9 @@ describe("generation", () => {
     expect(body.text.format.strict).toBe(true);
   });
   it("sends validation errors on a repair attempt", async () => {
-    setup(); const broken = generated(); broken.timeline[0].endMin = 1;
+    setup(); const broken = generated(); broken.groups[0].cards.pop(); // карточек меньше, чем просит расписание
     const fetch = fakeModel(provider, [broken, generated()]); vi.stubGlobal("fetch", fetch);
-    await expect(generateLesson(input)).resolves.toEqual(demoLesson);
+    expectLesson(await generateLesson(input));
     const calls = planCalls(fetch);
     expect(calls).toHaveLength(2);
     expect(JSON.parse(JSON.parse(calls[1][1].body).input).validationErrors.length).toBeGreaterThan(0);
@@ -115,7 +132,7 @@ describe("generation", () => {
       return provider(demoLesson.groups.find((g) => g.grade === data.grade)!.explanation);
     });
     vi.stubGlobal("fetch", fetch);
-    await expect(generateLesson(input)).resolves.toEqual(demoLesson);
+    expectLesson(await generateLesson(input));
     expect(explainCalls).toBe(2);
   });
   it("rejects a valid lesson that ignores the requested topic", async () => {
@@ -156,7 +173,7 @@ describe("gemini", () => {
   it("sends the schema Gemini understands and the key in a header, not the URL", async () => {
     setupGemini();
     const fetch = fakeModel(gemini); vi.stubGlobal("fetch", fetch);
-    await expect(generateLesson(input)).resolves.toEqual(demoLesson);
+    expectLesson(await generateLesson(input));
     for (const [url, init] of fetch.mock.calls) {
       expect(url).toBe("https://generativelanguage.googleapis.com/v1beta/models/gemini-test:generateContent");
       expect((init.headers as Record<string, string>)["x-goog-api-key"]).toBe("gemini-key");
@@ -174,7 +191,7 @@ describe("gemini", () => {
     setupGemini();
     const thought = Response.json({ candidates: [{ finishReason: "STOP", content: { parts: [{ text: "думаю…", thought: true }, { text: JSON.stringify(generated()) }] } }] });
     const fetch = fakeModel(gemini, [gemini(generated(), "MAX_TOKENS"), thought]); vi.stubGlobal("fetch", fetch);
-    await expect(generateLesson(input)).resolves.toEqual(demoLesson);
+    expectLesson(await generateLesson(input));
     expect(planCalls(fetch)).toHaveLength(2);
   });
   it("reports a blocked prompt as an invalid plan and an HTTP error as a provider error", async () => {
@@ -188,7 +205,7 @@ describe("gemini", () => {
   it("retries a temporary overload and still returns the lesson", async () => {
     setupGemini();
     const fetch = fakeModel(gemini, [new Response("high demand", { status: 503 }), generated()]); vi.stubGlobal("fetch", fetch);
-    await expect(generateLesson(input)).resolves.toEqual(demoLesson);
+    expectLesson(await generateLesson(input));
     expect(planCalls(fetch)).toHaveLength(2);
   });
   it("does not retry a broken request", async () => {

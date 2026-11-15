@@ -1,5 +1,5 @@
 import { findWrongEquation } from "./arithmetic";
-import { ExplanationSchema, LessonCoreSchema, LessonPlanSchema, type Explanation, type LessonCore, type LessonPlan, type Segment } from "./schema";
+import { ExplanationSchema, LessonPlanSchema, type Explanation, type LessonCore, type LessonPlan, type Segment } from "./schema";
 
 /**
  * validateLessonPlan — проверка СМЫСЛА урока (SPEC §5, инварианты 1–9).
@@ -54,14 +54,6 @@ function schemaErrors(issues: { path: PropertyKey[]; message: string }[]): strin
 /** Zod + validateLessonPlan за один вызов: для готового урока и загрузки фикстур. */
 export function parseLessonPlan(input: unknown): Parsed<LessonPlan> {
   const parsed = LessonPlanSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, errors: schemaErrors(parsed.error.issues) };
-  const result = validateLessonPlan(parsed.data);
-  return result.ok ? { ok: true, plan: parsed.data } : result;
-}
-
-/** То же для урока без объяснений: ответ модели на запрос расписания и карточек. */
-export function parseLessonCore(input: unknown): Parsed<LessonCore> {
-  const parsed = LessonCoreSchema.safeParse(input);
   if (!parsed.success) return { ok: false, errors: schemaErrors(parsed.error.issues) };
   const result = validateLessonPlan(parsed.data);
   return result.ok ? { ok: true, plan: parsed.data } : result;

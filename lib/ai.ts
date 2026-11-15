@@ -1,19 +1,21 @@
 import { z } from "zod";
-import { GeneratedPlanSchema, normalizeGeneratedPlan, type LessonRequest } from "./generation-schema";
+import { contentToLesson, GeneratedContentSchema, type LessonRequest } from "./generation-schema";
 import { explanationInstructions, lessonInstructions } from "./prompts";
 import { ProviderError, resolveProvider, type Provider } from "./providers";
-import { parseExplanation, parseLessonCore } from "./validate";
+import { planSchedule } from "./schedule";
+import { parseExplanation, validateLessonPlan } from "./validate";
 import { ExplanationSchema, type Explanation, type LessonCore, type LessonPlan } from "./schema";
 
 /**
  * Генерация урока: не зависит от того, какая модель отвечает.
  * Провайдер (OpenAI или Gemini) выбирается в lib/providers.ts по env.
  *
- * Урок собирается из нескольких запросов, которые идут параллельно:
- * 1) расписание, карточки и домашнее задание для всех классов;
- * 2) объяснение новой темы — отдельный запрос на каждый класс.
- * Когда всё было одним большим ответом, облегчённая модель путалась в таймлайне трёх классов.
- * Короткие ответы надёжнее, и каждый проверяется своими правилами и повторяется отдельно.
+ * Кто что делает:
+ * - расписание по минутам считает код (lib/schedule.ts): учитель никогда не окажется с двумя классами;
+ * - модель пишет содержание для всех классов: цели, карточки, тексты этапов, домашнее задание;
+ * - объяснение новой темы модель пишет отдельным запросом на каждый класс.
+ * Запросы идут параллельно, каждый ответ проверяется своими правилами и при ошибке повторяется.
+ * Когда модель составляла и таймлайн, и всё содержание одним ответом, она путалась в минутах.
  */
 
 export class GenerationError extends Error {
@@ -78,23 +80,31 @@ async function generateChecked<T>(provider: Provider, job: Job<T>, startedAt: nu
   throw new GenerationError("invalid_plan");
 }
 
-const planSchema = () => z.toJSONSchema(GeneratedPlanSchema, { target: "draft-7" }) as Record<string, unknown>;
+const contentSchema = () => z.toJSONSchema(GeneratedContentSchema, { target: "draft-7" }) as Record<string, unknown>;
 const explanationSchema = () => z.toJSONSchema(ExplanationSchema, { target: "draft-7" }) as Record<string, unknown>;
 
 function planJob(input: LessonRequest): Job<LessonCore> {
+  const schedule = planSchedule(input.groups.length, input.durationMin);
   return {
     name: "plan",
     instructions: lessonInstructions(input.language),
-    request: { request: input },
-    schemaName: "lesson_plan",
-    schema: planSchema(),
-    check: (value) => {
-      const parsed = parseLessonCore(normalizeGeneratedPlan(value));
-      if (!parsed.ok) return parsed;
-      const mismatch = requestMismatch(parsed.plan, input);
-      return mismatch.length ? { ok: false, errors: mismatch } : parsed;
+    request: {
+      request: input,
+      cardPlan: schedule.cards.map((c, i) => ({ group: i + 1, grade: input.groups[i].grade, review: c.review, practice: c.practice })),
     },
-    // Расписание сложнее всего: две повторные попытки.
+    schemaName: "lesson_content",
+    schema: contentSchema(),
+    check: (value) => {
+      const content = GeneratedContentSchema.safeParse(value);
+      if (!content.success) return { ok: false, errors: content.error.issues.map((i) => `SCHEMA: ${i.path.join(".")}: ${i.message}`) };
+      const built = contentToLesson(content.data, schedule);
+      if (!built.ok) return built;
+      // Таймлайн верен по построению, но правила всё равно проверяем: подсказки, ответы, арифметика.
+      const valid = validateLessonPlan(built.plan);
+      if (!valid.ok) return valid;
+      const mismatch = requestMismatch(built.plan, input);
+      return mismatch.length ? { ok: false, errors: mismatch } : built;
+    },
     attempts: 3,
   };
 }

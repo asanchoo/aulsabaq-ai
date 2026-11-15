@@ -89,8 +89,8 @@ export const LessonPlanSchema = z.object({
 
 /**
  * Урок без объяснений темы: расписание, карточки, домашнее задание.
- * Модель составляет его отдельным запросом, а объяснение каждого класса — своим
- * (см. lib/ai.ts): так каждый ответ короче, и модель реже ошибается в таймлайне.
+ * Объяснение каждого класса модель пишет отдельным запросом (см. lib/ai.ts),
+ * поэтому правила таймлайна и карточек проверяются на уроке без него.
  */
 export const GroupCoreSchema = GroupSchema.omit({ explanation: true });
 export const LessonCoreSchema = LessonPlanSchema.extend({ groups: z.array(GroupCoreSchema) });
