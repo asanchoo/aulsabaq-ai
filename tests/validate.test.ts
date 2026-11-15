@@ -32,7 +32,12 @@ describe("validateLessonPlan", () => {
     // 5–15 мин: учитель с 2 классом, а 4 класс должен работать сам. Ломаем: 4 класс тоже «с учителем».
     segment(plan, "g2", 5).mode = "with_teacher";
 
-    expect(errorsOf(plan)).toEqual(["INV-2: на 5–15 мин учитель одновременно с группами g1, g2"]);
+    expect(errorsOf(plan)).toEqual([
+      "INV-2: на 5–15 мин учитель одновременно с группами g1, g2",
+      // Карточки повторения этого отрезка теперь никто не решает.
+      "INV-4: карточка g2-c1 группы g2 не стоит ни в одном отрезке самостоятельной работы",
+      "INV-4: карточка g2-c2 группы g2 не стоит ни в одном отрезке самостоятельной работы",
+    ]);
   });
 
   it("ловит дыру в таймлайне группы (инвариант 1)", () => {
@@ -108,7 +113,7 @@ describe("validateLessonPlan", () => {
     segment(plan, "g1", 15).startMin = 17;
     plan.groups[0].cards[0].answer = undefined;
 
-    expect(errorsOf(plan).map((e) => e.split(":")[0]).sort()).toEqual(["INV-1", "INV-2", "INV-5"]);
+    expect(errorsOf(plan).map((e) => e.split(":")[0]).sort()).toEqual(["INV-1", "INV-2", "INV-4", "INV-4", "INV-5"]);
   });
 });
 
@@ -132,7 +137,9 @@ describe("инвариант 7: новая тема не раньше объяс
   it("ловит карточку по новой теме, которую класс делает до работы с учителем", () => {
     const plan = demo();
     // 4 класс работает сам на 5–15 мин, а учитель придёт к нему только в 15. Даём ему деление столбиком.
+    // Меняем местами карточку повторения и карточку по новой теме, каждая по-прежнему в одном отрезке.
     segment(plan, "g2", 5).cardIds = ["g2-c1", "g2-c3"];
+    segment(plan, "g2", 25).cardIds = ["g2-c2", "g2-c4", "g2-c5"];
 
     expect(errorsOf(plan)).toEqual([
       "INV-7: у группы g2 на 5–15 мин карточки по новой теме (g2-c3) до объяснения учителя (15 мин); до него можно только повторение (purpose: review)",
@@ -141,7 +148,8 @@ describe("инвариант 7: новая тема не раньше объяс
 
   it("разрешает повторение и после объяснения учителя", () => {
     const plan = demo();
-    segment(plan, "g2", 25).cardIds = ["g2-c1", "g2-c3"];
+    segment(plan, "g2", 5).cardIds = ["g2-c1"];
+    segment(plan, "g2", 25).cardIds = ["g2-c2", "g2-c3", "g2-c4", "g2-c5"];
 
     expect(errorsOf(plan)).toEqual([]);
   });
@@ -179,5 +187,34 @@ describe("инвариант 7: новая тема не раньше объяс
 
     expect(result.ok).toBe(false);
     expect(!result.ok && result.errors[0]).toMatch(/^SCHEMA: groups\.0\.explanation/);
+  });
+
+  // --- Каждая карточка в плане ровно один раз (инвариант 4) ---
+
+  it("ловит карточку, которую класс так и не решает", () => {
+    const plan = demo();
+    segment(plan, "g2", 25).cardIds = ["g2-c3", "g2-c4"];
+
+    expect(errorsOf(plan)).toEqual(["INV-4: карточка g2-c5 группы g2 не стоит ни в одном отрезке самостоятельной работы"]);
+  });
+
+  // --- Арифметика (инвариант 9 и EXP) ---
+
+  it("ловит неверный ответ карточки-выражения и неверное равенство в подсказке", () => {
+    const plan = demo();
+    plan.groups[0].cards[0].answer = "62"; // 47 + 25 = 72
+    plan.groups[0].cards[1].hint = "Сначала 8 + 6 = 13.";
+
+    expect(errorsOf(plan)).toEqual([
+      "INV-9: неверное равенство «8 + 6 = 13»; пересчитай",
+      "INV-9: у карточки g1-c1 неверный ответ: 47 + 25 = 62; пересчитай",
+    ]);
+  });
+
+  it("ловит ошибку в счёте в разобранном примере, но не в разделе ошибок", () => {
+    const plan = LessonPlanSchema.parse(structuredClone(demoFixture));
+    plan.groups[0].explanation.example.steps[0] = "Складываем единицы: 8 + 14 = 14.";
+
+    expect(errorsOf(plan)).toEqual(["EXP: в объяснении у группы g1 неверное равенство «8 + 14 = 14»; пересчитай пример"]);
   });
 });

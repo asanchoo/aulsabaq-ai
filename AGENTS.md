@@ -81,11 +81,12 @@ components/
   SiteHeader.tsx, LangSwitch.tsx
 lib/
   schema.ts                # Zod-схемы: ФОРМА данных
-  validate.ts              # validateLessonPlan(): СМЫСЛ — инварианты 1–8 (коды INV-1…8)
+  validate.ts              # validateLessonPlan(): СМЫСЛ — инварианты 1–9 (коды INV-1…9, EXP)
   lesson.ts                # чистые помощники: segmentAt, timeSlots, lessonToText
   demo.ts                  # демо-урок (проходит те же проверки при сборке)
   i18n.ts                  # словарь ru/kk
-  ai.ts                    # генерация урока: проверка ответа и одна повторная попытка
+  ai.ts                    # генерация: расписание и объяснения параллельными запросами, проверка, повторные попытки
+  arithmetic.ts            # пересчёт равенств вида «6 + 8 = 14» в тексте урока
   providers.ts             # HTTP к OpenAI или Gemini, выбор провайдера по env
   prompts.ts, generation-schema.ts, rate-limit.ts
 proxy.ts                   # / → /ru или /kk по Accept-Language

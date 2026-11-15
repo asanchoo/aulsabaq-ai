@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { GroupSchema, LangSchema, LessonPlanSchema, SegmentSchema, TaskCardSchema } from "./schema";
+import { GroupCoreSchema, LangSchema, LessonCoreSchema, SegmentSchema, TaskCardSchema } from "./schema";
 
 export const LessonRequestSchema = z.object({
   subject: z.string().trim().min(1).max(100),
@@ -15,8 +15,9 @@ export const LessonRequestSchema = z.object({
 export type LessonRequest = z.infer<typeof LessonRequestSchema>;
 
 // Strict Structured Outputs: every field is required; optional values are null.
-export const GeneratedPlanSchema = LessonPlanSchema.extend({
-  groups: z.array(GroupSchema.extend({
+// Расписание и карточки без объяснений: объяснение каждого класса модель пишет отдельным запросом.
+export const GeneratedPlanSchema = LessonCoreSchema.extend({
+  groups: z.array(GroupCoreSchema.extend({
     cards: z.array(TaskCardSchema.extend({ answer: z.string().nullable() })),
   })),
   timeline: z.array(SegmentSchema.extend({ cardIds: z.array(z.string()).nullable() })),

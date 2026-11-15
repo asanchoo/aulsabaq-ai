@@ -87,6 +87,14 @@ export const LessonPlanSchema = z.object({
   teacherNotes: z.string(),
 });
 
+/**
+ * Урок без объяснений темы: расписание, карточки, домашнее задание.
+ * Модель составляет его отдельным запросом, а объяснение каждого класса — своим
+ * (см. lib/ai.ts): так каждый ответ короче, и модель реже ошибается в таймлайне.
+ */
+export const GroupCoreSchema = GroupSchema.omit({ explanation: true });
+export const LessonCoreSchema = LessonPlanSchema.extend({ groups: z.array(GroupCoreSchema) });
+
 export type Lang = z.infer<typeof LangSchema>;
 export type TaskCard = z.infer<typeof TaskCardSchema>;
 export type CardPurpose = TaskCard["purpose"];
@@ -95,3 +103,4 @@ export type Segment = z.infer<typeof SegmentSchema>;
 export type Group = z.infer<typeof GroupSchema>;
 export type Explanation = z.infer<typeof ExplanationSchema>;
 export type LessonPlan = z.infer<typeof LessonPlanSchema>;
+export type LessonCore = z.infer<typeof LessonCoreSchema>;
