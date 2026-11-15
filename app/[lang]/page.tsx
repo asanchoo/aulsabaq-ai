@@ -21,7 +21,7 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
     <main id="main" className="flex-1">
       {/* --- Первый экран: обещание слева, экран ученика справа --- */}
       <section aria-labelledby="hero-h" className="pt-10 pb-16 lg:flex lg:min-h-[calc(100svh-72px)] lg:py-12">
-        <div className="wrap grid gap-10 lg:grid-cols-12 lg:items-stretch lg:gap-x-6">
+        <div className="wrap grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-12 lg:items-stretch lg:gap-x-6">
           <div className="enter lg:col-span-5">
             <p className="flex items-center gap-2 text-[0.85rem] text-muted">
               <span aria-hidden className="size-2 rounded-full bg-ink" />
@@ -43,15 +43,15 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
             <p className="mt-5 text-[0.85rem] text-muted">{dict.hero.note}</p>
           </div>
 
-          <HeroDemo dict={dict} className="enter-late relative grid justify-items-center overflow-hidden rounded-frame bg-stage py-8 lg:col-span-6 lg:col-start-7 lg:min-h-[600px] lg:place-items-center lg:py-0 xl:justify-items-end xl:pr-16" />
+          <HeroDemo dict={dict} className="enter-late relative grid content-center justify-items-center overflow-hidden rounded-frame bg-stage py-8 lg:col-span-6 lg:col-start-7 lg:min-h-[600px] lg:place-items-center lg:py-0 xl:justify-items-end xl:pr-16" />
         </div>
       </section>
 
       {/* --- Как это работает: настоящий урок, который можно прокрутить по минутам --- */}
       <section id="how" aria-labelledby="how-h" className="scroll-mt-16 py-20 lg:min-h-svh lg:pt-[120px] lg:pb-24">
-        <div className="wrap grid gap-12 lg:grid-cols-12 lg:gap-x-6">
+        <div className="wrap grid grid-cols-[minmax(0,1fr)] gap-12 lg:grid-cols-12 lg:gap-x-6">
           <div className="lg:col-span-5">
-            <h2 id="how-h" className="display text-[2.2rem] sm:text-[2.8rem] lg:text-[3.2rem]">
+            <h2 id="how-h" className="display text-[1.75rem] min-[360px]:text-[2.2rem] sm:text-[2.8rem] lg:text-[3.2rem]">
               {dict.how.title}
             </h2>
             <p className="mt-5 max-w-[30rem] text-[1.05rem] leading-relaxed text-ink/85">{dict.how.lead}</p>
@@ -93,9 +93,10 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
 
       {/* --- Для учеников: тёмная полоса, одна на странице --- */}
       <section id="students" aria-labelledby="students-h" className="scroll-mt-16 bg-ink py-20 text-white lg:min-h-svh lg:pt-[120px] lg:pb-24">
-        <div className="wrap grid gap-12 lg:grid-cols-12 lg:gap-x-6">
+        <div className="wrap grid grid-cols-[minmax(0,1fr)] gap-12 lg:grid-cols-12 lg:gap-x-6">
           <div className="lg:col-span-5">
-            <h2 id="students-h" className="display text-[2.2rem] sm:text-[2.8rem] lg:text-[3.2rem]">
+            <p className="mb-5 inline-flex rounded-full bg-white/10 px-3 py-1 text-[0.8rem] font-semibold text-mint">{dict.students.soon}</p>
+            <h2 id="students-h" className="display text-[1.75rem] min-[360px]:text-[2.2rem] sm:text-[2.8rem] lg:text-[3.2rem]">
               {dict.students.title}
             </h2>
             <p className="mt-5 max-w-[30rem] text-[1.05rem] leading-relaxed text-white/75">{dict.students.lead}</p>
@@ -111,6 +112,7 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
                 </li>
               ))}
             </ul>
+            <p className="mt-8 max-w-[30rem] border-t border-white/15 pt-5 text-[0.95rem] leading-relaxed text-white/70">{dict.students.now}</p>
           </div>
 
           <div className="lg:col-span-6 lg:col-start-7">
@@ -122,8 +124,8 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
       {/* --- Почему это важно --- */}
       <section id="why" aria-labelledby="why-h" className="py-20 lg:min-h-svh lg:pt-[120px] lg:pb-24">
         <div className="wrap">
-        <div className="grid items-start gap-6 lg:grid-cols-12 lg:gap-x-6">
-          <h2 id="why-h" className="display text-[2.2rem] sm:text-[2.8rem] lg:col-span-7 lg:text-[3.2rem]">
+        <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-12 lg:gap-x-6">
+          <h2 id="why-h" className="display text-[1.75rem] min-[360px]:text-[2.2rem] sm:text-[2.8rem] lg:col-span-7 lg:text-[3.2rem]">
             {dict.why.title}
           </h2>
           <p className="max-w-[30rem] text-[1.05rem] leading-relaxed text-ink/85 lg:col-span-5 lg:col-start-8">{dict.why.lead}</p>
@@ -145,7 +147,7 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
       {/* --- Финал и подвал --- */}
       <footer className="closing bg-stage pt-20 pb-10 lg:flex lg:min-h-svh lg:pt-[120px]">
         <div className="wrap flex flex-col justify-between gap-16">
-        <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-x-6">
+        <div className="grid grid-cols-[minmax(0,1fr)] items-center gap-12 lg:grid-cols-12 lg:gap-x-6">
         <div className="lg:col-span-6">
           <h2 className="display max-w-[16ch] text-[2.2rem] sm:text-[2.8rem] lg:text-[3.6rem]">{dict.closing.title}</h2>
           <p className="mt-5 max-w-[34rem] text-[1.05rem] leading-relaxed text-ink/85">{dict.closing.lead}</p>
@@ -166,7 +168,7 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
             <Reveal
               key={card.id}
               delay={i * 140}
-              className="absolute w-[300px] rounded-card bg-white p-5 shadow-[0_24px_50px_-28px_rgb(0_0_0/0.35)]"
+              className="absolute w-[64%] max-w-[300px] rounded-card bg-white p-5 shadow-[0_24px_50px_-28px_rgb(0_0_0/0.35)]"
               style={{ left: `${i * 18}%`, top: `${i * 22}%` }}
             >
               <p className="font-mono text-[0.75rem] text-muted">

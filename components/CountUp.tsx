@@ -3,8 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 import { useInView, useReducedMotion } from "./motion";
 
+/**
+ * Разряды через неразрывный пробел, как принято в русском и казахском: 2 654.
+ * Не toLocaleString: на сервере и в браузере разные данные локалей, и для kk-KZ
+ * сервер выдавал «2,654», а браузер «2 654», из-за чего React перерисовывал блок.
+ */
+function formatNumber(n: number) {
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "\u00a0");
+}
+
 /** Число отсчитывается от нуля один раз, когда появляется на экране (1,2 секунды). */
-export function CountUp({ value, suffix = "", locale }: { value: number; suffix?: string; locale: string }) {
+export function CountUp({ value, suffix = "" }: { value: number; suffix?: string; locale?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const seen = useInView(ref, { once: true, threshold: 0.5 });
   const reduced = useReducedMotion();
@@ -25,7 +34,7 @@ export function CountUp({ value, suffix = "", locale }: { value: number; suffix?
 
   return (
     <span ref={ref} className="tabular">
-      {n.toLocaleString(locale === "kk" ? "kk-KZ" : "ru-RU")}
+      {formatNumber(n)}
       {suffix}
     </span>
   );

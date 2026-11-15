@@ -27,8 +27,8 @@ function LessonSkeleton() {
   return (
     <div aria-hidden className="animate-pulse">
       <div className="h-5 w-40 rounded-md bg-surface" />
-      <div className="mt-8 h-12 w-72 rounded-md bg-surface" />
-      <div className="mt-4 h-5 w-56 rounded-md bg-surface" />
+      <div className="mt-8 h-12 w-72 max-w-full rounded-md bg-surface" />
+      <div className="mt-4 h-5 w-56 max-w-full rounded-md bg-surface" />
       <div className="mt-12 h-[32rem] rounded-frame bg-surface" />
     </div>
   );

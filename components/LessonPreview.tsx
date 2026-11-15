@@ -52,7 +52,10 @@ export function LessonPreview({ lang }: { lang: Locale }) {
           <circle cx="12" cy="12" r="9" />
           <path d="M12 11v5M12 7.5v.5" />
         </svg>
-        <p>{value.demo ? d.demoNotice : d.local}</p>
+        <div className="grid gap-1.5">
+          <p>{value.demo ? d.demoNotice : d.local}</p>
+          {!value.demo && <p className="font-semibold">{d.review}</p>}
+        </div>
       </div>
       <LessonView plan={result.plan} lang={lang} dict={dict} badge={value.demo ? dict.lesson.demoBadge : d.preview} />
     </>
