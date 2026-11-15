@@ -3,11 +3,12 @@ import { LessonActions } from "./LessonActions";
 import { ModeLegend } from "./LessonScore";
 import { LessonTimeline } from "./LessonTimeline";
 import { TaskCards } from "./TaskCards";
+import { TopicExplanation } from "./TopicExplanation";
 import { t, type Dict, type Locale } from "@/lib/i18n";
 import { lessonToText } from "@/lib/lesson";
 import type { LessonPlan } from "@/lib/schema";
 
-/** Страница урока для учителя: шапка с действиями, ход урока, советы, карточки. */
+/** Страница урока для учителя: шапка с действиями, ход урока, советы, объяснение темы, карточки. */
 export function LessonView({ plan, lang, dict, badge }: { plan: LessonPlan; lang: Locale; dict: Dict; badge: string }) {
   const grades = plan.groups.map((g) => t(dict.common.grade, { n: g.grade })).join(" · ");
 
@@ -55,6 +56,16 @@ export function LessonView({ plan, lang, dict, badge }: { plan: LessonPlan; lang
           </div>
         </aside>
       </div>
+
+      <section aria-labelledby="explain" className="mt-20 print:hidden">
+        <h2 id="explain" className="text-[1.6rem] font-semibold tracking-[-0.02em]">
+          {dict.lesson.explainTitle}
+        </h2>
+        <p className="mt-1 max-w-2xl text-[0.9rem] text-muted">{dict.lesson.explainLead}</p>
+        <div className="mt-6">
+          <TopicExplanation groups={plan.groups} dict={dict} />
+        </div>
+      </section>
 
       <section aria-labelledby="cards" className="mt-20 print:mt-4">
         <h2 id="cards" className="text-[1.6rem] font-semibold tracking-[-0.02em] print:hidden">

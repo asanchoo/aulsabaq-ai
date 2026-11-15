@@ -74,12 +74,14 @@ components/
   modes.ts                 # цвета режимов урока: графит / мята / серый
   StudentPhone.tsx, Logo.tsx, LessonForm.tsx, LessonView.tsx, LessonPreview.tsx
   LessonTimeline.tsx       # таймлайн: колонки на компьютере, промежутки на телефоне
-  TaskCards.tsx            # карточки, print CSS (ответ печатается вверх ногами)
+  TaskCards.tsx            # карточки с подсказкой, print CSS (ответ печатается вверх ногами)
+  TopicExplanation.tsx     # объяснение новой темы для каждого класса (правило, шаги, пример, вопросы)
+  ExplanationSlides.tsx    # то же объяснение слайдами для показа классу (<dialog>, стрелки)
   LessonActions.tsx        # «Распечатать» / «Скопировать»
   SiteHeader.tsx, LangSwitch.tsx
 lib/
   schema.ts                # Zod-схемы: ФОРМА данных
-  validate.ts              # validateLessonPlan(): СМЫСЛ — инварианты 1–7 (коды INV-1…7)
+  validate.ts              # validateLessonPlan(): СМЫСЛ — инварианты 1–8 (коды INV-1…8)
   lesson.ts                # чистые помощники: segmentAt, timeSlots, lessonToText
   demo.ts                  # демо-урок (проходит те же проверки при сборке)
   i18n.ts                  # словарь ru/kk

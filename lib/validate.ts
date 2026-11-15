@@ -1,14 +1,14 @@
 import { LessonPlanSchema, type LessonPlan, type Segment } from "./schema";
 
 /**
- * validateLessonPlan — проверка СМЫСЛА урока (SPEC §5, инварианты 1–7).
+ * validateLessonPlan — проверка СМЫСЛА урока (SPEC §5, инварианты 1–8).
  *
  * Zod уже гарантировал, что поля на месте и нужного типа. Но модель может вернуть
  * аккуратный JSON, по которому урок физически невозможно провести: учитель в одну
  * минуту с двумя классами, дыра в таймлайне, самостоятельная работа без карточек.
  * Эта функция ловит такие планы. Она чистая (без сети и БД), поэтому легко тестируется.
  *
- * Каждая ошибка начинается с кода (INV-1 … INV-7, REF), чтобы тесты и повторный
+ * Каждая ошибка начинается с кода (INV-1 … INV-8, REF), чтобы тесты и повторный
  * запрос к модели могли понять, что именно не так.
  */
 
@@ -16,7 +16,7 @@ export type ValidationResult = { ok: true } | { ok: false; errors: string[] };
 
 export const LIMITS = {
   groups: { min: 2, max: 3 },
-  cards: { min: 3, max: 5 },
+  cards: { min: 3, max: 6 },
   durationMin: { min: 30, max: 90 },
 } as const;
 
@@ -31,6 +31,7 @@ export function validateLessonPlan(plan: LessonPlan): ValidationResult {
   checkModesPresent(plan, byGroup, errors);
   checkCards(plan, byGroup, errors);
   checkCardOrder(plan, byGroup, errors);
+  checkHints(plan, errors);
 
   return errors.length === 0 ? { ok: true } : { ok: false, errors };
 }
@@ -217,6 +218,26 @@ function checkCardOrder(plan: LessonPlan, byGroup: Map<string, Segment[]>, error
       errors.push(`INV-7: у группы ${group.id} нет ни одной карточки по новой теме (purpose: practice)`);
     }
   }
+}
+
+/**
+ * Инвариант 8: подсказка не выдаёт ответ. Подсказка ведёт к решению, а не заменяет его,
+ * иначе самопроверка теряет смысл. Ищем ответ целым словом или числом, без учёта регистра;
+ * однобуквенные ответы («5», «а») не проверяем: они случайно встречаются в любом тексте.
+ */
+function checkHints(plan: LessonPlan, errors: string[]) {
+  for (const card of plan.groups.flatMap((g) => g.cards)) {
+    const answer = normalize(card.answer ?? "");
+    if (answer.length < 2) continue;
+    if (` ${normalize(card.hint)} `.includes(` ${answer} `)) {
+      errors.push(`INV-8: подсказка карточки ${card.id} содержит ответ; подсказка должна вести к решению, не называя ответ`);
+    }
+  }
+}
+
+/** Нижний регистр, знаки препинания как пробелы: «72.» и «72» — одно и то же. */
+function normalize(text: string) {
+  return text.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 }
 
 function range(seg: Segment) {

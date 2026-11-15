@@ -84,12 +84,31 @@ export function lessonToText(plan: LessonPlan, dict: Dict): string {
     }
   }
 
+  const ex = dict.lesson.explain;
+  const numbered = (items: string[]) => items.map((item, i) => `  ${i + 1}. ${item}`);
+  const bullets = (items: string[]) => items.map((item) => `  • ${item}`);
+  for (const g of plan.groups) {
+    const e = g.explanation;
+    lines.push(
+      "",
+      `${dict.lesson.explainTitle} — ${t(dict.common.grade, { n: g.grade })}: ${g.topic}`,
+      `${ex.hook}: ${e.hook}`,
+      `${ex.keyIdea}: ${e.keyIdea}`,
+      `${ex.steps}:`, ...numbered(e.steps),
+      `${ex.example}: ${e.example.problem}`, ...numbered(e.example.steps), `  ${dict.lesson.answer}: ${e.example.answer}`,
+      `${ex.mistakes}:`, ...bullets(e.mistakes),
+      `${ex.checkQuestions}:`, ...bullets(e.checkQuestions),
+    );
+  }
+
   for (const g of plan.groups) {
     lines.push("", `${dict.lesson.cardsTitle} — ${t(dict.common.grade, { n: g.grade })}`);
     g.cards.forEach((c, i) => {
       lines.push(`${t(dict.common.card, { n: i + 1 })} (${dict.lesson.purpose[c.purpose]}). ${c.prompt}`);
+      lines.push(`   ${dict.lesson.hint}: ${c.hint}`);
       if (c.answer) lines.push(`   ${dict.lesson.answer}: ${c.answer}`);
     });
+    lines.push(`${dict.lesson.homework}: ${g.homework}`);
   }
 
   if (plan.teacherNotes) lines.push("", `${dict.lesson.notesTitle}:`, plan.teacherNotes);

@@ -6,6 +6,7 @@ import { t, type Dict } from "@/lib/i18n";
  * На экране ответ спрятан под «Показать ответ».
  * При печати ответ печатается вверх ногами внизу карточки: классический приём
  * для самопроверки, ученик решает, потом переворачивает лист.
+ * Подсказка ведёт к решению, не называя ответ (инвариант 8), поэтому её можно печатать открыто.
  * Метка «Повторение» / «Новая тема» подсказывает учителю, какие карточки можно дать
  * до объяснения (инвариант 7 в lib/validate.ts).
  */
@@ -49,9 +50,22 @@ export function TaskCards({ groups, dict }: { groups: Group[]; dict: Dict }) {
                   <span className="font-semibold text-ink">{dict.lesson.criteria}:</span> {card.successCriteria}
                 </p>
 
+                <details className="group mt-4 print:hidden">
+                  <summary className="inline-flex min-h-10 cursor-pointer list-none items-center gap-1.5 rounded-btn border border-line-strong px-3 text-[0.86rem] font-semibold select-none hover:border-ink [&::-webkit-details-marker]:hidden">
+                    <svg aria-hidden viewBox="0 0 16 16" className="size-3.5 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m6 4 4 4-4 4" />
+                    </svg>
+                    {dict.lesson.hint}
+                  </summary>
+                  <p className="mt-2 leading-snug">{card.hint}</p>
+                </details>
+                <p className="mt-3 hidden text-[0.8rem] leading-snug text-muted print:block">
+                  <span className="font-semibold text-ink">{dict.lesson.hint}:</span> {card.hint}
+                </p>
+
                 {card.answer && (
                   <>
-                    <details className="group mt-4 print:hidden">
+                    <details className="group mt-2 print:hidden">
                       <summary className="inline-flex min-h-10 cursor-pointer list-none items-center gap-1.5 rounded-btn bg-mint-soft px-3 text-[0.86rem] font-semibold select-none hover:bg-mint [&::-webkit-details-marker]:hidden">
                         <svg aria-hidden viewBox="0 0 16 16" className="size-3.5 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="m6 4 4 4-4 4" />

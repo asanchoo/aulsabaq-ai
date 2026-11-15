@@ -152,4 +152,32 @@ describe("инвариант 7: новая тема не раньше объяс
 
     expect(errorsOf(plan)).toEqual(["INV-7: у группы g1 нет ни одной карточки по новой теме (purpose: practice)"]);
   });
+
+  // --- Инвариант 8: подсказка не выдаёт ответ ---
+
+  it("ловит подсказку, в которой назван ответ", () => {
+    const plan = demo();
+    plan.groups[1].cards[2].hint = "Подсказка: получится 216.";
+
+    expect(errorsOf(plan)).toEqual([
+      "INV-8: подсказка карточки g2-c3 содержит ответ; подсказка должна вести к решению, не называя ответ",
+    ]);
+  });
+
+  it("не путает ответ с частью другого числа", () => {
+    const plan = demo();
+    // Ответ 72, а в подсказке 720 и 172: это не ответ.
+    plan.groups[0].cards[0].hint = "Сравни с 720 и 172.";
+
+    expect(errorsOf(plan)).toEqual([]);
+  });
+
+  it("требует объяснение темы у каждого класса", () => {
+    const broken = structuredClone(demoFixture) as Record<string, unknown> & { groups: Record<string, unknown>[] };
+    delete broken.groups[0].explanation;
+    const result = parseLessonPlan(broken);
+
+    expect(result.ok).toBe(false);
+    expect(!result.ok && result.errors[0]).toMatch(/^SCHEMA: groups\.0\.explanation/);
+  });
 });

@@ -93,7 +93,7 @@ function openaiProvider(apiKey: string, model: string): Provider {
     name: "openai",
     async call({ instructions, input, schemaName, schema }) {
       const json = await post("openai", "https://api.openai.com/v1/responses", { Authorization: `Bearer ${apiKey}` }, {
-        model, store: false, max_output_tokens: 10000, instructions, input,
+        model, store: false, max_output_tokens: 16000, instructions, input,
         text: { format: { type: "json_schema", name: schemaName, strict: true, schema } },
       });
       const result = OpenAIResponse.safeParse(json);
@@ -147,7 +147,7 @@ function geminiProvider(apiKey: string, model: string): Provider {
         generationConfig: {
           responseMimeType: "application/json",
           responseJsonSchema: toGeminiSchema(schema),
-          maxOutputTokens: 16000,
+          maxOutputTokens: 24000,
           thinkingConfig: { thinkingLevel: "low" },
         },
       });
