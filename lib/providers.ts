@@ -46,7 +46,9 @@ export function resolveProvider(env: Record<string, string | undefined> = proces
  * Паузы вынесены в объект, чтобы тесты могли их обнулить.
  */
 const TRANSIENT = new Set([429, 500, 503, 504]);
-export const retryTiming = { delaysMs: [1500, 4000] };
+// Перегрузка Gemini бывает затяжной (минуту и больше), а учителю лучше подождать, чем получить ошибку:
+// четыре повтора с растущей паузой, всего около полуминуты ожидания.
+export const retryTiming = { delaysMs: [2000, 5000, 10000, 15000] };
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
