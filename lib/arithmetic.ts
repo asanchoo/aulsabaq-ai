@@ -63,12 +63,16 @@ export function findWrongEquation(text: string): string | null {
 /**
  * Слово, в котором смешаны алфавиты: «дегенimiz» (кириллица и латиница), «Бүگүн» (арабская буква).
  * Так выглядят опечатки облегчённой модели; в нормальном тексте одно слово пишется одним алфавитом
- * (формулы вроде «3x» или «D = b²» сюда не попадают: там латинские слова отдельно).
+ * (формулы вроде «3x» или «D = b²» сюда не попадают: там латинские слова отдельно; «xтің» с одной
+ * латинской буквой тоже не ошибка).
  */
 export function findMixedScriptWord(text: string): string | null {
   for (const word of text.split(/[^\p{L}]+/u)) {
-    const scripts = [/\p{Script=Cyrillic}/u, /\p{Script=Latin}/u, /\p{Script=Arabic}/u].filter((re) => re.test(word));
-    if (scripts.length > 1) return word;
+    const cyrillic = /\p{Script=Cyrillic}/u.test(word);
+    const latin = word.match(/\p{Script=Latin}/gu)?.length ?? 0;
+    const arabic = /\p{Script=Arabic}/u.test(word);
+    // Одна латинская буква рядом с кириллицей — переменная с окончанием («xтің»), так пишут в учебниках.
+    if ((cyrillic && latin >= 2) || (arabic && (cyrillic || latin > 0))) return word;
   }
   return null;
 }

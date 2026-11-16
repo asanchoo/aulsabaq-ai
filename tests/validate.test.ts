@@ -220,8 +220,8 @@ describe("инвариант 7: новая тема не раньше объяс
 
   it("ловит опечатку из букв разных алфавитов", () => {
     const plan = demo();
-    plan.groups[0].homework = "Реши примеры дома и провеrь их.";
+    plan.groups[0].homework = "Реши примеры дома и провеrьte их.";
 
-    expect(errorsOf(plan)).toEqual(["TXT: опечатка «провеrь»: в слове смешаны алфавиты"]);
+    expect(errorsOf(plan)).toEqual(["TXT: опечатка «провеrьte»: в слове смешаны алфавиты"]);
   });
 });

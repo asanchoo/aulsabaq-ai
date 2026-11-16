@@ -30,8 +30,7 @@ describe("findMixedScriptWord", () => {
   it("находит слово, где смешаны алфавиты, и пропускает формулы", () => {
     expect(findMixedScriptWord("Пропорция дегенimiz екі қатынастың теңдігі")).toBe("дегенimiz");
     expect(findMixedScriptWord("Бүگүн біз үйренеміз")).toBe("Бүگүн");
-    expect(findMixedScriptWord("биіk тау")).toBe("биіk");
-    for (const ok of ["3x = 2250, x = 750", "D = b² - 4ac", "ax^2 + bx + c = 0 теңдеуі", "x-ті табамыз", "Wi-Fi нет"]) {
+    for (const ok of ["3x = 2250, x = 750", "D = b² - 4ac", "ax^2 + bx + c = 0 теңдеуі", "x-ті табамыз", "xтің мәнін табамыз", "Wi-Fi нет"]) {
       expect(findMixedScriptWord(ok)).toBeNull();
     }
   });
