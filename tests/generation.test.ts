@@ -46,7 +46,7 @@ function provider(plan: unknown, status = "completed") {
 }
 function clearEnv() { for (const k of ["AI_PROVIDER", "OPENAI_API_KEY", "OPENAI_MODEL", "GEMINI_API_KEY", "GEMINI_MODEL"]) vi.stubEnv(k, ""); }
 function setup() { clearEnv(); vi.stubEnv("OPENAI_API_KEY", "test-key"); vi.stubEnv("OPENAI_MODEL", "test-model"); }
-function setupGemini() { clearEnv(); vi.stubEnv("GEMINI_API_KEY", "gemini-key"); vi.stubEnv("GEMINI_MODEL", "gemini-test"); }
+function setupGemini() { clearEnv(); vi.stubEnv("GEMINI_API_KEY", "gemini-key"); vi.stubEnv("GEMINI_MODEL", "gemini-3-test"); }
 function gemini(plan: unknown, finishReason = "STOP") {
   return Response.json({ candidates: [{ finishReason, content: { role: "model", parts: [{ text: JSON.stringify(plan) }] } }] });
 }
@@ -187,7 +187,7 @@ describe("gemini", () => {
     const fetch = fakeModel(gemini); vi.stubGlobal("fetch", fetch);
     expectLesson(await generateLesson(input));
     for (const [url, init] of fetch.mock.calls) {
-      expect(url).toBe("https://generativelanguage.googleapis.com/v1beta/models/gemini-test:generateContent");
+      expect(url).toBe("https://generativelanguage.googleapis.com/v1beta/models/gemini-3-test:generateContent");
       expect((init.headers as Record<string, string>)["x-goog-api-key"]).toBe("gemini-key");
       const config = JSON.parse(String(init.body)).generationConfig;
       const schema = JSON.stringify(config.responseJsonSchema);
@@ -220,6 +220,20 @@ describe("gemini", () => {
     const fetch = fakeModel(gemini, [new Response("high demand", { status: 503 }), generated()]); vi.stubGlobal("fetch", fetch);
     expectLesson(await generateLesson(input));
     expect(planCalls(fetch)).toHaveLength(2);
+  });
+  it("switches to the next model in GEMINI_MODEL when one stays overloaded", async () => {
+    clearEnv(); vi.stubEnv("GEMINI_API_KEY", "gemini-key"); vi.stubEnv("GEMINI_MODEL", "gemini-main, gemini-2.5-spare");
+    const fetch = vi.fn(async (url: string, init: RequestInit) => {
+      if (url.includes("gemini-main")) return new Response("high demand", { status: 503 });
+      const { kind, data } = requestOf(init);
+      return gemini(kind === "plan" ? generated() : demoLesson.groups.find((g) => g.grade === data.grade)!.explanation);
+    });
+    vi.stubGlobal("fetch", fetch);
+    expectLesson(await generateLesson(input));
+    const spare = fetch.mock.calls.filter(([url]) => url.includes("gemini-2.5-spare"));
+    expect(spare).toHaveLength(1 + input.groups.length);
+    // У моделей 2.5 нет thinkingLevel: параметр не отправляем.
+    expect(JSON.parse(String(spare[0][1].body)).generationConfig.thinkingConfig).toBeUndefined();
   });
   it("does not retry a broken request", async () => {
     setupGemini();

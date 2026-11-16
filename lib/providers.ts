@@ -18,12 +18,13 @@ export type ProviderRequest = {
 /** Текст ответа или null, если модель не закончила (отказ, обрыв по длине, блокировка). */
 export type Provider = { name: ProviderName; call(req: ProviderRequest): Promise<string | null> };
 
+/** transient: временный сбой (перегрузка, лимит, таймаут), тот же запрос может пройти у другой модели. */
 export class ProviderError extends Error {
-  constructor() { super("provider"); }
+  constructor(public transient = false) { super("provider"); }
 }
 
-// Урок — длинный JSON; две попытки по 100 секунд укладываются в maxDuration роута (300).
-const TIMEOUT_MS = 100_000;
+// Один ответ модели — до минуты; с повторами и запасной моделью укладываемся в maxDuration роута (300).
+const TIMEOUT_MS = 60_000;
 
 /**
  * Какого провайдера использовать. AI_PROVIDER задаёт его явно; если не задан,
@@ -32,7 +33,9 @@ const TIMEOUT_MS = 100_000;
  */
 export function resolveProvider(env: Record<string, string | undefined> = process.env): Provider | null {
   const openai = env.OPENAI_API_KEY && env.OPENAI_MODEL ? openaiProvider(env.OPENAI_API_KEY, env.OPENAI_MODEL) : null;
-  const gemini = env.GEMINI_API_KEY && env.GEMINI_MODEL ? geminiProvider(env.GEMINI_API_KEY, env.GEMINI_MODEL) : null;
+  // GEMINI_MODEL может перечислять запасные модели через запятую: «gemini-3.5-flash-lite,gemini-3.1-flash-lite».
+  const geminiModels = (env.GEMINI_MODEL ?? "").split(",").map((m) => m.trim()).filter(Boolean);
+  const gemini = env.GEMINI_API_KEY && geminiModels.length ? geminiProvider(env.GEMINI_API_KEY, geminiModels) : null;
   const choice = env.AI_PROVIDER?.trim().toLowerCase();
   if (choice === "openai") return openai;
   if (choice === "gemini") return gemini;
@@ -46,9 +49,8 @@ export function resolveProvider(env: Record<string, string | undefined> = proces
  * Паузы вынесены в объект, чтобы тесты могли их обнулить.
  */
 const TRANSIENT = new Set([429, 500, 503, 504]);
-// Перегрузка Gemini бывает затяжной (минуту и больше), а учителю лучше подождать, чем получить ошибку:
-// четыре повтора с растущей паузой, всего около полуминуты ожидания.
-export const retryTiming = { delaysMs: [2000, 5000, 10000, 15000] };
+// Два коротких повтора; если модель перегружена дольше, Gemini переходит к запасной модели (у неё своя квота).
+export const retryTiming = { delaysMs: [2000, 6000] };
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
@@ -66,8 +68,9 @@ async function post(name: ProviderName, url: string, headers: Record<string, str
         body: JSON.stringify(body),
       });
     } catch (error) {
+      // Таймаут или обрыв сети: временный сбой, запасная модель может ответить.
       console.error(`[ai] ${name}: request failed (${error instanceof Error ? error.name : "unknown"})`);
-      throw new ProviderError();
+      throw new ProviderError(true);
     }
     if (response.ok) {
       try { return await response.json(); } catch { throw new ProviderError(); }
@@ -76,7 +79,7 @@ async function post(name: ProviderName, url: string, headers: Record<string, str
     const delay = retryTiming.delaysMs[retry];
     const willRetry = TRANSIENT.has(response.status) && delay !== undefined;
     console.error(`[ai] ${name}: HTTP ${response.status}${willRetry ? `, retry ${retry + 1}` : ""} ${detail.replace(/\s+/g, " ").slice(0, 300)}`);
-    if (!willRetry) throw new ProviderError();
+    if (!willRetry) throw new ProviderError(TRANSIENT.has(response.status));
     await sleep(delay);
   }
 }
@@ -136,23 +139,41 @@ export function toGeminiSchema(schema: unknown): unknown {
   return out;
 }
 
-function geminiProvider(apiKey: string, model: string): Provider {
+/**
+ * Запрос к Gemini с запасными моделями: если модель перегружена (503), упёрлась в лимит (429)
+ * или не ответила вовремя, тот же запрос уходит следующей модели из GEMINI_MODEL.
+ * Ошибку в самом запросе (400, 401) запасная модель не исправит, её отдаём сразу.
+ */
+async function postGemini(apiKey: string, models: string[], body: (model: string) => unknown): Promise<unknown> {
+  for (let i = 0; ; i++) {
+    const model = models[i];
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+    try {
+      return await post("gemini", url, { "x-goog-api-key": apiKey }, body(model));
+    } catch (error) {
+      const next = models[i + 1];
+      if (!(error instanceof ProviderError) || !error.transient || !next) throw error;
+      console.warn(`[ai] gemini: ${model} unavailable, switching to ${next}`);
+    }
+  }
+}
+
+function geminiProvider(apiKey: string, models: string[]): Provider {
   return {
     name: "gemini",
     async call({ instructions, input, schema }) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
-      const json = await post("gemini", url, { "x-goog-api-key": apiKey }, {
+      const json = await postGemini(apiKey, models, (model) => ({
         systemInstruction: { parts: [{ text: instructions }] },
         contents: [{ role: "user", parts: [{ text: input }] }],
-        // Модели Gemini 3 по умолчанию долго «размышляют»; для урока по готовой схеме хватает короткого
-        // размышления. Лимит токенов включает и его, поэтому запас больше, чем у OpenAI.
         generationConfig: {
           responseMimeType: "application/json",
           responseJsonSchema: toGeminiSchema(schema),
           maxOutputTokens: 24000,
-          thinkingConfig: { thinkingLevel: "low" },
+          // Модели Gemini 3 по умолчанию долго «размышляют»; для урока по готовой схеме хватает короткого
+          // размышления. У моделей 2.5 этого параметра нет, и они по умолчанию не размышляют.
+          ...(model.startsWith("gemini-3") ? { thinkingConfig: { thinkingLevel: "low" } } : {}),
         },
-      });
+      }));
       const result = GeminiResponse.safeParse(json);
       const candidate = result.success ? result.data.candidates?.[0] : undefined;
       if (!candidate || candidate.finishReason !== "STOP") {
