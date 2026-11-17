@@ -1,10 +1,11 @@
 import { z } from "zod";
 import { contentToLesson, GeneratedContentSchema, type LessonRequest } from "./generation-schema";
-import { explanationInstructions, lessonInstructions } from "./prompts";
+import { cardInstructions, explanationInstructions, hintInstructions, lessonInstructions } from "./prompts";
 import { ProviderError, resolveProvider, type Provider } from "./providers";
 import { planSchedule } from "./schedule";
-import { parseExplanation, validateLessonPlan } from "./validate";
-import { ExplanationSchema, type Explanation, type LessonCore, type LessonPlan } from "./schema";
+import { checkSingleCard, hintRevealsAnswer, parseExplanation, validateLessonPlan } from "./validate";
+import { findMixedScriptWord } from "./arithmetic";
+import { ExplanationSchema, TaskCardSchema, type Explanation, type LessonCore, type LessonPlan, type TaskCard } from "./schema";
 
 /**
  * Генерация урока: не зависит от того, какая модель отвечает.
@@ -117,7 +118,7 @@ function explanationJob(input: LessonRequest, index: number): Job<Explanation> {
   return {
     name: `explain-g${index + 1}`,
     instructions: explanationInstructions(input.language),
-    request: { subject: input.subject, language: input.language, grade: group.grade, topic: group.topic },
+    request: { subject: input.subject, language: input.language, grade: group.grade, topic: group.topic, notes: group.notes ?? null },
     schemaName: "topic_explanation",
     schema: explanationSchema(),
     check: parseExplanation,
@@ -139,4 +140,102 @@ export async function generateLesson(input: LessonRequest): Promise<LessonPlan> 
       explanation: explanations[i], cards: g.cards, homework: g.homework,
     })),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Подсказка ученику во время урока
+
+const HintSchema = z.object({ hint: z.string().min(1).max(400) });
+/** Ученик ждёт подсказку с телефона: дольше 20 секунд не ждём, отдаём запасную. */
+const HINT_TIMEOUT_MS = 20_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([promise, new Promise<T>((_, reject) => setTimeout(() => reject(new ProviderError(true)), ms))]);
+}
+
+export type HintRequest = {
+  language: LessonPlan["language"];
+  subject: string;
+  grade: number;
+  topic: string;
+  card: TaskCard;
+  studentAnswer?: string;
+  previousHints: string[];
+};
+
+/**
+ * Подсказка от модели или null, если модель недоступна или дважды написала подсказку с ответом.
+ * Guard: hintRevealsAnswer отбрасывает подсказку, где есть ответ или число из ответа, которого нет в условии.
+ */
+export async function generateHint(req: HintRequest): Promise<string | null> {
+  const provider = resolveProvider();
+  if (!provider) return null;
+  const schema = z.toJSONSchema(HintSchema, { target: "draft-7" }) as Record<string, unknown>;
+  let rejected: string[] = [];
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const text = await withTimeout(provider.call({
+        instructions: hintInstructions(req.language),
+        input: JSON.stringify({
+          subject: req.subject, grade: req.grade, topic: req.topic,
+          task: req.card.prompt, successCriteria: req.card.successCriteria, correctAnswer: req.card.answer ?? null,
+          studentAnswer: req.studentAnswer ?? null, previousHints: req.previousHints, hintNumber: req.previousHints.length + 1,
+          rejectedBecauseTheyRevealTheAnswer: rejected,
+        }),
+        schemaName: "student_hint",
+        schema,
+      }), HINT_TIMEOUT_MS);
+      const parsed = text ? HintSchema.safeParse(JSON.parse(text)) : null;
+      if (!parsed?.success) continue;
+      const hint = parsed.data.hint.trim();
+      if (hintRevealsAnswer(hint, req.card.answer ?? "", req.card.prompt) || findMixedScriptWord(hint)) {
+        console.warn(`[ai] ${provider.name} hint: attempt ${attempt + 1} rejected by guard`);
+        rejected = [...rejected, hint];
+        continue;
+      }
+      return hint;
+    } catch (error) {
+      if (error instanceof ProviderError) return null;
+      if (!(error instanceof SyntaxError)) throw error;
+    }
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Замена одной карточки по просьбе учителя
+
+const NewCardSchema = TaskCardSchema.omit({ id: true }).extend({ answer: z.string().nullable() });
+
+export async function regenerateCard(plan: LessonPlan, groupId: string, cardId: string, wish: string | undefined): Promise<TaskCard> {
+  const provider = resolveProvider();
+  if (!provider) throw new GenerationError("not_configured");
+  const group = plan.groups.find((g) => g.id === groupId);
+  const old = group?.cards.find((c) => c.id === cardId);
+  if (!group || !old) throw new GenerationError("invalid_plan");
+  const job: Job<TaskCard> = {
+    name: `card-${cardId}`,
+    instructions: cardInstructions(plan.language),
+    request: {
+      subject: plan.subject, language: plan.language, grade: group.grade, topic: group.topic,
+      purpose: old.purpose, type: old.type, difficulty: old.difficulty,
+      currentCard: { prompt: old.prompt, answer: old.answer ?? null },
+      otherCards: group.cards.filter((c) => c.id !== cardId).map((c) => c.prompt),
+      example: group.explanation.example.problem,
+      wish: wish ?? null,
+    },
+    schemaName: "task_card",
+    schema: z.toJSONSchema(NewCardSchema, { target: "draft-7" }) as Record<string, unknown>,
+    check: (value) => {
+      const parsed = NewCardSchema.safeParse(value);
+      if (!parsed.success) return { ok: false, errors: parsed.error.issues.map((i) => `SCHEMA: ${i.path.join(".")}: ${i.message}`) };
+      const card: TaskCard = { ...parsed.data, id: cardId, answer: parsed.data.answer ?? undefined };
+      const errors = checkSingleCard(card);
+      if (card.type !== old.type || card.purpose !== old.purpose) errors.push(`REQUEST: keep type "${old.type}" and purpose "${old.purpose}"`);
+      if (card.prompt.trim() === old.prompt.trim()) errors.push("REQUEST: write a different task, not the current one");
+      return errors.length ? { ok: false, errors } : { ok: true, plan: card };
+    },
+    attempts: 3,
+  };
+  return generateChecked(provider, job, Date.now());
 }

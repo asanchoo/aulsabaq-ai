@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { LessonActions } from "./LessonActions";
 import { ModeLegend } from "./LessonScore";
 import { LessonTimeline } from "./LessonTimeline";
@@ -8,8 +9,11 @@ import { t, type Dict, type Locale } from "@/lib/i18n";
 import { lessonToText } from "@/lib/lesson";
 import type { LessonPlan } from "@/lib/schema";
 
-/** Страница урока для учителя: шапка с действиями, ход урока, советы, объяснение темы, карточки. */
-export function LessonView({ plan, lang, dict, badge }: { plan: LessonPlan; lang: Locale; dict: Dict; badge: string }) {
+/**
+ * Страница урока для учителя: шапка с действиями, ход урока, советы, объяснение темы, карточки.
+ * workspace — то, что зависит от сохранённого урока (код для учеников, панель, ведение урока); у демо там своя кнопка.
+ */
+export function LessonView({ plan, lang, dict, badge, notice, workspace }: { plan: LessonPlan; lang: Locale; dict: Dict; badge: string; notice?: string; workspace?: ReactNode }) {
   const grades = plan.groups.map((g) => t(dict.common.grade, { n: g.grade })).join(" · ");
 
   return (
@@ -30,6 +34,9 @@ export function LessonView({ plan, lang, dict, badge }: { plan: LessonPlan; lang
         </div>
         <LessonActions text={lessonToText(plan, dict)} labels={{ print: dict.lesson.print, copy: dict.lesson.copy, copied: dict.lesson.copied }} />
       </header>
+
+      {notice && <p className="mt-6 max-w-3xl text-[0.92rem] leading-snug text-muted print:hidden">{notice}</p>}
+      {workspace}
 
       <div className="mt-12 grid gap-10 lg:grid-cols-12 lg:gap-8 print:hidden">
         <section aria-labelledby="timeline" className="lg:col-span-8">

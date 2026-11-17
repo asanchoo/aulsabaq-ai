@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import type { Dict, Locale } from "@/lib/i18n";
-import { LangSwitch } from "./LangSwitch";
+import { LangLinks, LangSwitch } from "./LangSwitch";
 import { LogoMark } from "./Logo";
 
 export function SiteHeader({ lang, dict }: { lang: Locale; dict: Dict }) {
@@ -8,6 +9,7 @@ export function SiteHeader({ lang, dict }: { lang: Locale; dict: Dict }) {
     { href: `/${lang}#how`, label: dict.nav.how },
     { href: `/${lang}#students`, label: dict.nav.students },
     { href: `/${lang}/teacher/demo`, label: dict.nav.demo },
+    { href: `/${lang}/join`, label: dict.nav.join },
   ];
 
   return (
@@ -33,7 +35,9 @@ export function SiteHeader({ lang, dict }: { lang: Locale; dict: Dict }) {
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          <LangSwitch current={lang} label={dict.nav.langLabel} />
+          <Suspense fallback={<LangLinks current={lang} label={dict.nav.langLabel} rest="" />}>
+            <LangSwitch current={lang} label={dict.nav.langLabel} />
+          </Suspense>
           <Link href={`/${lang}/teacher/new`} className="btn btn-primary btn-sm hidden sm:inline-flex">
             {dict.nav.create}
           </Link>

@@ -112,6 +112,9 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
                 </li>
               ))}
             </ul>
+            <Link href={`/${lang}/join`} className="btn btn-secondary mt-10">
+              {dict.nav.join}
+            </Link>
             <p className="mt-8 max-w-[30rem] border-t border-white/15 pt-5 text-[0.95rem] leading-relaxed text-white/70">{dict.students.now}</p>
           </div>
 

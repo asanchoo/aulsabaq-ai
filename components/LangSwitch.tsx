@@ -9,8 +9,14 @@ const names: Record<Locale, string> = { kk: "Қаз", ru: "Рус" };
 /** Меняет язык в адресе, оставаясь на той же странице: /ru/teacher/demo → /kk/teacher/demo. */
 export function LangSwitch({ current, label }: { current: Locale; label: string }) {
   const pathname = usePathname() ?? `/${current}`;
-  const rest = pathname.split("/").slice(2).join("/");
+  return <LangLinks current={current} label={label} rest={pathname.split("/").slice(2).join("/")} />;
+}
 
+/**
+ * Сами ссылки. Пока адрес страницы неизвестен (страница ученика или урока из базы собирается при запросе),
+ * шапка показывает их со ссылками на главную на другом языке.
+ */
+export function LangLinks({ current, label, rest }: { current: Locale; label: string; rest: string }) {
   return (
     <div role="group" aria-label={label} className="flex rounded-btn border border-line p-0.5 text-[0.82rem]">
       {[...locales].reverse().map((locale) => {

@@ -1,5 +1,5 @@
 import { findMixedScriptWord, findWrongEquation } from "./arithmetic";
-import { ExplanationSchema, LessonPlanSchema, type Explanation, type LessonCore, type LessonPlan, type Segment } from "./schema";
+import { ExplanationSchema, LessonPlanSchema, type Explanation, type LessonCore, type LessonPlan, type Segment, type TaskCard } from "./schema";
 
 /**
  * validateLessonPlan — проверка СМЫСЛА урока (SPEC §5, инварианты 1–9).
@@ -272,12 +272,36 @@ function checkCardOrder(plan: LessonCore, byGroup: Map<string, Segment[]>, error
  */
 function checkHints(plan: LessonCore, errors: string[]) {
   for (const card of plan.groups.flatMap((g) => g.cards)) {
-    const answer = normalize(card.answer ?? "");
-    if (answer.length < 2) continue;
-    if (` ${normalize(card.hint)} `.includes(` ${answer} `)) {
+    if (hintContainsAnswer(card.hint, card.answer ?? "")) {
       errors.push(`INV-8: подсказка карточки ${card.id} содержит ответ; подсказка должна вести к решению, не называя ответ`);
     }
   }
+}
+
+/** Ответ целым словом или числом внутри подсказки; однобуквенные ответы не проверяем. */
+export function hintContainsAnswer(hint: string, answer: string): boolean {
+  const a = normalize(answer);
+  return a.length >= 2 && ` ${normalize(hint)} `.includes(` ${a} `);
+}
+
+/**
+ * Строгая проверка для подсказок, которые ИИ пишет ученику во время урока (guard из SPEC §6).
+ * Кроме ответа целиком, ловим числа из ответа, которых нет в условии: «Попробуй 216» выдаёт ответ,
+ * а «Сколько раз 4 помещается в 8?» нет, если 4 и 8 есть в самом задании.
+ */
+export function hintRevealsAnswer(hint: string, answer: string, prompt: string): boolean {
+  if (!answer.trim()) return false;
+  if (hintContainsAnswer(hint, answer)) return true;
+  const a = normalize(answer);
+  if (a.length === 1 && ` ${normalize(hint)} `.includes(` ${a} `) && !` ${normalize(prompt)} `.includes(` ${a} `)) return true;
+  const inPrompt = new Set(numbersIn(prompt));
+  const secret = numbersIn(answer).filter((n) => !inPrompt.has(n));
+  const inHint = new Set(numbersIn(hint));
+  return secret.length > 0 && secret.every((n) => inHint.has(n));
+}
+
+function numbersIn(text: string): string[] {
+  return [...text.replace(/(\d)[\s  ](?=\d{3}(?!\d))/g, "$1").matchAll(/\d+(?:[.,]\d+)?/g)].map((m) => m[0].replace(",", "."));
 }
 
 /**
@@ -299,11 +323,34 @@ function checkPlanArithmetic(plan: LessonCore, errors: string[]) {
     if (word) errors.push(`TXT: опечатка «${word}»: в слове смешаны алфавиты`);
   }
   for (const card of plan.groups.flatMap((g) => g.cards)) {
-    const expression = card.prompt.match(/^[^\d]*?(\d+(?:\s*[+\-−×·:]\s*\d+)+)\s*(?:=\s*\?)?\s*[.?]?$/);
-    if (!expression || !card.answer || !/^\d+$/.test(card.answer.trim())) continue;
-    const wrong = findWrongEquation(`${expression[1]} = ${card.answer.trim()}`);
+    const wrong = wrongCardAnswer(card);
     if (wrong) errors.push(`INV-9: у карточки ${card.id} неверный ответ: ${wrong}; пересчитай`);
   }
+}
+
+/** Задание — одно выражение без других чисел («Вычисли: 47 + 25»): ответ можно пересчитать. */
+function wrongCardAnswer(card: TaskCard): string | null {
+  const expression = card.prompt.match(/^[^\d]*?(\d+(?:\s*[+\-−×·:]\s*\d+)+)\s*(?:=\s*\?)?\s*[.?]?$/);
+  if (!expression || !card.answer || !/^\d+$/.test(card.answer.trim())) return null;
+  return findWrongEquation(`${expression[1]} = ${card.answer.trim()}`);
+}
+
+/** Те же правила для одной карточки: когда учитель просит пересоздать её отдельно. */
+export function checkSingleCard(card: TaskCard): string[] {
+  const errors: string[] = [];
+  if (card.type === "closed" && !card.answer?.trim()) errors.push("INV-5: у закрытой карточки нет ответа для самопроверки");
+  if (hintContainsAnswer(card.hint, card.answer ?? "")) errors.push("INV-8: подсказка содержит ответ; подсказка должна вести к решению, не называя ответ");
+  for (const text of [card.prompt, card.hint, card.successCriteria]) {
+    const wrong = findWrongEquation(text);
+    if (wrong) errors.push(`INV-9: неверное равенство «${wrong}»; пересчитай`);
+  }
+  const answerError = wrongCardAnswer(card);
+  if (answerError) errors.push(`INV-9: неверный ответ: ${answerError}; пересчитай`);
+  for (const text of [card.prompt, card.hint, card.successCriteria, card.answer ?? ""]) {
+    const word = findMixedScriptWord(text);
+    if (word) errors.push(`TXT: опечатка «${word}»: в слове смешаны алфавиты`);
+  }
+  return errors;
 }
 
 /** Нижний регистр, знаки препинания как пробелы: «72.» и «72» — одно и то же. */

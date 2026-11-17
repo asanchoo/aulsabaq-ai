@@ -10,6 +10,8 @@ export const LessonRequestSchema = z.object({
     grade: z.number().int().min(1).max(11),
     topic: z.string().trim().min(1).max(300),
     studentCount: z.number().int().min(1).max(100).optional(),
+    /** Что учитель хочет сказать о классе: что уже прошли, уровень, на что обратить внимание. Необязательно. */
+    notes: z.string().trim().max(300).optional(),
   })).min(2).max(3),
 }).refine((r) => new Set(r.groups.map((g) => g.grade)).size === r.groups.length);
 

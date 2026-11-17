@@ -1,17 +1,20 @@
-import { LessonView } from "@/components/LessonView";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
+import { DemoLive } from "@/components/DemoLive";
+import { LessonView } from "@/components/LessonView";
+import { TeacherWorkspace } from "@/components/TeacherWorkspace";
+import { storageConfigured } from "@/lib/db";
 import { DEMO_LESSON_ID, demoLesson } from "@/lib/demo";
-import { getDict, isLocale } from "@/lib/i18n";
+import { getCreationDict, getDict, isLocale } from "@/lib/i18n";
+import { getLesson, isUuid } from "@/lib/store";
 
-// Пока есть только демо-урок. Уроки из базы появятся в День 4 (Supabase).
+// Демо-урок собирается при сборке; уроки учителей читаются из базы при каждом открытии.
 export function generateStaticParams() {
   return [{ lessonId: DEMO_LESSON_ID }];
 }
 
 /**
- * Каркас страницы отдаётся сразу, а содержимое урока (зависит от lessonId в адресе)
- * подгружается внутри <Suspense>. В День 4 здесь будет запрос к базе — структура уже готова.
+ * Каркас страницы отдаётся сразу, а урок (зависит от lessonId в адресе) подгружается внутри <Suspense>.
  */
 export default function LessonPage({ params }: PageProps<"/[lang]/teacher/[lessonId]">) {
   return (
@@ -36,9 +39,38 @@ function LessonSkeleton() {
 
 async function LessonContent({ params }: { params: PageProps<"/[lang]/teacher/[lessonId]">["params"] }) {
   const { lang, lessonId } = await params;
-  if (!isLocale(lang) || lessonId !== DEMO_LESSON_ID) notFound();
-
+  if (!isLocale(lang)) notFound();
   const dict = getDict(lang);
-  const plan = demoLesson;
-  return <LessonView plan={plan} lang={lang} dict={dict} badge={dict.lesson.demoBadge} />;
+
+  if (lessonId === DEMO_LESSON_ID) {
+    return (
+      <LessonView
+        plan={demoLesson}
+        lang={lang}
+        dict={dict}
+        badge={dict.lesson.demoBadge}
+        workspace={storageConfigured() ? <DemoLive lang={lang} plan={demoLesson} /> : undefined}
+      />
+    );
+  }
+
+  if (!isUuid(lessonId) || !storageConfigured()) notFound();
+  let lesson;
+  try {
+    lesson = await getLesson(lessonId);
+  } catch {
+    return <p role="alert" className="max-w-xl py-16 text-[1.1rem]">{dict.teacher.loadError}</p>;
+  }
+  if (!lesson) notFound();
+
+  return (
+    <LessonView
+      plan={lesson.plan}
+      lang={lang}
+      dict={dict}
+      badge={lesson.isDemo ? dict.lesson.demoBadge : getCreationDict(lang).preview}
+      notice={lesson.isDemo ? undefined : getCreationDict(lang).review}
+      workspace={<TeacherWorkspace lessonId={lesson.id} joinCode={lesson.joinCode} plan={lesson.plan} lang={lang} isDemo={lesson.isDemo} />}
+    />
+  );
 }

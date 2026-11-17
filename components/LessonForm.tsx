@@ -6,14 +6,16 @@ import { useRouter } from "next/navigation";
 import { LessonRequestSchema } from "@/lib/generation-schema";
 import { parseLessonPlan } from "@/lib/validate";
 import { getCreationDict, getDict, t, type Locale } from "@/lib/i18n";
+import { rememberLesson } from "@/lib/local";
 
-type GroupDraft = { id: number; grade: number; topic: string; count: string };
+type GroupDraft = { id: number; grade: number; topic: string; count: string; notes: string };
 
 const GRADES = Array.from({ length: 11 }, (_, i) => i + 1);
 
 /**
- * Форма совмещённого урока. Логика та же, что в День 3:
- * Zod на клиенте → POST /api/lessons → parseLessonPlan → sessionStorage → страница предпросмотра.
+ * Форма совмещённого урока: Zod на клиенте → POST /api/lessons → parseLessonPlan.
+ * Сервер сохраняет урок в базу и отдаёт id и ключ учителя: открываем страницу урока по ссылке.
+ * Если база недоступна, урок показывается из sessionStorage этой вкладки, как раньше.
  * Справа живой предпросмотр: дорожки выбранных классов, пока урок не собран.
  */
 export function LessonForm({ lang }: { lang: Locale }) {
@@ -22,8 +24,8 @@ export function LessonForm({ lang }: { lang: Locale }) {
   const router = useRouter();
   const [subject, setSubject] = useState("");
   const [groups, setGroups] = useState<GroupDraft[]>([
-    { id: 1, grade: 2, topic: "", count: "" },
-    { id: 2, grade: 4, topic: "", count: "" },
+    { id: 1, grade: 2, topic: "", count: "", notes: "" },
+    { id: 2, grade: 4, topic: "", count: "", notes: "" },
   ]);
   const [language, setLanguage] = useState<Locale>(lang);
   const [busy, setBusy] = useState(false);
@@ -46,7 +48,12 @@ export function LessonForm({ lang }: { lang: Locale }) {
       subject,
       language,
       durationMin: Number(data.get("duration")),
-      groups: groups.map((g) => ({ grade: g.grade, topic: g.topic, ...(g.count ? { studentCount: Number(g.count) } : {}) })),
+      groups: groups.map((g) => ({
+        grade: g.grade,
+        topic: g.topic,
+        ...(g.count ? { studentCount: Number(g.count) } : {}),
+        ...(g.notes.trim() ? { notes: g.notes.trim() } : {}),
+      })),
     });
     if (!input.success) {
       setError("bad_request");
@@ -70,6 +77,14 @@ export function LessonForm({ lang }: { lang: Locale }) {
         setError("invalid_plan");
         return;
       }
+      if (typeof result.id === "string" && typeof result.token === "string") {
+        rememberLesson({
+          id: result.id, token: result.token, subject: plan.plan.subject, grades: plan.plan.groups.map((g) => g.grade),
+          language: plan.plan.language, demo: result.demo === true,
+        });
+        router.push(`/${lang}/teacher/${result.id}`);
+        return;
+      }
       try {
         sessionStorage.setItem("aulsabaq-preview", JSON.stringify({ plan: plan.plan, demo: result.demo === true }));
       } catch {
@@ -91,7 +106,7 @@ export function LessonForm({ lang }: { lang: Locale }) {
   function addGroup() {
     setGroups((gs) => [
       ...gs,
-      { id: Math.max(...gs.map((g) => g.id)) + 1, grade: GRADES.find((n) => !gs.some((g) => g.grade === n)) ?? 1, topic: "", count: "" },
+      { id: Math.max(...gs.map((g) => g.id)) + 1, grade: GRADES.find((n) => !gs.some((g) => g.grade === n)) ?? 1, topic: "", count: "", notes: "" },
     ]);
   }
 
@@ -238,6 +253,20 @@ export function LessonForm({ lang }: { lang: Locale }) {
                           onChange={(e) => update(group.id, { count: e.target.value })}
                         />
                       </div>
+                    </div>
+                    <div className="mt-4">
+                      <label htmlFor={`notes-${group.id}`} className="field-label">
+                        {d.notes}
+                      </label>
+                      <textarea
+                        id={`notes-${group.id}`}
+                        className="field min-h-0 py-2.5 leading-snug"
+                        rows={2}
+                        maxLength={300}
+                        placeholder={d.notesPlaceholder}
+                        value={group.notes}
+                        onChange={(e) => update(group.id, { notes: e.target.value })}
+                      />
                     </div>
                   </section>
                 );

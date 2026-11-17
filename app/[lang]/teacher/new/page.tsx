@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LessonForm } from "@/components/LessonForm";
+import { RecentLessons } from "@/components/RecentLessons";
 import { getCreationDict, isLocale } from "@/lib/i18n";
 
 export default async function NewLessonPage({ params }: PageProps<"/[lang]/teacher/new">) {
@@ -17,6 +18,7 @@ export default async function NewLessonPage({ params }: PageProps<"/[lang]/teach
         <h1 className="display text-[2.4rem] sm:text-[3.2rem]">{d.title}</h1>
         <p className="mt-4 text-[1.05rem] leading-relaxed text-ink/85">{d.lead}</p>
       </header>
+      <RecentLessons lang={lang} />
       <LessonForm lang={lang} />
     </main>
   );
