@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { DemoLive } from "@/components/DemoLive";
 import { LessonView } from "@/components/LessonView";
 import { TeacherWorkspace } from "@/components/TeacherWorkspace";
@@ -55,6 +56,9 @@ async function LessonContent({ params }: { params: PageProps<"/[lang]/teacher/[l
   }
 
   if (!isUuid(lessonId) || !storageConfigured()) notFound();
+  // Урок из базы читаем только при настоящем запросе. Без этого Next.js при сборке оболочки страницы
+  // начинал запрос к базе и обрывал его, а в логах это выглядело как сбой базы.
+  await connection();
   let lesson;
   try {
     lesson = await getLesson(lessonId);
