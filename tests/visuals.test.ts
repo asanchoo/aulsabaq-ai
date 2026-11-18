@@ -92,7 +92,7 @@ describe("parseExplanation: объяснение от модели", () => {
   const generated = () => {
     const e = structuredClone(demoLesson.groups[1].explanation);
     const ex = (x: typeof e.example) => ({ ...x, visual: x.visual ? toDraft(x.visual) : null });
-    return { ...e, visuals: e.visuals.map(toDraft), example: ex(e.example), examples: e.examples.map(ex) };
+    return { ...e, visuals: e.visuals.map(toDraft), example: ex(e.example), examples: e.examples.map(ex), reviewCards: [] };
   };
 
   it("ответ примера должен совпасть с тем, что посчитал код", () => {

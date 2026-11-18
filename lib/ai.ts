@@ -1,9 +1,10 @@
 import { z } from "zod";
-import { contentToLesson, GeneratedContentSchema, GeneratedExplanationSchema, requestForModel, type LessonRequest } from "./generation-schema";
-import { cardInstructions, explanationInstructions, hintInstructions, lessonInstructions } from "./prompts";
+import { contentToLesson, GeneratedContentSchema, GeneratedExplanationSchema, requestForModel, type GeneratedCard, type LessonRequest } from "./generation-schema";
+import { cardInstructions, explanationInstructions, hintInstructions, lessonInstructions, proofreadInstructions } from "./prompts";
+import { applyCorrections, collectTexts, safeCorrections } from "./proofread";
 import { ProviderError, resolveProvider, type Provider, type ProviderImage } from "./providers";
 import { planSchedule } from "./schedule";
-import { checkSingleCard, hintRevealsAnswer, maxCardMinutes, minCards, parseExplanation, validateLessonPlan } from "./validate";
+import { checkReviewCards, checkSingleCard, hintRevealsAnswer, maxCardMinutes, minCards, parseExplained, validateLessonPlan } from "./validate";
 import { findMixedScriptWord, prettyMathDeep } from "./arithmetic";
 import { TaskCardSchema, type Explanation, type LessonCore, type LessonPlan, type TaskCard } from "./schema";
 
@@ -42,7 +43,7 @@ export function requestMismatch(plan: LessonCore, input: LessonRequest): string[
 type Checked<T> = { ok: true; plan: T } | { ok: false; errors: string[]; fallback?: T };
 
 /** Нехватка карточек по времени — мягкая ошибка; всё остальное (расписание, ответы, арифметика) жёсткое. */
-export const isSoftError = (error: string) => /^(TIME|CARDS):/.test(error);
+export const isSoftError = (error: string) => /^(TIME|CARDS|REVIEW):/.test(error);
 
 type Job<T> = {
   /** Короткое имя для логов: plan, explain-g1… */
@@ -124,8 +125,32 @@ function photosOf(input: LessonRequest, only?: number): ProviderImage[] {
   }))));
 }
 
-function planJob(input: LessonRequest, explanations: Explanation[]): Job<LessonCore> {
+type Explained = { explanation: Explanation; reviewCards: GeneratedCard[] };
+
+/**
+ * Что запрос содержания знает об объяснении: на этом держится целостность урока. Карточки практики идут по той же
+ * лестнице, что и примеры; последняя карточка и домашнее задание продолжают ситуацию из hook; проверка учителя
+ * ищет ошибки из mistakes; общий итог урока собирается из summary классов.
+ */
+function explanationBrief(e: Explanation, reviewCards: GeneratedCard[], group: number) {
+  return {
+    group,
+    hook: e.hook,
+    keyIdea: e.keyIdea,
+    steps: e.steps,
+    examples: [e.example, ...e.examples].map((x) => ({ level: x.level, problem: x.problem, answer: x.answer })),
+    practiceOnSlides: e.practice.map((p) => p.task),
+    mistakes: e.mistakes,
+    summary: e.summary,
+    terms: e.terms.map((t) => t.term),
+    prerequisites: e.prerequisites,
+    reviewCards: reviewCards.map((c) => c.prompt),
+  };
+}
+
+function planJob(input: LessonRequest, explained: Explained[]): Job<LessonCore> {
   const schedule = planSchedule(input.groups.length, input.durationMin);
+  const reviewCards = explained.map((x, i) => (schedule.cards[i].reviewMinutes > 0 ? x.reviewCards : []));
   return {
     name: "plan",
     instructions: lessonInstructions(input.language),
@@ -136,15 +161,11 @@ function planJob(input: LessonRequest, explanations: Explanation[]): Job<LessonC
         const grade = input.groups[i].grade;
         const need = minCards(grade, c.reviewMinutes, c.practiceMinutes);
         return {
-          group: i + 1, grade, reviewMinutes: c.reviewMinutes, practiceMinutes: c.practiceMinutes,
-          minReviewCards: need.review, minPracticeCards: need.practice, maxMinutesPerCard: maxCardMinutes(grade),
+          group: i + 1, grade, practiceMinutes: c.practiceMinutes, minPracticeCards: need.practice,
+          maxMinutesPerCard: maxCardMinutes(grade),
         };
       }),
-      // Чтобы этап «с учителем» шёл по готовому объяснению, а карточки не повторяли разобранный пример.
-      explanations: explanations.map((e, i) => ({
-        group: i + 1, keyIdea: e.keyIdea, example: e.example.problem, exampleAnswer: e.example.answer,
-        alreadyUsedInExplanation: [...e.examples.map((x) => x.problem), ...e.practice.map((p) => p.task)],
-      })),
+      explanations: explained.map((x, i) => explanationBrief(x.explanation, reviewCards[i], i + 1)),
     },
     images: photosOf(input),
     schemaName: "lesson_content",
@@ -152,7 +173,7 @@ function planJob(input: LessonRequest, explanations: Explanation[]): Job<LessonC
     check: (value) => {
       const content = GeneratedContentSchema.safeParse(prettyMathDeep(value));
       if (!content.success) return { ok: false, errors: content.error.issues.map((i) => `SCHEMA: ${i.path.join(".")}: ${i.message}`) };
-      const built = contentToLesson(content.data, schedule);
+      const built = contentToLesson(content.data, schedule, reviewCards);
       if (!built.ok) return built;
       // Таймлайн верен по построению, но правила всё равно проверяем: подсказки, ответы, арифметика, время.
       const valid = validateLessonPlan(built.plan);
@@ -164,9 +185,10 @@ function planJob(input: LessonRequest, explanations: Explanation[]): Job<LessonC
   };
 }
 
-function explanationJob(input: LessonRequest, index: number): Job<Explanation> {
+function explanationJob(input: LessonRequest, index: number): Job<Explained> {
   const group = input.groups[index];
-  const explainMinutes = planSchedule(input.groups.length, input.durationMin).cards[index].explainMinutes;
+  const { explainMinutes, reviewMinutes } = planSchedule(input.groups.length, input.durationMin).cards[index];
+  const minReviewCards = minCards(group.grade, reviewMinutes, 0).review;
   return {
     name: `explain-g${index + 1}`,
     instructions: explanationInstructions(input.language),
@@ -174,10 +196,19 @@ function explanationJob(input: LessonRequest, index: number): Job<Explanation> {
       subject: input.subject, language: input.language, grade: group.grade, topic: group.topic,
       notes: group.notes ?? null, pages: group.pages ?? null, textbookPhotos: group.photos?.length ?? 0,
       explainMinutes,
+      // Сколько минут класс сам повторяет до объяснения и сколько карточек повторения нужно (0 — не нужно).
+      reviewMinutes, minReviewCards, maxMinutesPerCard: maxCardMinutes(group.grade),
     },
     schemaName: "topic_explanation",
     schema: explanationSchema(),
-    check: parseExplanation,
+    check: (value) => {
+      const parsed = parseExplained(value);
+      if (!parsed.ok) return parsed;
+      const plan = { explanation: parsed.plan.explanation, reviewCards: reviewMinutes > 0 ? parsed.plan.reviewCards : [] };
+      const { hard, soft } = checkReviewCards(plan.reviewCards, plan.explanation, group.grade, reviewMinutes);
+      if (!hard.length && !soft.length) return { ok: true, plan };
+      return { ok: false, errors: [...hard, ...soft], ...(hard.length ? {} : { fallback: plan }) };
+    },
     attempts: 3,
     images: photosOf(input, index),
     noRetryAfterMs: EXPLANATION_NO_RETRY_AFTER_MS,
@@ -189,9 +220,10 @@ export async function generateLesson(input: LessonRequest): Promise<LessonPlan> 
   if (!provider) throw new GenerationError("not_configured");
   const startedAt = Date.now();
   // Сначала объяснения всех классов (параллельно), потом содержание урока, которое на них опирается.
-  const explanations = await Promise.all(input.groups.map((_, i) => generateChecked(provider, explanationJob(input, i), startedAt)));
-  const core = await generateChecked(provider, planJob(input, explanations), startedAt);
-  return {
+  const explained = await Promise.all(input.groups.map((_, i) => generateChecked(provider, explanationJob(input, i), startedAt)));
+  const explanations = explained.map((x) => x.explanation);
+  const core = await generateChecked(provider, planJob(input, explained), startedAt);
+  const lesson: LessonPlan = {
     ...core,
     groups: core.groups.map((g, i) => {
       const asked = input.groups[i];
@@ -202,6 +234,47 @@ export async function generateLesson(input: LessonRequest): Promise<LessonPlan> 
       };
     }),
   };
+  return proofreadLesson(provider, lesson, startedAt);
+}
+
+// ---------------------------------------------------------------------------
+// Корректура: опечатки облегчённой модели («Дптер», «қурғақ»)
+
+const ProofSchema = z.object({ corrections: z.array(z.object({ wrong: z.string(), right: z.string() })) });
+const PROOF_TIMEOUT_MS = 25_000;
+/** Если урок собирался долго, корректуру пропускаем: роут живёт не дольше 300 секунд. */
+const PROOF_BUDGET_MS = 230_000;
+
+/**
+ * Модель ищет опечатки, код применяет только безопасные исправления (lib/proofread.ts) и откатывает их,
+ * если после замен урок перестал проходить проверки. Любой сбой корректора — урок без корректуры, а не ошибка.
+ */
+async function proofreadLesson(provider: Provider, plan: LessonPlan, startedAt: number): Promise<LessonPlan> {
+  if (Date.now() - startedAt > PROOF_BUDGET_MS) return plan;
+  const texts = collectTexts(plan);
+  try {
+    const text = await withTimeout(provider.call({
+      instructions: proofreadInstructions(plan.language),
+      input: JSON.stringify({ texts }),
+      schemaName: "proofreading",
+      schema: z.toJSONSchema(ProofSchema, { target: "draft-7" }) as Record<string, unknown>,
+    }), PROOF_TIMEOUT_MS);
+    const parsed = text ? ProofSchema.safeParse(JSON.parse(text)) : null;
+    if (!parsed?.success) return plan;
+    const corrections = safeCorrections(parsed.data.corrections, texts);
+    if (corrections.length === 0) return plan;
+    const fixed = applyCorrections(plan, corrections);
+    const errorsOf = (p: LessonPlan) => { const r = validateLessonPlan(p); return r.ok ? [] : r.errors; };
+    const before = new Set(errorsOf(plan));
+    if (errorsOf(fixed).some((e) => !before.has(e))) {
+      console.warn(`[ai] ${provider.name} proofread: rolled back, corrections broke a check`);
+      return plan;
+    }
+    console.warn(`[ai] ${provider.name} proofread: ${corrections.length} correction(s)`);
+    return fixed;
+  } catch {
+    return plan;
+  }
 }
 
 // ---------------------------------------------------------------------------

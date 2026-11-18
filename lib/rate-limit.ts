@@ -36,8 +36,16 @@ const memory = Object.fromEntries(
   Object.entries(LIMITS).map(([name, { limit, windowSec }]) => [name, createRateLimiter(limit, windowSec * 1000)]),
 ) as Record<LimitBucket, ReturnType<typeof createRateLimiter>>;
 
+/**
+ * Лимиты временно выключены по решению автора (тестирование с учителями из одной школы).
+ * Включить обратно: RATE_LIMITS=on в env Vercel. Без лимита ключ модели может тратить любой посетитель;
+ * на бесплатном тарифе Gemini это не деньги, а риск упереться в квоту.
+ */
+export const rateLimitsEnabled = (env: Record<string, string | undefined> = process.env) => env.RATE_LIMITS === "on";
+
 /** 0 — можно; иначе через сколько секунд повторить. */
 export async function checkLimit(bucket: LimitBucket, ip: string): Promise<number> {
+  if (!rateLimitsEnabled()) return 0;
   if (storageConfigured()) {
     try {
       const { limit, windowSec } = LIMITS[bucket];

@@ -37,7 +37,7 @@ const TIMEOUT_MS = 90_000;
  * Нет ни одного: null, и API честно отвечает «не подключено».
  */
 export function resolveProvider(env: Record<string, string | undefined> = process.env): Provider | null {
-  const openai = env.OPENAI_API_KEY && env.OPENAI_MODEL ? openaiProvider(env.OPENAI_API_KEY, env.OPENAI_MODEL) : null;
+  const openai = env.OPENAI_API_KEY && env.OPENAI_MODEL ? openaiProvider(env.OPENAI_API_KEY, env.OPENAI_MODEL, env.OPENAI_REASONING?.trim() || undefined) : null;
   // GEMINI_MODEL может перечислять запасные модели через запятую: «gemini-3.5-flash-lite,gemini-3.1-flash-lite».
   const geminiModels = (env.GEMINI_MODEL ?? "").split(",").map((m) => m.trim()).filter(Boolean);
   const gemini = env.GEMINI_API_KEY && geminiModels.length ? geminiProvider(env.GEMINI_API_KEY, geminiModels) : null;
@@ -82,10 +82,14 @@ async function post(name: ProviderName, url: string, headers: Record<string, str
     }
     const detail = await response.text().catch(() => "");
     const delay = retryTiming.delaysMs[retry];
-    const willRetry = TRANSIENT.has(response.status) && delay !== undefined;
+    // Кончились деньги на счету (OpenAI: insufficient_quota) — повтор и другая модель не помогут.
+    const billing = /insufficient_quota|credit_balance/.test(detail);
+    const willRetry = TRANSIENT.has(response.status) && delay !== undefined && !billing;
     console.error(`[ai] ${name}: HTTP ${response.status}${willRetry ? `, retry ${retry + 1}` : ""} ${detail.replace(/\s+/g, " ").slice(0, 300)}`);
-    if (!willRetry) throw new ProviderError(TRANSIENT.has(response.status));
-    await sleep(delay);
+    if (!willRetry) throw new ProviderError(TRANSIENT.has(response.status) && !billing);
+    // Лимит токенов в минуту: OpenAI сам пишет, через сколько повторить («try again in 8.17s»). Ждём столько, но не дольше 25 с.
+    const asked = Number(detail.match(/try again in ([\d.]+)\s*s/i)?.[1]);
+    await sleep(Number.isFinite(asked) && asked > 0 ? Math.min(Math.ceil(asked * 1000) + 500, 25_000) * (delay > 0 ? 1 : 0) : delay);
   }
 }
 
@@ -98,7 +102,20 @@ const OpenAIResponse = z.object({
   })),
 });
 
-function openaiProvider(apiKey: string, model: string): Provider {
+/**
+ * Строгие Structured Outputs OpenAI не принимают ограничения длины строк (minLength, maxLength) и служебный $schema.
+ * Остальное (additionalProperties: false, все поля в required, minItems, minimum) Zod уже пишет как нужно.
+ * Длину строк всё равно проверяет Zod при приёме ответа.
+ */
+export function toOpenAISchema(schema: unknown): unknown {
+  if (Array.isArray(schema)) return schema.map(toOpenAISchema);
+  if (!schema || typeof schema !== "object") return schema;
+  return Object.fromEntries(
+    Object.entries(schema).filter(([key]) => !["$schema", "minLength", "maxLength"].includes(key)).map(([k, v]) => [k, toOpenAISchema(v)]),
+  );
+}
+
+function openaiProvider(apiKey: string, model: string, reasoning?: string): Provider {
   return {
     name: "openai",
     async call({ instructions, input, schemaName, schema, images }) {
@@ -113,7 +130,9 @@ function openaiProvider(apiKey: string, model: string): Provider {
         : input;
       const json = await post("openai", "https://api.openai.com/v1/responses", { Authorization: `Bearer ${apiKey}` }, {
         model, store: false, max_output_tokens: 24000, instructions, input: content,
-        text: { format: { type: "json_schema", name: schemaName, strict: true, schema } },
+        text: { format: { type: "json_schema", name: schemaName, strict: true, schema: toOpenAISchema(schema) } },
+        // Уровень размышления у моделей, которые его поддерживают (OPENAI_REASONING=low и т.п.); пусто — по умолчанию.
+        ...(reasoning ? { reasoning: { effort: reasoning } } : {}),
       });
       const result = OpenAIResponse.safeParse(json);
       if (!result.success || result.data.status !== "completed") {

@@ -71,6 +71,9 @@ export function ExplanationSlides({ explanation: e, grade, topic, lang }: Props)
         </>
       ),
     },
+    ...(e.prerequisites.length
+      ? [{ kicker: l.explain.prerequisites, frames: 0, render: () => <NumberedList items={e.prerequisites} /> } satisfies Slide]
+      : []),
     ...(e.intuition
       ? [{
           kicker: l.explain.intuition,

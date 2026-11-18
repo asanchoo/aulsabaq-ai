@@ -41,6 +41,13 @@ export const StagesSchema = z.object({
   check: z.string().min(1),
 });
 
+/** Карточка от модели: id и назначение ставит код (повторение пишет запрос объяснения, практику — запрос содержания). */
+export const GeneratedCardSchema = TaskCardSchema.omit({ id: true, purpose: true }).extend({
+  answer: z.string().nullable(),
+  minutes: z.number().int().min(1).max(20),
+});
+export type GeneratedCard = z.infer<typeof GeneratedCardSchema>;
+
 export const GeneratedContentSchema = z.object({
   subject: z.string().min(1),
   language: LangSchema,
@@ -48,12 +55,8 @@ export const GeneratedContentSchema = z.object({
   opening: z.string().min(1),
   closing: z.string().min(1),
   groups: z.array(GroupCoreSchema.omit({ id: true, source: true }).extend({
-    /**
-     * Какую прошлую тему класс повторяет до объяснения. Модель пишет её до карточек: назвав тему явно,
-     * она реже даёт «повторение» по новой теме. В урок поле не попадает.
-     */
-    reviewTopic: z.string().min(1),
-    cards: z.array(TaskCardSchema.omit({ id: true }).extend({ answer: z.string().nullable(), minutes: z.number().int().min(1).max(20) })),
+    /** Карточки практики по новой теме. Карточки повторения уже написал запрос объяснения. */
+    cards: z.array(GeneratedCardSchema),
     stages: StagesSchema,
   })),
   teacherNotes: z.string(),
@@ -67,18 +70,19 @@ export type GeneratedContent = z.infer<typeof GeneratedContentSchema>;
  * самостоятельной работы. Здесь проверяем только границы (CARDS), а хватает ли минут, проверяет
  * validateLessonPlan (инвариант 10) уже на собранном уроке. ID групп и карточек ставит код (g1, g1-c1…).
  */
-export function contentToLesson(content: GeneratedContent, schedule: Schedule): { ok: true; plan: LessonCore; warnings: string[] } | { ok: false; errors: string[] } {
+export function contentToLesson(
+  content: GeneratedContent,
+  schedule: Schedule,
+  reviewCards: GeneratedCard[][],
+): { ok: true; plan: LessonCore; warnings: string[] } | { ok: false; errors: string[] } {
   const warnings: string[] = [];
   if (content.groups.length !== schedule.cards.length) {
     return { ok: false, errors: [`REQUEST: нужно ${schedule.cards.length} групп, как в запросе`] };
   }
   content.groups.forEach((g, i) => {
-    const want = schedule.cards[i];
-    const review = g.cards.filter((c) => c.purpose === "review").length;
-    const practice = g.cards.length - review;
-    if (want.reviewMinutes > 0 && review === 0) warnings.push(`CARDS: у группы ${i + 1} есть ${want.reviewMinutes} мин повторения, нужны карточки review`);
-    if (practice < MIN_PRACTICE_CARDS) warnings.push(`CARDS: у группы ${i + 1} нужно не меньше ${MIN_PRACTICE_CARDS} карточек practice`);
-    if (g.cards.length > MAX_CARDS) warnings.push(`CARDS: у группы ${i + 1} больше ${MAX_CARDS} карточек; объедини короткие задания`);
+    const review = schedule.cards[i].reviewMinutes > 0 ? (reviewCards[i] ?? []).length : 0;
+    if (g.cards.length < MIN_PRACTICE_CARDS) warnings.push(`CARDS: у группы ${i + 1} нужно не меньше ${MIN_PRACTICE_CARDS} карточек practice`);
+    if (g.cards.length + review > MAX_CARDS) warnings.push(`CARDS: у группы ${i + 1} больше ${MAX_CARDS} карточек вместе с повторением; объедини короткие задания`);
   });
 
   const groups = content.groups.map((g, i) => ({
@@ -87,8 +91,11 @@ export function contentToLesson(content: GeneratedContent, schedule: Schedule): 
     topic: g.topic,
     learningGoal: g.learningGoal,
     // Повторение первым: так карточки идут в том же порядке, в каком класс их решает.
-    cards: [...g.cards.filter((c) => c.purpose === "review"), ...g.cards.filter((c) => c.purpose === "practice")]
-      .map((c, k) => ({ ...c, id: `g${i + 1}-c${k + 1}`, answer: c.answer ?? undefined })),
+    // Повторение есть только у класса, который ждёт учителя (у первого его нет по расписанию).
+    cards: [
+      ...(schedule.cards[i].reviewMinutes > 0 ? reviewCards[i] ?? [] : []).map((c) => ({ ...c, purpose: "review" as const })),
+      ...g.cards.map((c) => ({ ...c, purpose: "practice" as const })),
+    ].map((c, k) => ({ ...c, id: `g${i + 1}-c${k + 1}`, answer: c.answer ?? undefined })),
     homework: g.homework,
   }));
   const timeline = buildTimeline(schedule, groups.map((g, i) => ({
@@ -123,9 +130,12 @@ const GeneratedExampleSchema = z.object({
   visual: VisualDraftSchema.nullable(),
 });
 
-// Порядок полей — порядок, в котором модель пишет: сначала зачем и простыми словами, потом правило, схемы, примеры.
+
+// Порядок полей — порядок, в котором модель пишет: сначала зачем и простыми словами, потом правило, схемы, примеры,
+// и в конце карточки повторения: к этому моменту модель уже назвала термины новой темы и знает, чего в них быть не должно.
 export const GeneratedExplanationSchema = z.object({
   hook: z.string().min(1),
+  prerequisites: z.array(z.string().min(1)).min(1).max(4),
   intuition: z.string().min(1),
   terms: z.array(TermSchema).max(8),
   keyIdea: z.string().min(1),
@@ -137,5 +147,6 @@ export const GeneratedExplanationSchema = z.object({
   mistakes: z.array(z.string().min(1)).min(1).max(4),
   summary: z.array(z.string().min(1)).min(3).max(6),
   checkQuestions: z.array(z.string().min(1)).min(2).max(4),
+  reviewCards: z.array(GeneratedCardSchema).max(10),
 });
 export type GeneratedExplanation = z.infer<typeof GeneratedExplanationSchema>;

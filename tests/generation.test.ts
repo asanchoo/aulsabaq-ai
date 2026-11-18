@@ -3,7 +3,7 @@ import { POST } from "@/app/api/lessons/route";
 import { demoLesson } from "@/lib/demo";
 import { GeneratedContentSchema, LessonRequestSchema } from "@/lib/generation-schema";
 import { generateLesson } from "@/lib/ai";
-import { resolveProvider, retryTiming, toGeminiSchema } from "@/lib/providers";
+import { resolveProvider, retryTiming, toGeminiSchema, toOpenAISchema } from "@/lib/providers";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { ExplanationSchema, type LessonPlan } from "@/lib/schema";
 import { planSchedule } from "@/lib/schedule";
@@ -16,23 +16,37 @@ const input = {
   groups: demoLesson.groups.map((g) => ({ grade: g.grade, topic: g.topic })),
 };
 const schedule = planSchedule(input.groups.length, input.durationMin);
-/** Сколько карточек по 3 минуты нужно, чтобы занять время самостоятельной работы, плюс одна в запас. */
-const cardCounts = schedule.cards.map((c) => ({
-  review: Math.ceil(c.reviewMinutes / 3),
+/** Карточки повторения пишет запрос объяснения: берём карточки повторения демо-урока (их хватает на 12 минут). */
+const reviewOf = (grade: unknown) => {
+  const group = demoLesson.groups.find((g) => g.grade === grade)!;
+  const i = demoLesson.groups.indexOf(group);
+  if (schedule.cards[i].reviewMinutes === 0) return [];
+  return group.cards.filter((c) => c.purpose === "review").map((card) => {
+    const c: Partial<typeof card> = { ...card };
+    delete c.id;
+    delete c.purpose;
+    return { ...c, answer: card.answer ?? null, minutes: card.minutes ?? 3 };
+  });
+};
+/** Сколько карточек: повторение из объяснения, практика по темпу (3 минуты на карточку в начальной школе) и одна в запас. */
+const cardCounts = schedule.cards.map((c, i) => ({
+  review: reviewOf(demoLesson.groups[i].grade).length,
   practice: Math.max(3, Math.ceil(c.practiceMinutes / 3) + 1),
 }));
-/** Ответ модели на запрос содержания: карточки демо-урока по кругу, по 3 минуты, сколько нужно по времени. */
+/** Ответ модели на запрос содержания: только практика, карточки демо-урока по кругу, по 3 минуты. */
 function generated() {
   return {
     subject: demoLesson.subject, language: demoLesson.language, durationMin: demoLesson.durationMin,
     opening: "Общий настрой", closing: "Общий итог",
     groups: demoLesson.groups.map((g, i) => ({
-      grade: g.grade, topic: g.topic, learningGoal: g.learningGoal, homework: g.homework, reviewTopic: "Прошлая тема",
-      cards: Array.from({ length: cardCounts[i].review + cardCounts[i].practice }, (_, k) => {
-        const card = g.cards[k % g.cards.length];
+      grade: g.grade, topic: g.topic, learningGoal: g.learningGoal, homework: g.homework,
+      cards: Array.from({ length: cardCounts[i].practice }, (_, k) => {
+        const practice = g.cards.filter((c) => c.purpose === "practice");
+        const card = practice[k % practice.length];
         const c: Partial<typeof card> = { ...card };
         delete c.id;
-        return { ...c, answer: card.answer ?? null, minutes: 3, purpose: k < cardCounts[i].review ? "review" : "practice" };
+        delete c.purpose;
+        return { ...c, answer: card.answer ?? null, minutes: 3 };
       }),
       stages: { review: "Повторяют", explain: "Учитель объясняет", practice: "Решают карточки", check: "Учитель проверяет" },
     })),
@@ -53,7 +67,7 @@ function expectLesson(plan: LessonPlan) {
 function draftOf(grade: unknown) {
   const e = demoLesson.groups.find((g) => g.grade === grade)!.explanation;
   const example = (x: typeof e.example) => ({ ...x, visual: x.visual ? toDraft(x.visual) : null });
-  return { ...e, visuals: e.visuals.map(toDraft), example: example(e.example), examples: e.examples.map(example) };
+  return { ...e, visuals: e.visuals.map(toDraft), example: example(e.example), examples: e.examples.map(example), reviewCards: reviewOf(grade) };
 }
 function provider(plan: unknown, status = "completed") {
   return Response.json({ status, output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify(plan) }] }] });
@@ -65,11 +79,12 @@ function gemini(plan: unknown, finishReason = "STOP") {
   return Response.json({ candidates: [{ finishReason, content: { role: "model", parts: [{ text: JSON.stringify(plan) }] } }] });
 }
 
-/** Что спросили у модели: расписание (в запросе есть request) или объяснение одного класса. */
-function requestOf(init: RequestInit): { kind: "plan" | "explain"; data: Record<string, unknown> } {
+/** Что спросили у модели: содержание (в запросе есть request), корректуру (texts) или объяснение одного класса. */
+function requestOf(init: RequestInit): { kind: "plan" | "explain" | "proof"; data: Record<string, unknown> } {
   const body = JSON.parse(String(init.body));
-  const data = JSON.parse(body.input ?? body.contents[0].parts[0].text);
-  return { kind: "request" in data ? "plan" : "explain", data };
+  const input = typeof body.input === "string" ? body.input : Array.isArray(body.input) ? body.input[0].content[0].text : body.contents[0].parts[0].text;
+  const data = JSON.parse(input);
+  return { kind: "request" in data ? "plan" : "texts" in data ? "proof" : "explain", data };
 }
 
 /**
@@ -82,6 +97,7 @@ function fakeModel(format: (value: unknown) => Response, plans: unknown[] = [gen
   return vi.fn(async (_url: string, init: RequestInit) => {
     const { kind, data } = requestOf(init);
     if (kind === "explain") return format(draftOf(data.grade));
+    if (kind === "proof") return format({ corrections: [] });
     const next = plans[Math.min(planCalls++, plans.length - 1)];
     return next instanceof Response ? next.clone() : format(next);
   });
@@ -121,7 +137,7 @@ describe("generation", () => {
     const fetch = fakeModel(provider); vi.stubGlobal("fetch", fetch);
     expectLesson(await generateLesson(input));
     // Одно расписание и по объяснению на каждый класс.
-    expect(fetch).toHaveBeenCalledTimes(1 + input.groups.length);
+    expect(fetch).toHaveBeenCalledTimes(1 + input.groups.length + 1); // объяснения, содержание, корректура
     const body = JSON.parse(planCalls(fetch)[0][1].body);
     expect(body.model).toBe("test-model"); expect(body.store).toBe(false);
     expect(body.text.format.strict).toBe(true);
@@ -131,12 +147,18 @@ describe("generation", () => {
     const fetch = fakeModel(provider); vi.stubGlobal("fetch", fetch);
     await generateLesson(input);
     const kinds = fetch.mock.calls.map(([, init]) => requestOf(init as RequestInit).kind);
-    expect(kinds).toEqual(["explain", "explain", "plan"]);
-    const request = requestOf(planCalls(fetch)[0][1] as RequestInit).data;
-    expect(request.explanations).toEqual(demoLesson.groups.map((g, i) => ({
-      group: i + 1, keyIdea: g.explanation.keyIdea, example: g.explanation.example.problem, exampleAnswer: g.explanation.example.answer,
-      alreadyUsedInExplanation: [...g.explanation.examples.map((x) => x.problem), ...g.explanation.practice.map((p) => p.task)],
-    })));
+    expect(kinds).toEqual(["explain", "explain", "plan", "proof"]);
+    const request = requestOf(planCalls(fetch)[0][1] as RequestInit).data as { explanations: Record<string, unknown>[] };
+    // Содержание строится на объяснении: ситуация, лестница примеров, ошибки, итог, готовые карточки повторения.
+    expect(request.explanations[1]).toMatchObject({
+      group: 2,
+      hook: demoLesson.groups[1].explanation.hook,
+      examples: [demoLesson.groups[1].explanation.example, ...demoLesson.groups[1].explanation.examples].map((x) => ({ level: x.level, problem: x.problem, answer: x.answer })),
+      mistakes: demoLesson.groups[1].explanation.mistakes,
+      summary: demoLesson.groups[1].explanation.summary,
+      reviewCards: demoLesson.groups[1].cards.filter((c) => c.purpose === "review").map((c) => c.prompt),
+    });
+    expect(request.explanations[0]).toMatchObject({ reviewCards: [] }); // у первого класса повторения нет
   });
   it("sends validation errors on a repair attempt", async () => {
     setup(); const broken = generated(); broken.groups[0].cards.splice(-2); // карточек не хватит на всё время практики (TIME)
@@ -245,6 +267,7 @@ describe("gemini", () => {
   });
   it("turns const into a one-value enum", () => {
     expect(toGeminiSchema({ $schema: "x", anyOf: [{ type: "number", const: 1 }] })).toEqual({ anyOf: [{ type: "number", enum: [1] }] });
+    expect(toOpenAISchema({ $schema: "x", type: "string", minLength: 1, maxLength: 9 })).toEqual({ type: "string" });
     // Ограничения длины Gemini не принимает на большой вложенной схеме («too many states»): их проверяет Zod.
     expect(toGeminiSchema({ type: "array", minItems: 2, maxItems: 6, items: { type: "string", minLength: 1 } })).toEqual({ type: "array", items: { type: "string" } });
   });
@@ -280,7 +303,7 @@ describe("gemini", () => {
     vi.stubGlobal("fetch", fetch);
     expectLesson(await generateLesson(input));
     const spare = fetch.mock.calls.filter(([url]) => url.includes("gemini-2.5-spare"));
-    expect(spare).toHaveLength(1 + input.groups.length);
+    expect(spare).toHaveLength(1 + input.groups.length + 1);
     // У моделей 2.5 нет thinkingLevel: параметр не отправляем.
     expect(JSON.parse(String(spare[0][1].body)).generationConfig.thinkingConfig).toBeUndefined();
   });
@@ -315,4 +338,14 @@ it("limits ten requests, isolates IPs and resets after an hour", () => {
   const limit = createRateLimiter();
   for (let i = 0; i < 10; i++) expect(limit("a", 0)).toBe(0);
   expect(limit("a", 0)).toBe(3600); expect(limit("b", 0)).toBe(0); expect(limit("a", 3_600_000)).toBe(0);
+});
+
+describe("billing", () => {
+  it("does not retry when the account has no credits", async () => {
+    clearEnv(); vi.stubEnv("OPENAI_API_KEY", "test-key"); vi.stubEnv("OPENAI_MODEL", "test-model");
+    const fetch = vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify({ error: { type: "insufficient_quota", code: "credit_balance_exhausted" } }), { status: 429 })));
+    vi.stubGlobal("fetch", fetch);
+    await expect(generateLesson(input)).rejects.toMatchObject({ code: "provider" });
+    expect(fetch).toHaveBeenCalledTimes(input.groups.length); // по одному запросу на объяснение, без повторов
+  });
 });

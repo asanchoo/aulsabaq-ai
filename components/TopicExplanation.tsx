@@ -40,6 +40,11 @@ export function TopicExplanation({ groups, dict, lang }: { groups: Group[]; dict
                 <Block title={l.explain.hook}>
                   <p className="max-w-[65ch] leading-[1.6]">{e.hook}</p>
                 </Block>
+                {e.prerequisites.length > 0 && (
+                  <Block title={l.explain.prerequisites}>
+                    <Bullets items={e.prerequisites} />
+                  </Block>
+                )}
                 {e.intuition && (
                   <Block title={l.explain.intuition}>
                     <p className="max-w-[65ch] leading-[1.6]">{e.intuition}</p>

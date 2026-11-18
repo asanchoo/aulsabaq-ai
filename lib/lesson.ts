@@ -93,6 +93,7 @@ export function lessonToText(plan: LessonPlan, dict: Dict): string {
       "",
       `${dict.lesson.explainTitle} — ${t(dict.common.grade, { n: g.grade })}: ${g.topic}`,
       `${ex.hook}: ${e.hook}`,
+      ...(e.prerequisites.length ? [`${ex.prerequisites}:`, ...bullets(e.prerequisites)] : []),
       ...(e.intuition ? [`${ex.intuition}: ${e.intuition}`] : []),
       ...(e.terms.length ? [`${ex.terms}:`, ...e.terms.map((x) => `  • ${x.term}: ${x.meaning}`)] : []),
       `${ex.keyIdea}: ${e.keyIdea}`,

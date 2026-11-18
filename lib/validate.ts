@@ -1,5 +1,6 @@
 import { findMixedScriptWord, findWrongEquation, prettyMathDeep } from "./arithmetic";
-import { GeneratedExplanationSchema, type GeneratedExplanation } from "./generation-schema";
+import { GeneratedExplanationSchema, type GeneratedCard, type GeneratedExplanation } from "./generation-schema";
+import { MAX_CARDS } from "./schedule";
 import { columnResult, toVisual, visualTexts, type Visual, type VisualDraft } from "./visuals";
 import { ExplanationSchema, LessonPlanSchema, type Explanation, type LessonCore, type LessonPlan, type Segment, type TaskCard } from "./schema";
 
@@ -69,6 +70,12 @@ export function parseLessonPlan(input: unknown): Parsed<LessonPlan> {
  * просим модель исправить: наглядность — главное в объяснении.
  */
 export function parseExplanation(input: unknown): Parsed<Explanation> {
+  const result = parseExplained(input);
+  return result.ok ? { ok: true, plan: result.plan.explanation } : result;
+}
+
+/** Ответ запроса объяснения целиком: объяснение и карточки повторения (их проверяет checkReviewCards). */
+export function parseExplained(input: unknown): Parsed<{ explanation: Explanation; reviewCards: GeneratedCard[] }> {
   const parsed = GeneratedExplanationSchema.safeParse(prettyMathDeep(input));
   if (!parsed.success) return { ok: false, errors: schemaErrors(parsed.error.issues) };
   const g = parsed.data;
@@ -83,6 +90,7 @@ export function parseExplanation(input: unknown): Parsed<Explanation> {
   const example = (e: GeneratedExplanation["example"]) => ({ problem: e.problem, steps: e.steps, answer: e.answer, visual: convert(e.visual), level: e.level });
   const explanation = ExplanationSchema.parse({
     hook: g.hook,
+    prerequisites: g.prerequisites,
     intuition: g.intuition,
     terms: g.terms,
     summary: g.summary,
@@ -99,7 +107,48 @@ export function parseExplanation(input: unknown): Parsed<Explanation> {
   const visualCount = explanation.visuals.length + [explanation.example, ...explanation.examples].filter((e) => e.visual).length;
   const errors = checkExplanation(explanation);
   if (visualCount === 0) errors.push(`VIS: no valid visual block; add at least one (${rejected.join("; ") || "visuals is empty"})`);
-  return errors.length ? { ok: false, errors } : { ok: true, plan: explanation };
+  return errors.length ? { ok: false, errors } : { ok: true, plan: { explanation, reviewCards: g.reviewCards } };
+}
+
+/** Основа слова для поиска: «бастауыш» → «бастау» (ловит «бастауышты»), короткие слова не ищем. */
+function stemsOf(term: string): string[] {
+  return (term.toLowerCase().match(/\p{L}{6,}/gu) ?? []).map((w) => w.slice(0, Math.max(5, w.length - 2)));
+}
+
+/**
+ * Карточки повторения: каждая проходит правила карточки (ответ, подсказка без ответа, счёт) — это жёсткие ошибки.
+ * Мягкие: карточек меньше, чем нужно по времени, и термин новой темы в карточке повторения (REVIEW): класс решает
+ * их до объяснения, новую тему он ещё не знает. Термины берём из terms этого же объяснения. Если термин из
+ * нескольких слов («табиғат зонасы»), ищем его самое длинное слово.
+ */
+export function checkReviewCards(
+  cards: GeneratedCard[],
+  explanation: Explanation,
+  grade: number,
+  reviewMinutes: number,
+): { hard: string[]; soft: string[] } {
+  const hard: string[] = [];
+  const soft: string[] = [];
+  if (reviewMinutes <= 0) return { hard, soft };
+  if (cards.length === 0) return { hard: [`CARDS: класс повторяет ${reviewMinutes} мин до объяснения, нужны reviewCards`], soft };
+  cards.forEach((card, i) => {
+    const id = `review-${i + 1}`;
+    for (const e of checkSingleCard({ ...card, id, purpose: "review", answer: card.answer ?? undefined })) hard.push(e.replace(":", ` (${id}):`));
+    const text = ` ${[card.prompt, card.hint].join(" ").toLowerCase()} `;
+    for (const t of explanation.terms) {
+      const stems = stemsOf(t.term);
+      const longest = stems.sort((a, b) => b.length - a.length)[0];
+      if (longest && text.includes(longest)) {
+        soft.push(`REVIEW: карточка повторения ${i + 1} использует термин новой темы «${t.term}»; повторение только по prerequisites`);
+        break;
+      }
+    }
+  });
+  const need = minCards(grade, reviewMinutes, 0).review;
+  const minutes = cards.reduce((n, c) => n + c.minutes, 0);
+  if (cards.length < need) soft.push(`TIME: на ${reviewMinutes} мин повторения нужно не меньше ${need} reviewCards, а их ${cards.length}; добавь ${need - cards.length}`);
+  if (minutes < reviewMinutes * 0.9) soft.push(`TIME: reviewCards на ${minutes} мин, а повторение длится ${reviewMinutes} мин; добавь карточки`);
+  return { hard, soft };
 }
 
 /**
@@ -341,13 +390,14 @@ export const maxCardMinutes = (grade: number) => (grade <= 4 ? 10 : 15);
  * («сложить 36 и 18 — 5 минут»), а число карточек она не завысит: по темпу код считает, сколько карточек
  * нужно не меньше, и передаёт это число модели готовым.
  */
-export const cardPace = (grade: number) => (grade <= 4 ? 4 : 6);
+export const cardPace = (grade: number) => (grade <= 4 ? 3 : 5);
 
-/** Сколько карточек нужно не меньше: на всё время по темпу, у практики ещё одна в запас. */
+/** Сколько карточек нужно не меньше: на всё время по темпу, у практики ещё одна в запас; всего не больше MAX_CARDS. */
 export function minCards(grade: number, reviewMinutes: number, practiceMinutes: number) {
+  const review = reviewMinutes > 0 ? Math.max(1, Math.ceil((reviewMinutes * 0.9) / cardPace(grade))) : 0;
   return {
-    review: reviewMinutes > 0 ? Math.max(1, Math.ceil((reviewMinutes * 0.9) / cardPace(grade))) : 0,
-    practice: Math.max(3, Math.ceil(practiceMinutes / cardPace(grade)) + 1),
+    review,
+    practice: Math.min(MAX_CARDS - review, Math.max(3, Math.ceil(practiceMinutes / cardPace(grade)) + 1)),
   };
 }
 
