@@ -146,6 +146,20 @@ describe("generation", () => {
     expect(calls).toHaveLength(2);
     expect(JSON.parse(JSON.parse(calls[1][1].body).input).validationErrors.length).toBeGreaterThan(0);
   });
+  it("after all repairs, accepts a lesson whose only issue is a few cards short, and never one with a hard error", async () => {
+    setup();
+    const short = generated(); short.groups[0].cards.splice(-2); // мягко: не хватает карточек по времени
+    let fetch = fakeModel(provider, [short]); vi.stubGlobal("fetch", fetch);
+    const plan = await generateLesson(input);
+    expect(planCalls(fetch)).toHaveLength(3);
+    expect(plan.groups[0].cards).toHaveLength(cardCounts[0].review + cardCounts[0].practice - 2);
+    const check = validateLessonPlan(plan);
+    expect(!check.ok && check.errors.every((e) => e.startsWith("TIME"))).toBe(true);
+
+    const wrong = generated(); wrong.groups[0].cards.splice(-2); wrong.groups[0].cards[0].answer = "1"; // и неверный ответ
+    fetch = fakeModel(provider, [wrong]); vi.stubGlobal("fetch", fetch);
+    await expect(generateLesson(input)).rejects.toThrow("invalid_plan");
+  });
   it("repairs an explanation with a wrong calculation", async () => {
     setup();
     const wrong = structuredClone(draftOf(2));

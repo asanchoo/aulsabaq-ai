@@ -67,8 +67,8 @@ export type GeneratedContent = z.infer<typeof GeneratedContentSchema>;
  * самостоятельной работы. Здесь проверяем только границы (CARDS), а хватает ли минут, проверяет
  * validateLessonPlan (инвариант 10) уже на собранном уроке. ID групп и карточек ставит код (g1, g1-c1…).
  */
-export function contentToLesson(content: GeneratedContent, schedule: Schedule): { ok: true; plan: LessonCore } | { ok: false; errors: string[] } {
-  const errors: string[] = [];
+export function contentToLesson(content: GeneratedContent, schedule: Schedule): { ok: true; plan: LessonCore; warnings: string[] } | { ok: false; errors: string[] } {
+  const warnings: string[] = [];
   if (content.groups.length !== schedule.cards.length) {
     return { ok: false, errors: [`REQUEST: нужно ${schedule.cards.length} групп, как в запросе`] };
   }
@@ -76,11 +76,10 @@ export function contentToLesson(content: GeneratedContent, schedule: Schedule): 
     const want = schedule.cards[i];
     const review = g.cards.filter((c) => c.purpose === "review").length;
     const practice = g.cards.length - review;
-    if (want.reviewMinutes > 0 && review === 0) errors.push(`CARDS: у группы ${i + 1} есть ${want.reviewMinutes} мин повторения, нужны карточки review`);
-    if (practice < MIN_PRACTICE_CARDS) errors.push(`CARDS: у группы ${i + 1} нужно не меньше ${MIN_PRACTICE_CARDS} карточек practice`);
-    if (g.cards.length > MAX_CARDS) errors.push(`CARDS: у группы ${i + 1} больше ${MAX_CARDS} карточек; объедини короткие задания`);
+    if (want.reviewMinutes > 0 && review === 0) warnings.push(`CARDS: у группы ${i + 1} есть ${want.reviewMinutes} мин повторения, нужны карточки review`);
+    if (practice < MIN_PRACTICE_CARDS) warnings.push(`CARDS: у группы ${i + 1} нужно не меньше ${MIN_PRACTICE_CARDS} карточек practice`);
+    if (g.cards.length > MAX_CARDS) warnings.push(`CARDS: у группы ${i + 1} больше ${MAX_CARDS} карточек; объедини короткие задания`);
   });
-  if (errors.length) return { ok: false, errors };
 
   const groups = content.groups.map((g, i) => ({
     id: `g${i + 1}`,
@@ -98,6 +97,7 @@ export function contentToLesson(content: GeneratedContent, schedule: Schedule): 
   })));
   return {
     ok: true,
+    warnings,
     plan: { subject: content.subject, language: content.language, durationMin: content.durationMin, groups, timeline, teacherNotes: content.teacherNotes },
   };
 }

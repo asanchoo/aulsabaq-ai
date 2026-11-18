@@ -34,7 +34,15 @@ export function requestMismatch(plan: LessonCore, input: LessonRequest): string[
   return errors;
 }
 
-type Checked<T> = { ok: true; plan: T } | { ok: false; errors: string[] };
+/**
+ * fallback: урок, у которого остались только «мягкие» замечания (не хватает карточек по времени).
+ * Модель всё равно получит повтор с замечаниями, но если повторы кончатся, лучше выдать учителю такой урок,
+ * чем ошибку: всё остальное в нём проверено и верно.
+ */
+type Checked<T> = { ok: true; plan: T } | { ok: false; errors: string[]; fallback?: T };
+
+/** Нехватка карточек по времени — мягкая ошибка; всё остальное (расписание, ответы, арифметика) жёсткое. */
+export const isSoftError = (error: string) => /^(TIME|CARDS):/.test(error);
 
 type Job<T> = {
   /** Короткое имя для логов: plan, explain-g1… */
@@ -62,6 +70,7 @@ const EXPLANATION_NO_RETRY_AFTER_MS = 100_000;
 /** Запрос к модели с проверкой ответа; при ошибке отправляем модели список нарушений и просим исправить. */
 async function generateChecked<T>(provider: Provider, job: Job<T>, startedAt: number): Promise<T> {
   let feedback: string[] = [];
+  let fallback: { plan: T; errors: number } | null = null;
   for (let attempt = 0; attempt < job.attempts; attempt++) {
     if (attempt > 0 && Date.now() - startedAt > (job.noRetryAfterMs ?? NO_NEW_ATTEMPT_AFTER_MS)) break;
     let text: string | null;
@@ -74,7 +83,10 @@ async function generateChecked<T>(provider: Provider, job: Job<T>, startedAt: nu
         images: job.images,
       });
     } catch (error) {
-      if (error instanceof ProviderError) throw new GenerationError("provider");
+      if (error instanceof ProviderError) {
+        if (fallback) break; // модель перегружена, но почти готовый урок уже есть
+        throw new GenerationError("provider");
+      }
       throw error;
     }
     try {
@@ -82,11 +94,16 @@ async function generateChecked<T>(provider: Provider, job: Job<T>, startedAt: nu
       const result = job.check(JSON.parse(text));
       if (result.ok) return result.plan;
       feedback = result.errors;
+      if (result.fallback && (!fallback || result.errors.length < fallback.errors)) fallback = { plan: result.fallback, errors: result.errors.length };
     } catch { feedback = ["Return a complete JSON object matching the required schema."]; }
     // Коды проверок (INV-1, EXP…) без текста урока; ошибки времени и количества карточек целиком:
     // в них только номера групп, карточек и минуты.
     const logged = feedback.map((e) => (/^(TIME|CARDS|SCHEMA):/.test(e) ? e.slice(0, 200) : e.split(":")[0]));
     console.warn(`[ai] ${provider.name} ${job.name}: attempt ${attempt + 1} rejected: ${logged.join(" | ")}`);
+  }
+  if (fallback) {
+    console.warn(`[ai] ${provider.name} ${job.name}: accepted with ${fallback.errors} soft issue(s)`);
+    return fallback.plan;
   }
   throw new GenerationError("invalid_plan");
 }
@@ -133,11 +150,11 @@ function planJob(input: LessonRequest, explanations: Explanation[]): Job<LessonC
       if (!content.success) return { ok: false, errors: content.error.issues.map((i) => `SCHEMA: ${i.path.join(".")}: ${i.message}`) };
       const built = contentToLesson(content.data, schedule);
       if (!built.ok) return built;
-      // Таймлайн верен по построению, но правила всё равно проверяем: подсказки, ответы, арифметика.
+      // Таймлайн верен по построению, но правила всё равно проверяем: подсказки, ответы, арифметика, время.
       const valid = validateLessonPlan(built.plan);
-      if (!valid.ok) return valid;
-      const mismatch = requestMismatch(built.plan, input);
-      return mismatch.length ? { ok: false, errors: mismatch } : built;
+      const errors = [...built.warnings, ...(valid.ok ? [] : valid.errors), ...requestMismatch(built.plan, input)];
+      if (errors.length === 0) return { ok: true, plan: built.plan };
+      return { ok: false, errors, ...(errors.every(isSoftError) ? { fallback: built.plan } : {}) };
     },
     attempts: 3,
   };
