@@ -7,7 +7,7 @@ import { resolveProvider, retryTiming, toGeminiSchema, toOpenAISchema } from "@/
 import { createRateLimiter } from "@/lib/rate-limit";
 import { ExplanationSchema, type LessonPlan } from "@/lib/schema";
 import { planSchedule } from "@/lib/schedule";
-import { validateLessonPlan } from "@/lib/validate";
+import { minCards, validateLessonPlan } from "@/lib/validate";
 import { toDraft } from "@/lib/visuals";
 import { z } from "zod";
 
@@ -16,22 +16,24 @@ const input = {
   groups: demoLesson.groups.map((g) => ({ grade: g.grade, topic: g.topic })),
 };
 const schedule = planSchedule(input.groups.length, input.durationMin);
-/** Карточки повторения пишет запрос объяснения: берём карточки повторения демо-урока (их хватает на 12 минут). */
+/** Карточки повторения пишет запрос объяснения: карточки повторения демо-урока по кругу, сколько нужно по темпу. */
 const reviewOf = (grade: unknown) => {
   const group = demoLesson.groups.find((g) => g.grade === grade)!;
   const i = demoLesson.groups.indexOf(group);
-  if (schedule.cards[i].reviewMinutes === 0) return [];
-  return group.cards.filter((c) => c.purpose === "review").map((card) => {
+  const need = minCards(group.grade, schedule.cards[i].reviewMinutes, 0).review;
+  const review = group.cards.filter((c) => c.purpose === "review");
+  return Array.from({ length: need }, (_, k) => {
+    const card = review[k % review.length];
     const c: Partial<typeof card> = { ...card };
     delete c.id;
     delete c.purpose;
-    return { ...c, answer: card.answer ?? null, minutes: card.minutes ?? 3 };
+    return { ...c, answer: card.answer ?? null, minutes: 1.5 };
   });
 };
-/** Сколько карточек: повторение из объяснения, практика по темпу (3 минуты на карточку в начальной школе) и одна в запас. */
+/** Сколько карточек: повторение из объяснения, практика по темпу (1,5 минуты в начальной школе) и одна в запас. */
 const cardCounts = schedule.cards.map((c, i) => ({
   review: reviewOf(demoLesson.groups[i].grade).length,
-  practice: Math.max(3, Math.ceil(c.practiceMinutes / 3) + 1),
+  practice: minCards(demoLesson.groups[i].grade, 0, c.practiceMinutes).practice,
 }));
 /** Ответ модели на запрос содержания: только практика, карточки демо-урока по кругу, по 3 минуты. */
 function generated() {
@@ -46,7 +48,7 @@ function generated() {
         const c: Partial<typeof card> = { ...card };
         delete c.id;
         delete c.purpose;
-        return { ...c, answer: card.answer ?? null, minutes: 3 };
+        return { ...c, answer: card.answer ?? null, minutes: 1.5 };
       }),
       stages: { review: "Повторяют", explain: "Учитель объясняет", practice: "Решают карточки", check: "Учитель проверяет" },
     })),
@@ -156,7 +158,7 @@ describe("generation", () => {
       examples: [demoLesson.groups[1].explanation.example, ...demoLesson.groups[1].explanation.examples].map((x) => ({ level: x.level, problem: x.problem, answer: x.answer })),
       mistakes: demoLesson.groups[1].explanation.mistakes,
       summary: demoLesson.groups[1].explanation.summary,
-      reviewCards: demoLesson.groups[1].cards.filter((c) => c.purpose === "review").map((c) => c.prompt),
+      reviewCards: reviewOf(demoLesson.groups[1].grade).map((c) => c.prompt),
     });
     expect(request.explanations[0]).toMatchObject({ reviewCards: [] }); // у первого класса повторения нет
   });

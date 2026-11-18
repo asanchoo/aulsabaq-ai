@@ -30,10 +30,10 @@ const OPENING_MIN = 5;
 const CLOSING_MIN = 5;
 /** Доля середины урока на объяснения, остальное на проверки. */
 const EXPLAIN_SHARE = 0.65;
-/** Больше карточек одному классу не даём (хватает и на сдвоенный урок в 90 минут). */
-export const MAX_CARDS = 16;
+/** Больше карточек одному классу не даём: на сдвоенный урок в 90 минут хватает с запасом. */
+export const MAX_CARDS = 30;
 /** По новой теме не меньше стольких карточек, даже если практики мало. */
-export const MIN_PRACTICE_CARDS = 3;
+export const MIN_PRACTICE_CARDS = 4;
 
 /** Делит total минут на n частей, разница не больше минуты, первым достаётся больше. */
 function split(total: number, n: number): number[] {

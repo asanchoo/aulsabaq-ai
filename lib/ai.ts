@@ -340,7 +340,7 @@ export async function generateHint(req: HintRequest): Promise<string | null> {
 // ---------------------------------------------------------------------------
 // Замена одной карточки по просьбе учителя
 
-const NewCardSchema = TaskCardSchema.omit({ id: true }).extend({ answer: z.string().nullable(), minutes: z.number().int().min(1).max(20) });
+const NewCardSchema = TaskCardSchema.omit({ id: true }).extend({ answer: z.string().nullable(), minutes: z.number().min(0.5).max(20) });
 
 export async function regenerateCard(plan: LessonPlan, groupId: string, cardId: string, wish: string | undefined): Promise<TaskCard> {
   const provider = resolveProvider();

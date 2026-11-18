@@ -44,7 +44,8 @@ export const StagesSchema = z.object({
 /** Карточка от модели: id и назначение ставит код (повторение пишет запрос объяснения, практику — запрос содержания). */
 export const GeneratedCardSchema = TaskCardSchema.omit({ id: true, purpose: true }).extend({
   answer: z.string().nullable(),
-  minutes: z.number().int().min(1).max(20),
+  /** Минуты среднего ученика, можно с половиной: 0.5, 1, 1.5… */
+  minutes: z.number().min(0.5).max(20),
 });
 export type GeneratedCard = z.infer<typeof GeneratedCardSchema>;
 
@@ -143,10 +144,10 @@ export const GeneratedExplanationSchema = z.object({
   steps: z.array(z.string().min(1)).min(2).max(8),
   example: GeneratedExampleSchema,
   examples: z.array(GeneratedExampleSchema).min(3).max(6),
-  practice: z.array(QuickTaskSchema).min(2).max(8),
+  practice: z.array(QuickTaskSchema).min(2).max(10),
   mistakes: z.array(z.string().min(1)).min(1).max(4),
   summary: z.array(z.string().min(1)).min(3).max(6),
   checkQuestions: z.array(z.string().min(1)).min(2).max(4),
-  reviewCards: z.array(GeneratedCardSchema).max(10),
+  reviewCards: z.array(GeneratedCardSchema).max(26),
 });
 export type GeneratedExplanation = z.infer<typeof GeneratedExplanationSchema>;

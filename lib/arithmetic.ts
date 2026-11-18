@@ -50,8 +50,15 @@ function evaluate(first: string, rest: string): { value: number; onlyDivision: b
   return { value, onlyDivision };
 }
 
+/**
+ * Задание «найди ошибку» нарочно содержит неверное равенство («Данияр вычислил 58 + 17 = 615. Найди ошибку»).
+ * Такой текст не пересчитываем: иначе проверка отклоняла бы правильный урок.
+ */
+const FIND_THE_ERROR = /ошиб|неверн|неправильн|қате|дұрыс емес|қателес/iu;
+
 /** Первое неверное равенство в тексте или null, если всё сходится. */
 export function findWrongEquation(text: string): string | null {
+  if (FIND_THE_ERROR.test(text)) return null;
   for (const match of text.matchAll(EQUATION)) {
     const [whole, first, rest, result] = match;
     const computed = evaluate(first, rest);

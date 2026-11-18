@@ -42,10 +42,13 @@ describe("карточки повторения из запроса объясн
   const explanation = demoLesson.groups[1].explanation;
   const card = (prompt: string, minutes = 3) => ({ type: "closed" as const, prompt, answer: "12", successCriteria: "Верно", hint: "Вспомни таблицу", difficulty: 1 as const, minutes });
 
-  it("термин новой темы в карточке повторения — мягкая ошибка REVIEW", () => {
-    const result = checkReviewCards([card("Найди неполное делимое в примере 96 : 8"), card("Вычисли 6 × 2"), card("Вычисли 24 : 2"), card("Вычисли 3 × 4")], explanation, 4, 12);
-    expect(result.hard).toEqual([]);
-    expect(result.soft).toEqual([expect.stringMatching(/^REVIEW: карточка повторения 1 использует термин новой темы/)]);
+  it("повторение по новой теме — мягкая ошибка REVIEW, одно знакомое слово — нет", () => {
+    const plain = ["Вычисли 6 × 2", "Вычисли 24 : 2", "Вычисли 3 × 4", "Вычисли 2 × 6", "Вычисли 60 : 5", "Вычисли 4 × 3", "Вычисли 36 : 3"].map((p) => card(p, 1.5));
+    const one = checkReviewCards([card("Найди частное: 96 : 8", 1.5), ...plain], explanation, 4, 12);
+    expect(one).toEqual({ hard: [], soft: [] });
+    const newTopic = ["Найди неполное делимое: 96 : 8", "Найди неполное делимое: 84 : 7", "Найди неполное делимое: 72 : 6", "Найди неполное делимое: 60 : 5", "Найди неполное делимое: 48 : 4"].map((p) => card(p, 1.5));
+    const many = checkReviewCards([...newTopic, ...plain.slice(0, 3)], explanation, 4, 12);
+    expect(many.soft).toEqual([expect.stringMatching(/^REVIEW: карточки повторения 1 \(«/)]);
   });
 
   it("нехватка карточек — мягкая, пустой список при времени на повторение — жёсткая", () => {

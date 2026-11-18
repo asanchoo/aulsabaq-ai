@@ -1,6 +1,6 @@
 import { findMixedScriptWord, findWrongEquation, prettyMathDeep } from "./arithmetic";
 import { GeneratedExplanationSchema, type GeneratedCard, type GeneratedExplanation } from "./generation-schema";
-import { MAX_CARDS } from "./schedule";
+import { MAX_CARDS, MIN_PRACTICE_CARDS } from "./schedule";
 import { columnResult, toVisual, visualTexts, type Visual, type VisualDraft } from "./visuals";
 import { ExplanationSchema, LessonPlanSchema, type Explanation, type LessonCore, type LessonPlan, type Segment, type TaskCard } from "./schema";
 
@@ -20,7 +20,7 @@ export type ValidationResult = { ok: true } | { ok: false; errors: string[] };
 
 export const LIMITS = {
   groups: { min: 2, max: 3 },
-  cards: { min: 3, max: 16 },
+  cards: { min: 3, max: 30 },
   durationMin: { min: 30, max: 90 },
 } as const;
 
@@ -131,23 +131,26 @@ export function checkReviewCards(
   const soft: string[] = [];
   if (reviewMinutes <= 0) return { hard, soft };
   if (cards.length === 0) return { hard: [`CARDS: класс повторяет ${reviewMinutes} мин до объяснения, нужны reviewCards`], soft };
+  const withNewTerms: string[] = [];
   cards.forEach((card, i) => {
     const id = `review-${i + 1}`;
     for (const e of checkSingleCard({ ...card, id, purpose: "review", answer: card.answer ?? undefined })) hard.push(e.replace(":", ` (${id}):`));
     const text = ` ${[card.prompt, card.hint].join(" ").toLowerCase()} `;
-    for (const t of explanation.terms) {
-      const stems = stemsOf(t.term);
-      const longest = stems.sort((a, b) => b.length - a.length)[0];
-      if (longest && text.includes(longest)) {
-        soft.push(`REVIEW: карточка повторения ${i + 1} использует термин новой темы «${t.term}»; повторение только по prerequisites`);
-        break;
-      }
-    }
+    const term = explanation.terms.find((t) => {
+      const longest = stemsOf(t.term).sort((a, b) => b.length - a.length)[0];
+      return longest && text.includes(longest);
+    });
+    if (term) withNewTerms.push(`${i + 1} («${term.term}»)`);
   });
+  // Одно знакомое слово из списка терминов («делимое» в 4 классе) не повод переписывать объяснение: просим
+  // исправить, только если по новой теме больше половины карточек повторения, то есть повторение не про то.
+  if (withNewTerms.length * 2 > cards.length) {
+    soft.push(`REVIEW: карточки повторения ${withNewTerms.join(", ")} используют термины новой темы; повторение только по prerequisites`);
+  }
   const need = minCards(grade, reviewMinutes, 0).review;
   const minutes = cards.reduce((n, c) => n + c.minutes, 0);
   if (cards.length < need) soft.push(`TIME: на ${reviewMinutes} мин повторения нужно не меньше ${need} reviewCards, а их ${cards.length}; добавь ${need - cards.length}`);
-  if (minutes < reviewMinutes * 0.9) soft.push(`TIME: reviewCards на ${minutes} мин, а повторение длится ${reviewMinutes} мин; добавь карточки`);
+  if (minutes < reviewMinutes * 0.8) soft.push(`TIME: reviewCards на ${minutes} мин, а повторение длится ${reviewMinutes} мин; добавь карточки`);
   return { hard, soft };
 }
 
@@ -383,21 +386,22 @@ function checkCardOrder(plan: LessonCore, byGroup: Map<string, Segment[]>, error
  * Слишком «долгую» карточку не принимаем: так модель могла бы закрыть время двумя заданиями.
  * У уроков без минут (сохранённых до 18 ноября) проверку пропускаем.
  */
-export const maxCardMinutes = (grade: number) => (grade <= 4 ? 10 : 15);
+export const maxCardMinutes = (grade: number) => (grade <= 4 ? 5 : 8);
 
 /**
  * Темп: примерно столько минут в среднем уходит на одну карточку. Оценку минут модель может завысить
  * («сложить 36 и 18 — 5 минут»), а число карточек она не завысит: по темпу код считает, сколько карточек
  * нужно не меньше, и передаёт это число модели готовым.
  */
-export const cardPace = (grade: number) => (grade <= 4 ? 3 : 5);
+export const cardPace = (grade: number) => (grade <= 4 ? 1.5 : 2.5);
 
 /** Сколько карточек нужно не меньше: на всё время по темпу, у практики ещё одна в запас; всего не больше MAX_CARDS. */
 export function minCards(grade: number, reviewMinutes: number, practiceMinutes: number) {
-  const review = reviewMinutes > 0 ? Math.max(1, Math.ceil((reviewMinutes * 0.9) / cardPace(grade))) : 0;
+  // На очень длинное повторение (третий класс на сдвоенном уроке) карточек не больше, чем оставляет место практике.
+  const review = reviewMinutes > 0 ? Math.min(MAX_CARDS - MIN_PRACTICE_CARDS, Math.max(1, Math.ceil((reviewMinutes * 0.9) / cardPace(grade)))) : 0;
   return {
     review,
-    practice: Math.min(MAX_CARDS - review, Math.max(3, Math.ceil(practiceMinutes / cardPace(grade)) + 1)),
+    practice: Math.min(MAX_CARDS - review, Math.max(MIN_PRACTICE_CARDS, Math.ceil(practiceMinutes / cardPace(grade)) + 1)),
   };
 }
 
@@ -422,10 +426,11 @@ function checkTiming(plan: LessonCore, byGroup: Map<string, Segment[]>, errors: 
     if (practiceCount < need.practice) {
       errors.push(`TIME: у группы ${group.id} на ${practiceTime} мин практики нужно не меньше ${need.practice} карточек practice (с запасом), а их ${practiceCount}; добавь ${need.practice - practiceCount}`);
     }
-    if (reviewTime > 0 && review < reviewTime * 0.9) {
+    if (reviewTime > 0 && review < reviewTime * 0.8) {
       errors.push(`TIME: у группы ${group.id} повторение длится ${reviewTime} мин, а карточек review на ${review} мин; добавь карточки review`);
     }
-    if (practice < practiceTime) {
+    // Минуты модель оценивает приблизительно; число карточек держит правило темпа выше, поэтому здесь 80%.
+    if (practice < practiceTime * 0.8) {
       errors.push(`TIME: у группы ${group.id} самостоятельная практика длится ${practiceTime} мин, а карточек practice на ${practice} мин; добавь карточки, в том числе 1–2 в запас для быстрых учеников`);
     }
     for (const card of group.cards) {

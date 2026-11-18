@@ -74,3 +74,11 @@ describe("prettyMath: школьная запись формул", () => {
     expect(findWrongEquation(prettyMath("Осталось 3^2 = 9"))).toBeNull();
   });
 });
+
+describe("задания «найди ошибку»", () => {
+  it("нарочно неверное равенство в задании на поиск ошибки не считается ошибкой урока", () => {
+    expect(findWrongEquation("Данияр вычислил 58 + 17 = 615. Найди ошибку и реши правильно.")).toBeNull();
+    expect(findWrongEquation("Айгерім 46 + 27 = 63 деп жазды. Қатесін тап.")).toBeNull();
+    expect(findWrongEquation("Вычисли: 58 + 17 = 615")).toBe("58 + 17 = 615");
+  });
+});

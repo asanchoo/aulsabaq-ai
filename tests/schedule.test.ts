@@ -48,8 +48,8 @@ describe("planSchedule", () => {
   it("раскладывает карточки практики по отрезкам по их минутам, в каждом хотя бы одна", () => {
     const lesson = lessonFor(2, 45);
     const g1 = lesson.timeline.filter((s) => s.groupId === "g1" && s.mode === "independent");
-    // 17–28 (11 мин) и 34–40 (6 мин): 7 карточек по 3 минуты делятся по времени примерно 65% и 35%.
-    expect(g1.map((s) => s.cardIds?.length)).toEqual([5, 2]);
+    // 17–28 (11 мин) и 34–40 (6 мин): 13 карточек делятся по времени примерно 65% и 35%.
+    expect(g1.map((s) => s.cardIds?.length)).toEqual([8, 5]);
     expect(g1.every((s) => (s.cardIds?.length ?? 0) >= 1)).toBe(true);
   });
 
