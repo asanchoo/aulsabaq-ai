@@ -138,15 +138,19 @@ const GeminiResponse = z.object({
 
 /**
  * Gemini понимает не весь JSON Schema: убираем служебный $schema и заменяем const на enum
- * из одного значения. Смысл схемы не меняется, а всё, что Gemini не проверит сам
- * (например, minLength), всё равно проверяют Zod и validateLessonPlan().
+ * из одного значения. Ещё убираем ограничения длины и чисел (minItems, maxLength, minimum…):
+ * у объяснения со схемами много вложенных массивов, и с этими ограничениями Gemini отвечает
+ * «schema produces a constraint that has too many states». Смысл схемы не меняется: все эти
+ * ограничения всё равно проверяют Zod и validateLessonPlan(), а нарушения уходят модели в повтор.
  */
+const GEMINI_DROPPED_KEYS = new Set(["$schema", "minItems", "maxItems", "minLength", "maxLength", "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "pattern"]);
+
 export function toGeminiSchema(schema: unknown): unknown {
   if (Array.isArray(schema)) return schema.map(toGeminiSchema);
   if (!schema || typeof schema !== "object") return schema;
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(schema)) {
-    if (key === "$schema") continue;
+    if (GEMINI_DROPPED_KEYS.has(key)) continue;
     if (key === "const") out.enum = [value];
     else out[key] = toGeminiSchema(value);
   }

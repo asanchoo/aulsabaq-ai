@@ -231,6 +231,8 @@ describe("gemini", () => {
   });
   it("turns const into a one-value enum", () => {
     expect(toGeminiSchema({ $schema: "x", anyOf: [{ type: "number", const: 1 }] })).toEqual({ anyOf: [{ type: "number", enum: [1] }] });
+    // Ограничения длины Gemini не принимает на большой вложенной схеме («too many states»): их проверяет Zod.
+    expect(toGeminiSchema({ type: "array", minItems: 2, maxItems: 6, items: { type: "string", minLength: 1 } })).toEqual({ type: "array", items: { type: "string" } });
   });
   it("repairs after a cut-off answer and skips thought parts", async () => {
     setupGemini();
