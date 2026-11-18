@@ -8,7 +8,29 @@ import { parseLessonPlan } from "@/lib/validate";
 import { getCreationDict, getDict, t, type Locale } from "@/lib/i18n";
 import { rememberLesson } from "@/lib/local";
 
-type GroupDraft = { id: number; grade: number; topic: string; count: string; notes: string };
+type Photo = { mimeType: "image/jpeg"; data: string; preview: string };
+type GroupDraft = { id: number; grade: number; topic: string; count: string; notes: string; pages: string; photos: Photo[] };
+
+const MAX_PHOTOS = 2;
+
+/**
+ * Фото страницы учебника сжимаем в браузере: телефон снимает 3–8 МБ, а модели хватает ~1600 px по длинной стороне.
+ * Так запрос с шестью фото укладывается в лимит Vercel (4,5 МБ) и не тратит интернет сельской школы.
+ */
+async function compressPhoto(file: File): Promise<Photo> {
+  const bitmap = await createImageBitmap(file);
+  for (const [side, quality] of [[1600, 0.72], [1280, 0.6], [1000, 0.5]] as const) {
+    const scale = Math.min(1, side / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const url = canvas.toDataURL("image/jpeg", quality);
+    const data = url.slice(url.indexOf(",") + 1);
+    if (data.length <= 850_000) return { mimeType: "image/jpeg", data, preview: url };
+  }
+  throw new Error("too large");
+}
 
 const GRADES = Array.from({ length: 11 }, (_, i) => i + 1);
 
@@ -24,13 +46,27 @@ export function LessonForm({ lang }: { lang: Locale }) {
   const router = useRouter();
   const [subject, setSubject] = useState("");
   const [groups, setGroups] = useState<GroupDraft[]>([
-    { id: 1, grade: 2, topic: "", count: "", notes: "" },
-    { id: 2, grade: 4, topic: "", count: "", notes: "" },
+    { id: 1, grade: 2, topic: "", count: "", notes: "", pages: "", photos: [] },
+    { id: 2, grade: 4, topic: "", count: "", notes: "", pages: "", photos: [] },
   ]);
   const [language, setLanguage] = useState<Locale>(lang);
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState(0);
   const [error, setError] = useState<keyof typeof d.errors | null>(null);
+  const [photoError, setPhotoError] = useState<number | null>(null);
+
+  async function addPhotos(groupId: number, files: FileList | null) {
+    setPhotoError(null);
+    const group = groups.find((g) => g.id === groupId);
+    if (!files || !group) return;
+    const room = MAX_PHOTOS - group.photos.length;
+    try {
+      const added = await Promise.all([...files].slice(0, room).map(compressPhoto));
+      setGroups((items) => items.map((g) => (g.id === groupId ? { ...g, photos: [...g.photos, ...added].slice(0, MAX_PHOTOS) } : g)));
+    } catch {
+      setPhotoError(groupId);
+    }
+  }
 
   // Пока ждём ответ модели, отмечаем шаги по очереди: учителю видно, что работа идёт.
   useEffect(() => {
@@ -53,6 +89,8 @@ export function LessonForm({ lang }: { lang: Locale }) {
         topic: g.topic,
         ...(g.count ? { studentCount: Number(g.count) } : {}),
         ...(g.notes.trim() ? { notes: g.notes.trim() } : {}),
+        ...(g.pages.trim() ? { pages: g.pages.trim() } : {}),
+        ...(g.photos.length ? { photos: g.photos.map(({ mimeType, data }) => ({ mimeType, data })) } : {}),
       })),
     });
     if (!input.success) {
@@ -106,7 +144,7 @@ export function LessonForm({ lang }: { lang: Locale }) {
   function addGroup() {
     setGroups((gs) => [
       ...gs,
-      { id: Math.max(...gs.map((g) => g.id)) + 1, grade: GRADES.find((n) => !gs.some((g) => g.grade === n)) ?? 1, topic: "", count: "", notes: "" },
+      { id: Math.max(...gs.map((g) => g.id)) + 1, grade: GRADES.find((n) => !gs.some((g) => g.grade === n)) ?? 1, topic: "", count: "", notes: "", pages: "", photos: [] },
     ]);
   }
 
@@ -254,6 +292,59 @@ export function LessonForm({ lang }: { lang: Locale }) {
                         />
                       </div>
                     </div>
+                    <fieldset className="mt-4 rounded-btn border border-line bg-white p-3 sm:p-4">
+                      <legend className="px-1 text-[0.875rem] font-semibold">{d.textbook}</legend>
+                      <p className="text-[0.85rem] leading-snug text-muted">{d.textbookHint}</p>
+                      <div className="mt-3 flex flex-wrap items-end gap-3">
+                        <div className="w-36">
+                          <label htmlFor={`pages-${group.id}`} className="field-label">{d.pages}</label>
+                          <input
+                            id={`pages-${group.id}`}
+                            className="field"
+                            maxLength={40}
+                            placeholder={d.pagesPlaceholder}
+                            value={group.pages}
+                            onChange={(e) => update(group.id, { pages: e.target.value })}
+                          />
+                        </div>
+                        {group.photos.map((photo, k) => (
+                          <div key={k} className="relative">
+                            {/* eslint-disable-next-line @next/next/no-img-element -- предпросмотр из памяти браузера, next/image не нужен */}
+                            <img src={photo.preview} alt={t(d.photoAlt, { n: k + 1 })} className="h-12 w-12 rounded-btn border border-line object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => update(group.id, { photos: group.photos.filter((_, i) => i !== k) })}
+                              aria-label={t(d.removePhoto, { n: k + 1 })}
+                              className="absolute -top-2 -right-2 grid size-6 place-items-center rounded-full bg-ink text-white"
+                            >
+                              <svg aria-hidden viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                <path d="M18 6 6 18M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        ))}
+                        {group.photos.length < MAX_PHOTOS && (
+                          <label className="btn btn-secondary btn-sm cursor-pointer focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ink">
+                            <svg aria-hidden viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+                              <circle cx="12" cy="13" r="3" />
+                            </svg>
+                            {d.addPhoto}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              className="sr-only"
+                              onChange={(e) => {
+                                void addPhotos(group.id, e.target.files);
+                                e.target.value = "";
+                              }}
+                            />
+                          </label>
+                        )}
+                      </div>
+                      {photoError === group.id && <p role="alert" className="mt-2 text-[0.88rem] text-danger">{d.photoError}</p>}
+                    </fieldset>
                     <div className="mt-4">
                       <label htmlFor={`notes-${group.id}`} className="field-label">
                         {d.notes}

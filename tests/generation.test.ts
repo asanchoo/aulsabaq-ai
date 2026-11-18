@@ -8,24 +8,31 @@ import { createRateLimiter } from "@/lib/rate-limit";
 import { ExplanationSchema, type LessonPlan } from "@/lib/schema";
 import { planSchedule } from "@/lib/schedule";
 import { validateLessonPlan } from "@/lib/validate";
+import { toDraft } from "@/lib/visuals";
 import { z } from "zod";
 
 const input = {
   subject: demoLesson.subject, language: demoLesson.language, durationMin: demoLesson.durationMin,
   groups: demoLesson.groups.map((g) => ({ grade: g.grade, topic: g.topic })),
 };
-/** Ответ модели на запрос содержания: карточки демо-урока, столько review и practice, сколько просит расписание. */
+const schedule = planSchedule(input.groups.length, input.durationMin);
+/** Сколько карточек по 3 минуты нужно, чтобы занять время самостоятельной работы, плюс одна в запас. */
+const cardCounts = schedule.cards.map((c) => ({
+  review: Math.ceil(c.reviewMinutes / 3),
+  practice: Math.max(3, Math.ceil(c.practiceMinutes / 3) + 1),
+}));
+/** Ответ модели на запрос содержания: карточки демо-урока по кругу, по 3 минуты, сколько нужно по времени. */
 function generated() {
-  const schedule = planSchedule(input.groups.length, input.durationMin);
   return {
     subject: demoLesson.subject, language: demoLesson.language, durationMin: demoLesson.durationMin,
     opening: "Общий настрой", closing: "Общий итог",
     groups: demoLesson.groups.map((g, i) => ({
       grade: g.grade, topic: g.topic, learningGoal: g.learningGoal, homework: g.homework, reviewTopic: "Прошлая тема",
-      cards: g.cards.map((card, k) => {
+      cards: Array.from({ length: cardCounts[i].review + cardCounts[i].practice }, (_, k) => {
+        const card = g.cards[k % g.cards.length];
         const c: Partial<typeof card> = { ...card };
         delete c.id;
-        return { ...c, answer: card.answer ?? null, purpose: k < schedule.cards[i].review ? "review" : "practice" };
+        return { ...c, answer: card.answer ?? null, minutes: 3, purpose: k < cardCounts[i].review ? "review" : "practice" };
       }),
       stages: { review: "Повторяют", explain: "Учитель объясняет", practice: "Решают карточки", check: "Учитель проверяет" },
     })),
@@ -36,10 +43,17 @@ function generated() {
 function expectLesson(plan: LessonPlan) {
   expect(validateLessonPlan(plan)).toEqual({ ok: true });
   expect(plan.groups.map((g) => g.explanation)).toEqual(demoLesson.groups.map((g) => g.explanation));
-  expect(plan.groups.map((g) => g.cards.map((c) => c.id))).toEqual([
-    ["g1-c1", "g1-c2", "g1-c3", "g1-c4", "g1-c5"], ["g2-c1", "g2-c2", "g2-c3", "g2-c4", "g2-c5"],
-  ]);
-  expect(plan.timeline.find((s) => s.groupId === "g2" && s.mode === "independent")?.cardIds).toEqual(["g2-c1", "g2-c2", "g2-c3"]);
+  expect(plan.groups.map((g) => g.cards.map((c) => c.id))).toEqual(cardCounts.map((c, i) =>
+    Array.from({ length: c.review + c.practice }, (_, k) => `g${i + 1}-c${k + 1}`)));
+  // Пока второй класс ждёт учителя, он решает свои карточки повторения.
+  expect(plan.timeline.find((s) => s.groupId === "g2" && s.mode === "independent")?.cardIds).toEqual(
+    Array.from({ length: cardCounts[1].review }, (_, k) => `g2-c${k + 1}`));
+}
+/** Ответ модели на запрос объяснения: объяснение демо-урока в формате модели (наглядные блоки черновиками). */
+function draftOf(grade: unknown) {
+  const e = demoLesson.groups.find((g) => g.grade === grade)!.explanation;
+  const example = (x: typeof e.example) => ({ ...x, visual: x.visual ? toDraft(x.visual) : null });
+  return { ...e, visuals: e.visuals.map(toDraft), example: example(e.example), examples: e.examples.map(example) };
 }
 function provider(plan: unknown, status = "completed") {
   return Response.json({ status, output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify(plan) }] }] });
@@ -67,7 +81,7 @@ function fakeModel(format: (value: unknown) => Response, plans: unknown[] = [gen
   let planCalls = 0;
   return vi.fn(async (_url: string, init: RequestInit) => {
     const { kind, data } = requestOf(init);
-    if (kind === "explain") return format(demoLesson.groups.find((g) => g.grade === data.grade)!.explanation);
+    if (kind === "explain") return format(draftOf(data.grade));
     const next = plans[Math.min(planCalls++, plans.length - 1)];
     return next instanceof Response ? next.clone() : format(next);
   });
@@ -121,10 +135,11 @@ describe("generation", () => {
     const request = requestOf(planCalls(fetch)[0][1] as RequestInit).data;
     expect(request.explanations).toEqual(demoLesson.groups.map((g, i) => ({
       group: i + 1, keyIdea: g.explanation.keyIdea, example: g.explanation.example.problem, exampleAnswer: g.explanation.example.answer,
+      alreadyUsedInExplanation: [...g.explanation.examples.map((x) => x.problem), ...g.explanation.practice.map((p) => p.task)],
     })));
   });
   it("sends validation errors on a repair attempt", async () => {
-    setup(); const broken = generated(); broken.groups[0].cards.pop(); // карточек меньше, чем просит расписание
+    setup(); const broken = generated(); broken.groups[0].cards.splice(-2); // карточек не хватит на всё время практики (TIME)
     const fetch = fakeModel(provider, [broken, generated()]); vi.stubGlobal("fetch", fetch);
     expectLesson(await generateLesson(input));
     const calls = planCalls(fetch);
@@ -133,14 +148,14 @@ describe("generation", () => {
   });
   it("repairs an explanation with a wrong calculation", async () => {
     setup();
-    const wrong = structuredClone(demoLesson.groups[0].explanation);
+    const wrong = structuredClone(draftOf(2));
     wrong.example.steps[0] = "Единицы: 6 + 8 = 15.";
     let explainCalls = 0;
     const fetch = vi.fn(async (_url: string, init: RequestInit) => {
       const { kind, data } = requestOf(init);
       if (kind === "plan") return provider(generated());
       if (data.grade === 2 && explainCalls++ === 0) return provider(wrong);
-      return provider(demoLesson.groups.find((g) => g.grade === data.grade)!.explanation);
+      return provider(draftOf(data.grade));
     });
     vi.stubGlobal("fetch", fetch);
     expectLesson(await generateLesson(input));
@@ -182,6 +197,24 @@ describe("provider choice", () => {
 });
 
 describe("gemini", () => {
+  it("sends textbook photos as images to the right class and keeps them out of the JSON text", async () => {
+    setupGemini();
+    const photo = { mimeType: "image/jpeg" as const, data: "A".repeat(200) };
+    const withPhotos = { ...input, groups: [{ ...input.groups[0], pages: "34–35", photos: [photo] }, input.groups[1]] };
+    const fetch = fakeModel(gemini); vi.stubGlobal("fetch", fetch);
+    const plan = await generateLesson(withPhotos);
+    expect(plan.groups[0].source).toEqual({ pages: "34–35", photos: 1 });
+    expect(plan.groups[1].source).toBeNull();
+    const parts = (init: unknown) => JSON.parse(String((init as RequestInit).body)).contents[0].parts as { text?: string; inlineData?: unknown }[];
+    const explain = fetch.mock.calls.filter(([, init]) => requestOf(init as RequestInit).kind === "explain");
+    const images = explain.map(([, init]) => parts(init).filter((p) => p.inlineData).length);
+    expect(images.sort()).toEqual([0, 1]); // фото уходит только в объяснение того класса, к которому приложено
+    const planParts = parts(planCalls(fetch)[0][1]);
+    expect(planParts.filter((p) => p.inlineData)).toHaveLength(1);
+    expect(planParts[0].text).not.toContain("AAAA");
+    expect(JSON.parse(planParts[0].text!).request.groups[0]).toMatchObject({ pages: "34–35", textbookPhotos: 1 });
+  });
+
   it("sends the schema Gemini understands and the key in a header, not the URL", async () => {
     setupGemini();
     const fetch = fakeModel(gemini); vi.stubGlobal("fetch", fetch);
@@ -226,7 +259,7 @@ describe("gemini", () => {
     const fetch = vi.fn(async (url: string, init: RequestInit) => {
       if (url.includes("gemini-main")) return new Response("high demand", { status: 503 });
       const { kind, data } = requestOf(init);
-      return gemini(kind === "plan" ? generated() : demoLesson.groups.find((g) => g.grade === data.grade)!.explanation);
+      return gemini(kind === "plan" ? generated() : draftOf(data.grade));
     });
     vi.stubGlobal("fetch", fetch);
     expectLesson(await generateLesson(input));

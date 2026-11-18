@@ -8,11 +8,15 @@ import { z } from "zod";
 
 export type ProviderName = "openai" | "gemini";
 
+export type ProviderImage = { label: string; mimeType: string; data: string };
+
 export type ProviderRequest = {
   instructions: string;
   input: string;
   schemaName: string;
   schema: Record<string, unknown>;
+  /** Фото страниц учебника: идут после текста запроса, у каждого подпись («Группа 1, фото 1»). */
+  images?: ProviderImage[];
 };
 
 /** Текст ответа или null, если модель не закончила (отказ, обрыв по длине, блокировка). */
@@ -23,8 +27,9 @@ export class ProviderError extends Error {
   constructor(public transient = false) { super("provider"); }
 }
 
-// Один ответ модели — до минуты; с повторами и запасной моделью укладываемся в maxDuration роута (300).
-const TIMEOUT_MS = 60_000;
+// Один ответ модели — до полутора минут (объяснение со слайдами и фото страниц пишется дольше);
+// lib/ai.ts не начинает повторы под конец, чтобы урок уложился в maxDuration роута (300 секунд).
+const TIMEOUT_MS = 90_000;
 
 /**
  * Какого провайдера использовать. AI_PROVIDER задаёт его явно; если не задан,
@@ -96,9 +101,18 @@ const OpenAIResponse = z.object({
 function openaiProvider(apiKey: string, model: string): Provider {
   return {
     name: "openai",
-    async call({ instructions, input, schemaName, schema }) {
+    async call({ instructions, input, schemaName, schema, images }) {
+      const content = images?.length
+        ? [{ role: "user", content: [
+            { type: "input_text", text: input },
+            ...images.flatMap((img) => [
+              { type: "input_text", text: img.label },
+              { type: "input_image", image_url: `data:${img.mimeType};base64,${img.data}` },
+            ]),
+          ] }]
+        : input;
       const json = await post("openai", "https://api.openai.com/v1/responses", { Authorization: `Bearer ${apiKey}` }, {
-        model, store: false, max_output_tokens: 16000, instructions, input,
+        model, store: false, max_output_tokens: 24000, instructions, input: content,
         text: { format: { type: "json_schema", name: schemaName, strict: true, schema } },
       });
       const result = OpenAIResponse.safeParse(json);
@@ -161,10 +175,14 @@ async function postGemini(apiKey: string, models: string[], body: (model: string
 function geminiProvider(apiKey: string, models: string[]): Provider {
   return {
     name: "gemini",
-    async call({ instructions, input, schema }) {
+    async call({ instructions, input, schema, images }) {
+      const parts = [
+        { text: input },
+        ...(images ?? []).flatMap((img) => [{ text: img.label }, { inlineData: { mimeType: img.mimeType, data: img.data } }]),
+      ];
       const json = await postGemini(apiKey, models, (model) => ({
         systemInstruction: { parts: [{ text: instructions }] },
-        contents: [{ role: "user", parts: [{ text: input }] }],
+        contents: [{ role: "user", parts }],
         generationConfig: {
           responseMimeType: "application/json",
           responseJsonSchema: toGeminiSchema(schema),

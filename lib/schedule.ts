@@ -18,7 +18,11 @@ export type StageKind = "opening" | "review" | "explain" | "practice" | "check" 
 
 export type PlannedSegment = { groupIndex: number; startMin: number; endMin: number; stage: StageKind };
 
-export type GroupCardPlan = { review: number; practice: number };
+/**
+ * Сколько минут класс работает сам до объяснения (повторение) и после (практика), и сколько минут
+ * у учителя на объяснение ему новой темы. Количество карточек и слайдов модель подбирает под эти минуты.
+ */
+export type GroupCardPlan = { reviewMinutes: number; practiceMinutes: number; explainMinutes: number };
 
 export type Schedule = { segments: PlannedSegment[]; cards: GroupCardPlan[] };
 
@@ -26,10 +30,10 @@ const OPENING_MIN = 5;
 const CLOSING_MIN = 5;
 /** Доля середины урока на объяснения, остальное на проверки. */
 const EXPLAIN_SHARE = 0.65;
-/** Примерно столько минут самостоятельной работы на одну карточку. */
-const MIN_PER_PRACTICE_CARD = 3.5;
-const MIN_PER_REVIEW_CARD = 4;
-const MAX_CARDS = 6;
+/** Больше карточек одному классу не даём (хватает и на сдвоенный урок в 90 минут). */
+export const MAX_CARDS = 16;
+/** По новой теме не меньше стольких карточек, даже если практики мало. */
+export const MIN_PRACTICE_CARDS = 3;
 
 /** Делит total минут на n частей, разница не больше минуты, первым достаётся больше. */
 function split(total: number, n: number): number[] {
@@ -37,7 +41,6 @@ function split(total: number, n: number): number[] {
   return Array.from({ length: n }, (_, i) => base + (i < total % n ? 1 : 0));
 }
 
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
 export function planSchedule(groupCount: number, durationMin: number): Schedule {
   const middleStart = OPENING_MIN;
@@ -72,14 +75,7 @@ export function planSchedule(groupCount: number, durationMin: number): Schedule 
   const cards = Array.from({ length: groupCount }, (_, g) => {
     const own = merged.filter((s) => s.groupIndex === g);
     const minutes = (stage: StageKind) => own.filter((s) => s.stage === stage).reduce((sum, s) => sum + s.endMin - s.startMin, 0);
-    const practiceSegments = own.filter((s) => s.stage === "practice").length;
-    const review = minutes("review") > 0 ? clamp(Math.round(minutes("review") / MIN_PER_REVIEW_CARD), 1, 3) : 0;
-    const practice = clamp(
-      Math.round(minutes("practice") / MIN_PER_PRACTICE_CARD),
-      Math.max(2, practiceSegments, 3 - review), // в каждом отрезке хотя бы одна карточка, всего не меньше трёх
-      MAX_CARDS - review,
-    );
-    return { review, practice };
+    return { reviewMinutes: minutes("review"), practiceMinutes: minutes("practice"), explainMinutes: minutes("explain") };
   });
   return { segments: merged, cards };
 }
@@ -110,36 +106,46 @@ const MODE: Record<StageKind, Segment["mode"]> = {
  * пропорционально их длине, в каждом хотя бы одна. Карточки повторения у класса без такого
  * отрезка (первый класс) уходят в начало первой практики: повторить после объяснения тоже можно.
  */
-export function assignCards(segments: PlannedSegment[], cards: Pick<TaskCard, "id" | "purpose">[]): Map<PlannedSegment, string[]> {
+export function assignCards(segments: PlannedSegment[], cards: Pick<TaskCard, "id" | "purpose" | "minutes">[]): Map<PlannedSegment, string[]> {
   const result = new Map<PlannedSegment, string[]>();
   const review = segments.find((s) => s.stage === "review");
   const practice = segments.filter((s) => s.stage === "practice");
-  const reviewIds = cards.filter((c) => c.purpose === "review").map((c) => c.id);
-  const practiceIds = cards.filter((c) => c.purpose === "practice").map((c) => c.id);
+  const reviewCards = cards.filter((c) => c.purpose === "review");
+  // Повторение без своего отрезка (у первого класса) решают в начале первой практики.
+  const practiceCards = [...(review ? [] : reviewCards), ...cards.filter((c) => c.purpose === "practice")];
+  if (review) result.set(review, reviewCards.map((c) => c.id));
+  if (practice.length === 0) return result;
 
-  if (review) result.set(review, reviewIds);
-  const counts = practice.map(() => 1);
-  for (let left = practiceIds.length - practice.length; left > 0; left--) {
-    // Следующая карточка туда, где больше всего минут на одну карточку.
-    let best = 0;
-    practice.forEach((s, i) => {
-      if ((s.endMin - s.startMin) / counts[i] > (practice[best].endMin - practice[best].startMin) / counts[best]) best = i;
-    });
-    counts[best]++;
-  }
-  let next = 0;
-  practice.forEach((s, i) => {
-    const ids = practiceIds.slice(next, next + counts[i]);
-    next += counts[i];
-    result.set(s, i === 0 && !review ? [...reviewIds, ...ids] : ids);
+  // Карточки идут по порядку и раскладываются по отрезкам практики по своим минутам:
+  // карточка попадает в тот отрезок, на который приходится её середина по времени.
+  const length = (s: PlannedSegment) => s.endMin - s.startMin;
+  const total = practice.reduce((sum, s) => sum + length(s), 0);
+  const minutes = practiceCards.map((c) => c.minutes ?? 3);
+  const workload = minutes.reduce((a, b) => a + b, 0) || 1;
+  const buckets: string[][] = practice.map(() => []);
+  let done = 0;
+  practiceCards.forEach((card, k) => {
+    const at = ((done + minutes[k] / 2) / workload) * total;
+    done += minutes[k];
+    let edge = 0;
+    const index = practice.findIndex((s) => (edge += length(s)) > at);
+    buckets[index === -1 ? practice.length - 1 : index].push(card.id);
   });
+  // В каждом отрезке практики хотя бы одна карточка: берём у соседа, у которого их больше одной.
+  buckets.forEach((bucket, i) => {
+    if (bucket.length) return;
+    const donor = [i - 1, i + 1].find((j) => (buckets[j]?.length ?? 0) > 1);
+    if (donor === undefined) return;
+    bucket.push(donor < i ? buckets[donor].pop()! : buckets[donor].shift()!);
+  });
+  practice.forEach((s, i) => result.set(s, buckets[i]));
   return result;
 }
 
 /** Готовый таймлайн: этапы → отрезки урока с режимом, текстом этапа и карточками. */
 export function buildTimeline(
   schedule: Schedule,
-  groups: { id: string; cards: Pick<TaskCard, "id" | "purpose">[]; stageText: (stage: StageKind) => string }[],
+  groups: { id: string; cards: Pick<TaskCard, "id" | "purpose" | "minutes">[]; stageText: (stage: StageKind) => string }[],
 ): Segment[] {
   const timeline: Segment[] = [];
   groups.forEach((group, g) => {

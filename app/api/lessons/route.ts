@@ -16,7 +16,8 @@ export const maxDuration = 300;
 export async function POST(request: Request) {
   const retryAfter = await checkLimit("lesson", clientIp(request));
   if (retryAfter) return limited(retryAfter);
-  const body = await readJson(request);
+  // До ~4 МБ: фото страниц учебника (по 2 на класс, сжатые в браузере). Vercel принимает тело до 4,5 МБ.
+  const body = await readJson(request, 4_200_000);
   if (body instanceof Response) return body;
   const parsed = LessonRequestSchema.safeParse(body);
   if (!parsed.success) return fail("bad_request", 400);

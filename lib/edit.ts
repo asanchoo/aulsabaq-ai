@@ -30,7 +30,7 @@ export const LessonEditSchema = z.object({
     learningGoal: text(500),
     homework: text(1000),
     explanation: ExplanationSchema,
-    cards: z.array(CardEditSchema).max(6),
+    cards: z.array(CardEditSchema).max(16),
   })).min(2).max(3),
 });
 

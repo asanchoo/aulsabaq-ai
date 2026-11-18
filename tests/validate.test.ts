@@ -4,8 +4,18 @@ import { LessonPlanSchema, type LessonPlan, type Segment } from "@/lib/schema";
 import { parseLessonPlan, validateLessonPlan } from "@/lib/validate";
 
 /** Свежая копия демо-урока: каждый тест ломает свою копию и не мешает другим. */
-function demo(): LessonPlan {
+function full(): LessonPlan {
   return LessonPlanSchema.parse(structuredClone(demoFixture));
+}
+
+/**
+ * Демо-урок без минут на карточках: так проверка времени (инвариант 10) молчит и тесты других
+ * инвариантов видят только свои ошибки. Инвариант 10 проверяется отдельно на полном демо-уроке.
+ */
+function demo(): LessonPlan {
+  const plan = full();
+  for (const card of plan.groups.flatMap((g) => g.cards)) delete card.minutes;
+  return plan;
 }
 
 function segment(plan: LessonPlan, groupId: string, startMin: number): Segment {
@@ -37,6 +47,8 @@ describe("validateLessonPlan", () => {
       // Карточки повторения этого отрезка теперь никто не решает.
       "INV-4: карточка g2-c1 группы g2 не стоит ни в одном отрезке самостоятельной работы",
       "INV-4: карточка g2-c2 группы g2 не стоит ни в одном отрезке самостоятельной работы",
+      "INV-4: карточка g2-c3 группы g2 не стоит ни в одном отрезке самостоятельной работы",
+      "INV-4: карточка g2-c4 группы g2 не стоит ни в одном отрезке самостоятельной работы",
     ]);
   });
 
@@ -113,7 +125,7 @@ describe("validateLessonPlan", () => {
     segment(plan, "g1", 15).startMin = 17;
     plan.groups[0].cards[0].answer = undefined;
 
-    expect(errorsOf(plan).map((e) => e.split(":")[0]).sort()).toEqual(["INV-1", "INV-2", "INV-4", "INV-4", "INV-5"]);
+    expect(errorsOf(plan).map((e) => e.split(":")[0]).sort()).toEqual(["INV-1", "INV-2", "INV-4", "INV-4", "INV-4", "INV-4", "INV-5"]);
   });
 });
 
@@ -138,18 +150,18 @@ describe("инвариант 7: новая тема не раньше объяс
     const plan = demo();
     // 4 класс работает сам на 5–15 мин, а учитель придёт к нему только в 15. Даём ему деление столбиком.
     // Меняем местами карточку повторения и карточку по новой теме, каждая по-прежнему в одном отрезке.
-    segment(plan, "g2", 5).cardIds = ["g2-c1", "g2-c3"];
-    segment(plan, "g2", 25).cardIds = ["g2-c2", "g2-c4", "g2-c5"];
+    segment(plan, "g2", 5).cardIds = ["g2-c1", "g2-c2", "g2-c3", "g2-c5"];
+    segment(plan, "g2", 25).cardIds = ["g2-c4", "g2-c6", "g2-c7"];
 
     expect(errorsOf(plan)).toEqual([
-      "INV-7: у группы g2 на 5–15 мин карточки по новой теме (g2-c3) до объяснения учителя (15 мин); до него можно только повторение (purpose: review)",
+      "INV-7: у группы g2 на 5–15 мин карточки по новой теме (g2-c5) до объяснения учителя (15 мин); до него можно только повторение (purpose: review)",
     ]);
   });
 
   it("разрешает повторение и после объяснения учителя", () => {
     const plan = demo();
-    segment(plan, "g2", 5).cardIds = ["g2-c1"];
-    segment(plan, "g2", 25).cardIds = ["g2-c2", "g2-c3", "g2-c4", "g2-c5"];
+    segment(plan, "g2", 5).cardIds = ["g2-c1", "g2-c2", "g2-c3"];
+    segment(plan, "g2", 25).cardIds = ["g2-c4", "g2-c5", "g2-c6", "g2-c7"];
 
     expect(errorsOf(plan)).toEqual([]);
   });
@@ -165,10 +177,10 @@ describe("инвариант 7: новая тема не раньше объяс
 
   it("ловит подсказку, в которой назван ответ", () => {
     const plan = demo();
-    plan.groups[1].cards[2].hint = "Подсказка: получится 216.";
+    plan.groups[1].cards[4].hint = "Подсказка: получится 216.";
 
     expect(errorsOf(plan)).toEqual([
-      "INV-8: подсказка карточки g2-c3 содержит ответ; подсказка должна вести к решению, не называя ответ",
+      "INV-8: подсказка карточки g2-c5 содержит ответ; подсказка должна вести к решению, не называя ответ",
     ]);
   });
 
@@ -193,9 +205,31 @@ describe("инвариант 7: новая тема не раньше объяс
 
   it("ловит карточку, которую класс так и не решает", () => {
     const plan = demo();
-    segment(plan, "g2", 25).cardIds = ["g2-c3", "g2-c4"];
+    segment(plan, "g2", 25).cardIds = ["g2-c5", "g2-c6"];
 
-    expect(errorsOf(plan)).toEqual(["INV-4: карточка g2-c5 группы g2 не стоит ни в одном отрезке самостоятельной работы"]);
+    expect(errorsOf(plan)).toEqual(["INV-4: карточка g2-c7 группы g2 не стоит ни в одном отрезке самостоятельной работы"]);
+  });
+
+  // --- Инвариант 10: заданий хватает на всё время самостоятельной работы ---
+
+  it("демо-урок: карточек хватает и на повторение, и на практику", () => {
+    expect(errorsOf(full())).toEqual([]);
+  });
+
+  it("ловит класс, которому не хватит заданий до прихода учителя", () => {
+    const plan = full();
+    for (const card of plan.groups[1].cards.filter((c) => c.purpose === "review")) card.minutes = 1;
+    expect(errorsOf(plan)).toEqual(["TIME: у группы g2 повторение длится 10 мин, а карточек review на 4 мин; добавь карточки review"]);
+  });
+
+  it("ловит нехватку практики и «долгую» карточку, которой модель закрывает время", () => {
+    const plan = full();
+    for (const card of plan.groups[0].cards) card.minutes = 2;
+    plan.groups[0].cards[6].minutes = 25;
+    const errors = errorsOf(plan).map((e) => e.split(";")[0]);
+    expect(errors).toContain("TIME: карточка g1-c7 оценена в 25 мин, для 2 класса это слишком долго");
+    plan.groups[0].cards[6].minutes = 2;
+    expect(errorsOf(plan)[0]).toMatch(/^TIME: у группы g1 самостоятельная практика длится 18 мин, а карточек practice на 14 мин/);
   });
 
   // --- Арифметика (инвариант 9 и EXP) ---

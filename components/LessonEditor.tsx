@@ -6,8 +6,8 @@ import { toEdit, type EditIssue, type LessonEdit } from "@/lib/edit";
 import { t, type Dict } from "@/lib/i18n";
 import type { LessonPlan } from "@/lib/schema";
 
-type ListField = "steps" | "mistakes" | "checkQuestions";
-const LIST_LIMITS: Record<ListField | "exampleSteps", [number, number]> = { steps: [2, 6], mistakes: [1, 3], checkQuestions: [2, 4], exampleSteps: [2, 6] };
+type ListField = "steps" | "mistakes" | "checkQuestions" | "summary";
+const LIST_LIMITS: Record<ListField | "exampleSteps", [number, number]> = { steps: [2, 8], mistakes: [1, 4], checkQuestions: [2, 4], summary: [0, 6], exampleSteps: [2, 8] };
 
 const lines = (value: string) => value.split("\n");
 const filled = (items: string[]) => items.map((s) => s.trim()).filter(Boolean);
@@ -54,17 +54,17 @@ export function LessonEditor({ lessonId, token, plan, dict, onClose }: {
     const errors: string[] = [];
     const groups = edit.groups.map((g) => {
       const e = g.explanation;
-      const lists = { steps: filled(e.steps), mistakes: filled(e.mistakes), checkQuestions: filled(e.checkQuestions), exampleSteps: filled(e.example.steps) };
+      const lists = { steps: filled(e.steps), mistakes: filled(e.mistakes), checkQuestions: filled(e.checkQuestions), summary: filled(e.summary), exampleSteps: filled(e.example.steps) };
       for (const [field, items] of Object.entries(lists) as [keyof typeof LIST_LIMITS, string[]][]) {
         const [min, max] = LIST_LIMITS[field];
         if (items.length < min || items.length > max) {
-          const label = field === "exampleSteps" ? d.exampleSteps : field === "checkQuestions" ? d.questions : d[field];
+          const label = field === "exampleSteps" ? d.exampleSteps : field === "checkQuestions" ? d.questions : field === "summary" ? d.summary : d[field];
           errors.push(`${label}: ${t(d.lines, { min, max, n: items.length })}`);
         }
       }
       return {
         ...g,
-        explanation: { ...e, steps: lists.steps, mistakes: lists.mistakes, checkQuestions: lists.checkQuestions, example: { ...e.example, steps: lists.exampleSteps } },
+        explanation: { ...e, steps: lists.steps, mistakes: lists.mistakes, checkQuestions: lists.checkQuestions, summary: lists.summary, example: { ...e.example, steps: lists.exampleSteps } },
       };
     });
     return { value: { ...edit, groups }, errors };
@@ -138,12 +138,14 @@ export function LessonEditor({ lessonId, token, plan, dict, onClose }: {
               <div className="grid gap-4 rounded-card bg-surface p-4 sm:p-5">
                 <h3 className="font-semibold">{dict.lesson.explainTitle}</h3>
                 <Field id={`${g.id}-hook`} label={d.hook} value={e.hook} onChange={(v) => setExplanation(gi, { hook: v })} rows={2} />
+                <Field id={`${g.id}-intuition`} label={d.intuition} value={e.intuition} onChange={(v) => setExplanation(gi, { intuition: v })} rows={3} />
                 <Field id={`${g.id}-key`} label={d.keyIdea} value={e.keyIdea} onChange={(v) => setExplanation(gi, { keyIdea: v })} rows={2} />
                 <Field id={`${g.id}-steps`} label={d.steps} value={e.steps.join("\n")} onChange={(v) => setExplanation(gi, { steps: lines(v) })} rows={4} />
                 <Field id={`${g.id}-ex`} label={d.exampleProblem} value={e.example.problem} onChange={(v) => setExplanation(gi, { example: { ...e.example, problem: v } })} rows={2} />
                 <Field id={`${g.id}-exs`} label={d.exampleSteps} value={e.example.steps.join("\n")} onChange={(v) => setExplanation(gi, { example: { ...e.example, steps: lines(v) } })} rows={4} />
                 <Field id={`${g.id}-exa`} label={d.exampleAnswer} value={e.example.answer} onChange={(v) => setExplanation(gi, { example: { ...e.example, answer: v } })} />
                 <Field id={`${g.id}-mis`} label={d.mistakes} value={e.mistakes.join("\n")} onChange={(v) => setExplanation(gi, { mistakes: lines(v) })} rows={3} />
+                <Field id={`${g.id}-sum`} label={d.summary} value={e.summary.join("\n")} onChange={(v) => setExplanation(gi, { summary: lines(v) })} rows={4} />
                 <Field id={`${g.id}-q`} label={d.questions} value={e.checkQuestions.join("\n")} onChange={(v) => setExplanation(gi, { checkQuestions: lines(v) })} rows={3} />
               </div>
 

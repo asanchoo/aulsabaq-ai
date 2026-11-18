@@ -70,7 +70,7 @@ export function LessonView({ plan, lang, dict, badge, notice, workspace }: { pla
         </h2>
         <p className="mt-1 max-w-2xl text-[0.9rem] text-muted">{dict.lesson.explainLead}</p>
         <div className="mt-6">
-          <TopicExplanation groups={plan.groups} dict={dict} />
+          <TopicExplanation groups={plan.groups} dict={dict} lang={lang} />
         </div>
       </section>
 

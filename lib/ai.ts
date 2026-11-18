@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { contentToLesson, GeneratedContentSchema, type LessonRequest } from "./generation-schema";
+import { contentToLesson, GeneratedContentSchema, GeneratedExplanationSchema, requestForModel, type LessonRequest } from "./generation-schema";
 import { cardInstructions, explanationInstructions, hintInstructions, lessonInstructions } from "./prompts";
-import { ProviderError, resolveProvider, type Provider } from "./providers";
+import { ProviderError, resolveProvider, type Provider, type ProviderImage } from "./providers";
 import { planSchedule } from "./schedule";
-import { checkSingleCard, hintRevealsAnswer, parseExplanation, validateLessonPlan } from "./validate";
+import { checkSingleCard, hintRevealsAnswer, maxCardMinutes, parseExplanation, validateLessonPlan } from "./validate";
 import { findMixedScriptWord } from "./arithmetic";
-import { ExplanationSchema, TaskCardSchema, type Explanation, type LessonCore, type LessonPlan, type TaskCard } from "./schema";
+import { TaskCardSchema, type Explanation, type LessonCore, type LessonPlan, type TaskCard } from "./schema";
 
 /**
  * Генерация урока: не зависит от того, какая модель отвечает.
@@ -45,19 +45,25 @@ type Job<T> = {
   schema: Record<string, unknown>;
   check: (value: unknown) => Checked<T>;
   attempts: number;
+  /** Фото страниц учебника для модели. */
+  images?: ProviderImage[];
+  /** После стольких миллисекунд от начала урока повторную попытку не начинаем. */
+  noRetryAfterMs?: number;
 };
 
 /**
  * После этого времени новую попытку не начинаем: роут живёт не дольше 300 секунд (maxDuration),
- * а одна попытка может занять до 100 (таймаут в providers.ts).
+ * а одна попытка может занять до 90 (таймаут в providers.ts). Объяснения идут первыми, поэтому
+ * их повторы обрываем раньше: после них ещё должно уложиться содержание урока.
  */
 const NO_NEW_ATTEMPT_AFTER_MS = 170_000;
+const EXPLANATION_NO_RETRY_AFTER_MS = 100_000;
 
 /** Запрос к модели с проверкой ответа; при ошибке отправляем модели список нарушений и просим исправить. */
 async function generateChecked<T>(provider: Provider, job: Job<T>, startedAt: number): Promise<T> {
   let feedback: string[] = [];
   for (let attempt = 0; attempt < job.attempts; attempt++) {
-    if (attempt > 0 && Date.now() - startedAt > NO_NEW_ATTEMPT_AFTER_MS) break;
+    if (attempt > 0 && Date.now() - startedAt > (job.noRetryAfterMs ?? NO_NEW_ATTEMPT_AFTER_MS)) break;
     let text: string | null;
     try {
       text = await provider.call({
@@ -65,6 +71,7 @@ async function generateChecked<T>(provider: Provider, job: Job<T>, startedAt: nu
         input: JSON.stringify({ ...job.request, validationErrors: feedback }),
         schemaName: job.schemaName,
         schema: job.schema,
+        images: job.images,
       });
     } catch (error) {
       if (error instanceof ProviderError) throw new GenerationError("provider");
@@ -83,7 +90,16 @@ async function generateChecked<T>(provider: Provider, job: Job<T>, startedAt: nu
 }
 
 const contentSchema = () => z.toJSONSchema(GeneratedContentSchema, { target: "draft-7" }) as Record<string, unknown>;
-const explanationSchema = () => z.toJSONSchema(ExplanationSchema, { target: "draft-7" }) as Record<string, unknown>;
+const explanationSchema = () => z.toJSONSchema(GeneratedExplanationSchema, { target: "draft-7" }) as Record<string, unknown>;
+
+/** Фото страниц учебника с подписями, чтобы модель знала, к какому классу какое фото. */
+function photosOf(input: LessonRequest, only?: number): ProviderImage[] {
+  return input.groups.flatMap((g, i) => (only !== undefined && only !== i ? [] : (g.photos ?? []).map((p, k) => ({
+    label: `Фото учебника: группа ${i + 1} (${g.grade} класс), фото ${k + 1}${g.pages ? `, страницы ${g.pages}` : ""}`,
+    mimeType: p.mimeType,
+    data: p.data,
+  }))));
+}
 
 function planJob(input: LessonRequest, explanations: Explanation[]): Job<LessonCore> {
   const schedule = planSchedule(input.groups.length, input.durationMin);
@@ -91,11 +107,19 @@ function planJob(input: LessonRequest, explanations: Explanation[]): Job<LessonC
     name: "plan",
     instructions: lessonInstructions(input.language),
     request: {
-      request: input,
-      cardPlan: schedule.cards.map((c, i) => ({ group: i + 1, grade: input.groups[i].grade, review: c.review, practice: c.practice })),
+      request: requestForModel(input),
+      // Сколько минут каждый класс работает сам: карточек должно хватить на это время, с запасом.
+      cardPlan: schedule.cards.map((c, i) => ({
+        group: i + 1, grade: input.groups[i].grade, reviewMinutes: c.reviewMinutes, practiceMinutes: c.practiceMinutes,
+        maxMinutesPerCard: maxCardMinutes(input.groups[i].grade),
+      })),
       // Чтобы этап «с учителем» шёл по готовому объяснению, а карточки не повторяли разобранный пример.
-      explanations: explanations.map((e, i) => ({ group: i + 1, keyIdea: e.keyIdea, example: e.example.problem, exampleAnswer: e.example.answer })),
+      explanations: explanations.map((e, i) => ({
+        group: i + 1, keyIdea: e.keyIdea, example: e.example.problem, exampleAnswer: e.example.answer,
+        alreadyUsedInExplanation: [...e.examples.map((x) => x.problem), ...e.practice.map((p) => p.task)],
+      })),
     },
+    images: photosOf(input),
     schemaName: "lesson_content",
     schema: contentSchema(),
     check: (value) => {
@@ -115,14 +139,21 @@ function planJob(input: LessonRequest, explanations: Explanation[]): Job<LessonC
 
 function explanationJob(input: LessonRequest, index: number): Job<Explanation> {
   const group = input.groups[index];
+  const explainMinutes = planSchedule(input.groups.length, input.durationMin).cards[index].explainMinutes;
   return {
     name: `explain-g${index + 1}`,
     instructions: explanationInstructions(input.language),
-    request: { subject: input.subject, language: input.language, grade: group.grade, topic: group.topic, notes: group.notes ?? null },
+    request: {
+      subject: input.subject, language: input.language, grade: group.grade, topic: group.topic,
+      notes: group.notes ?? null, pages: group.pages ?? null, textbookPhotos: group.photos?.length ?? 0,
+      explainMinutes,
+    },
     schemaName: "topic_explanation",
     schema: explanationSchema(),
     check: parseExplanation,
     attempts: 3,
+    images: photosOf(input, index),
+    noRetryAfterMs: EXPLANATION_NO_RETRY_AFTER_MS,
   };
 }
 
@@ -135,10 +166,14 @@ export async function generateLesson(input: LessonRequest): Promise<LessonPlan> 
   const core = await generateChecked(provider, planJob(input, explanations), startedAt);
   return {
     ...core,
-    groups: core.groups.map((g, i) => ({
-      id: g.id, grade: g.grade, topic: g.topic, learningGoal: g.learningGoal,
-      explanation: explanations[i], cards: g.cards, homework: g.homework,
-    })),
+    groups: core.groups.map((g, i) => {
+      const asked = input.groups[i];
+      const source = asked.pages || asked.photos?.length ? { pages: asked.pages || null, photos: asked.photos?.length ?? 0 } : null;
+      return {
+        id: g.id, grade: g.grade, topic: g.topic, learningGoal: g.learningGoal,
+        explanation: explanations[i], cards: g.cards, homework: g.homework, source,
+      };
+    }),
   };
 }
 
@@ -205,7 +240,7 @@ export async function generateHint(req: HintRequest): Promise<string | null> {
 // ---------------------------------------------------------------------------
 // Замена одной карточки по просьбе учителя
 
-const NewCardSchema = TaskCardSchema.omit({ id: true }).extend({ answer: z.string().nullable() });
+const NewCardSchema = TaskCardSchema.omit({ id: true }).extend({ answer: z.string().nullable(), minutes: z.number().int().min(1).max(20) });
 
 export async function regenerateCard(plan: LessonPlan, groupId: string, cardId: string, wish: string | undefined): Promise<TaskCard> {
   const provider = resolveProvider();
@@ -218,7 +253,7 @@ export async function regenerateCard(plan: LessonPlan, groupId: string, cardId: 
     instructions: cardInstructions(plan.language),
     request: {
       subject: plan.subject, language: plan.language, grade: group.grade, topic: group.topic,
-      purpose: old.purpose, type: old.type, difficulty: old.difficulty,
+      purpose: old.purpose, type: old.type, difficulty: old.difficulty, minutes: old.minutes ?? null,
       currentCard: { prompt: old.prompt, answer: old.answer ?? null },
       otherCards: group.cards.filter((c) => c.id !== cardId).map((c) => c.prompt),
       example: group.explanation.example.problem,

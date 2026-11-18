@@ -93,10 +93,16 @@ export function lessonToText(plan: LessonPlan, dict: Dict): string {
       "",
       `${dict.lesson.explainTitle} — ${t(dict.common.grade, { n: g.grade })}: ${g.topic}`,
       `${ex.hook}: ${e.hook}`,
+      ...(e.intuition ? [`${ex.intuition}: ${e.intuition}`] : []),
+      ...(e.terms.length ? [`${ex.terms}:`, ...e.terms.map((x) => `  • ${x.term}: ${x.meaning}`)] : []),
       `${ex.keyIdea}: ${e.keyIdea}`,
       `${ex.steps}:`, ...numbered(e.steps),
-      `${ex.example}: ${e.example.problem}`, ...numbered(e.example.steps), `  ${dict.lesson.answer}: ${e.example.answer}`,
+      ...[e.example, ...e.examples].flatMap((x, i) => [
+        `${t(ex.examples, { n: i + 1 })}${x.level ? ` (${ex.levels[x.level]})` : ""}: ${x.problem}`, ...numbered(x.steps), `  ${dict.lesson.answer}: ${x.answer}`,
+      ]),
+      ...(e.practice.length ? [`${ex.practice}:`, ...e.practice.map((p, i) => `  ${i + 1}. ${p.task} (${dict.lesson.answer}: ${p.answer})`)] : []),
       `${ex.mistakes}:`, ...bullets(e.mistakes),
+      ...(e.summary.length ? [`${ex.summary}:`, ...bullets(e.summary)] : []),
       `${ex.checkQuestions}:`, ...bullets(e.checkQuestions),
     );
   }
@@ -104,7 +110,8 @@ export function lessonToText(plan: LessonPlan, dict: Dict): string {
   for (const g of plan.groups) {
     lines.push("", `${dict.lesson.cardsTitle} — ${t(dict.common.grade, { n: g.grade })}`);
     g.cards.forEach((c, i) => {
-      lines.push(`${t(dict.common.card, { n: i + 1 })} (${dict.lesson.purpose[c.purpose]}). ${c.prompt}`);
+      const time = c.minutes ? `, ${t(dict.lesson.cardMinutes, { n: c.minutes })}` : "";
+      lines.push(`${t(dict.common.card, { n: i + 1 })} (${dict.lesson.purpose[c.purpose]}${time}). ${c.prompt}`);
       lines.push(`   ${dict.lesson.hint}: ${c.hint}`);
       if (c.answer) lines.push(`   ${dict.lesson.answer}: ${c.answer}`);
     });

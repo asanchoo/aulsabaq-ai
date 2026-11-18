@@ -33,6 +33,7 @@ export function TaskCards({ groups, dict }: { groups: Group[]; dict: Dict }) {
                   <span className="font-mono text-[0.78rem] font-medium text-muted">
                     {t(dict.common.card, { n: i + 1 })}
                     <span className="print:hidden"> · {t(dict.common.gradeShort, { n: g.grade })}</span>
+                    {card.minutes && <span className="tabular"> · {t(dict.lesson.cardMinutes, { n: card.minutes })}</span>}
                   </span>
                   <span className="flex items-center gap-3">
                     <span
