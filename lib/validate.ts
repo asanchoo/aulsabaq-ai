@@ -336,6 +336,21 @@ function checkCardOrder(plan: LessonCore, byGroup: Map<string, Segment[]>, error
  */
 export const maxCardMinutes = (grade: number) => (grade <= 4 ? 10 : 15);
 
+/**
+ * Темп: примерно столько минут в среднем уходит на одну карточку. Оценку минут модель может завысить
+ * («сложить 36 и 18 — 5 минут»), а число карточек она не завысит: по темпу код считает, сколько карточек
+ * нужно не меньше, и передаёт это число модели готовым.
+ */
+export const cardPace = (grade: number) => (grade <= 4 ? 4 : 6);
+
+/** Сколько карточек нужно не меньше: на всё время по темпу, у практики ещё одна в запас. */
+export function minCards(grade: number, reviewMinutes: number, practiceMinutes: number) {
+  return {
+    review: reviewMinutes > 0 ? Math.max(1, Math.ceil((reviewMinutes * 0.9) / cardPace(grade))) : 0,
+    practice: Math.max(3, Math.ceil(practiceMinutes / cardPace(grade)) + 1),
+  };
+}
+
 function checkTiming(plan: LessonCore, byGroup: Map<string, Segment[]>, errors: string[]) {
   for (const group of plan.groups) {
     if (!group.cards.every((c) => typeof c.minutes === "number")) continue;
@@ -347,6 +362,16 @@ function checkTiming(plan: LessonCore, byGroup: Map<string, Segment[]>, errors: 
     const sum = (purpose: string) => group.cards.filter((c) => c.purpose === purpose).reduce((n, c) => n + (c.minutes ?? 0), 0);
     const review = reviewTime > 0 ? sum("review") : 0;
     const practice = sum("practice") + (reviewTime > 0 ? 0 : sum("review"));
+    const count = (purpose: string) => group.cards.filter((c) => c.purpose === purpose).length;
+    const need = minCards(group.grade, reviewTime, practiceTime);
+    const reviewCount = reviewTime > 0 ? count("review") : 0;
+    const practiceCount = count("practice") + (reviewTime > 0 ? 0 : count("review"));
+    if (reviewCount < need.review) {
+      errors.push(`TIME: у группы ${group.id} на ${reviewTime} мин повторения нужно не меньше ${need.review} карточек review, а их ${reviewCount}; добавь ${need.review - reviewCount}`);
+    }
+    if (practiceCount < need.practice) {
+      errors.push(`TIME: у группы ${group.id} на ${practiceTime} мин практики нужно не меньше ${need.practice} карточек practice (с запасом), а их ${practiceCount}; добавь ${need.practice - practiceCount}`);
+    }
     if (reviewTime > 0 && review < reviewTime * 0.9) {
       errors.push(`TIME: у группы ${group.id} повторение длится ${reviewTime} мин, а карточек review на ${review} мин; добавь карточки review`);
     }

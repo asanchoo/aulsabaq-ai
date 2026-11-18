@@ -3,7 +3,7 @@ import { contentToLesson, GeneratedContentSchema, GeneratedExplanationSchema, re
 import { cardInstructions, explanationInstructions, hintInstructions, lessonInstructions } from "./prompts";
 import { ProviderError, resolveProvider, type Provider, type ProviderImage } from "./providers";
 import { planSchedule } from "./schedule";
-import { checkSingleCard, hintRevealsAnswer, maxCardMinutes, parseExplanation, validateLessonPlan } from "./validate";
+import { checkSingleCard, hintRevealsAnswer, maxCardMinutes, minCards, parseExplanation, validateLessonPlan } from "./validate";
 import { findMixedScriptWord } from "./arithmetic";
 import { TaskCardSchema, type Explanation, type LessonCore, type LessonPlan, type TaskCard } from "./schema";
 
@@ -83,8 +83,10 @@ async function generateChecked<T>(provider: Provider, job: Job<T>, startedAt: nu
       if (result.ok) return result.plan;
       feedback = result.errors;
     } catch { feedback = ["Return a complete JSON object matching the required schema."]; }
-    // Только коды проверок (INV-1, EXP, REQUEST…), без текста урока.
-    console.warn(`[ai] ${provider.name} ${job.name}: attempt ${attempt + 1} rejected: ${feedback.map((e) => e.split(":")[0]).join(", ")}`);
+    // Коды проверок (INV-1, EXP…) без текста урока; ошибки времени и количества карточек целиком:
+    // в них только номера групп, карточек и минуты.
+    const logged = feedback.map((e) => (/^(TIME|CARDS|SCHEMA):/.test(e) ? e.slice(0, 200) : e.split(":")[0]));
+    console.warn(`[ai] ${provider.name} ${job.name}: attempt ${attempt + 1} rejected: ${logged.join(" | ")}`);
   }
   throw new GenerationError("invalid_plan");
 }
@@ -109,10 +111,14 @@ function planJob(input: LessonRequest, explanations: Explanation[]): Job<LessonC
     request: {
       request: requestForModel(input),
       // Сколько минут каждый класс работает сам: карточек должно хватить на это время, с запасом.
-      cardPlan: schedule.cards.map((c, i) => ({
-        group: i + 1, grade: input.groups[i].grade, reviewMinutes: c.reviewMinutes, practiceMinutes: c.practiceMinutes,
-        maxMinutesPerCard: maxCardMinutes(input.groups[i].grade),
-      })),
+      cardPlan: schedule.cards.map((c, i) => {
+        const grade = input.groups[i].grade;
+        const need = minCards(grade, c.reviewMinutes, c.practiceMinutes);
+        return {
+          group: i + 1, grade, reviewMinutes: c.reviewMinutes, practiceMinutes: c.practiceMinutes,
+          minReviewCards: need.review, minPracticeCards: need.practice, maxMinutesPerCard: maxCardMinutes(grade),
+        };
+      }),
       // Чтобы этап «с учителем» шёл по готовому объяснению, а карточки не повторяли разобранный пример.
       explanations: explanations.map((e, i) => ({
         group: i + 1, keyIdea: e.keyIdea, example: e.example.problem, exampleAnswer: e.example.answer,

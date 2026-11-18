@@ -1,15 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { buildTimeline, planSchedule } from "@/lib/schedule";
 import type { LessonCore, TaskCard } from "@/lib/schema";
-import { validateLessonPlan } from "@/lib/validate";
+import { minCards, validateLessonPlan } from "@/lib/validate";
 
 /** Урок с карточками по 3 минуты: сколько нужно, чтобы занять всё время самостоятельной работы, и одна в запас. */
 function lessonFor(groupCount: number, durationMin: number): LessonCore {
   const schedule = planSchedule(groupCount, durationMin);
   const groups = schedule.cards.map((plan, g) => {
     // Не больше 16 карточек: на длинном уроке карточки длиннее, как и сделал бы учитель.
-    const review = Math.ceil(plan.reviewMinutes / 5);
-    const practice = Math.min(16 - review, Math.max(3, Math.ceil(plan.practiceMinutes / 4) + 1));
+    const need = minCards(g + 2, plan.reviewMinutes, plan.practiceMinutes);
+    const review = need.review;
+    const practice = need.practice;
     // Повторение ровно на своё время, практика с одной карточкой в запас.
     const minutes = (time: number, count: number) => Math.max(3, Math.ceil(time / Math.max(1, count)));
     const cards: TaskCard[] = [...Array(review).fill("review"), ...Array(practice).fill("practice")].map((purpose, i) => ({

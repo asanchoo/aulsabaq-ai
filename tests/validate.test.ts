@@ -222,6 +222,18 @@ describe("инвариант 7: новая тема не раньше объяс
     expect(errorsOf(plan)).toEqual(["TIME: у группы g2 повторение длится 10 мин, а карточек review на 4 мин; добавь карточки review"]);
   });
 
+  it("не даёт закрыть время завышенными минутами: карточек должно быть не меньше, чем по темпу", () => {
+    const plan = full();
+    // 4 карточки по 5 минут дают 20 минут на 18 минут практики, но «сложить два числа за 5 минут» — завышено.
+    plan.groups[0].cards = plan.groups[0].cards.slice(0, 4).map((c) => ({ ...c, minutes: 5 }));
+    for (const seg of plan.timeline.filter((s) => s.groupId === "g1" && s.mode === "independent")) {
+      seg.cardIds = seg.startMin === 15 ? ["g1-c1", "g1-c2"] : ["g1-c3", "g1-c4"];
+    }
+    expect(errorsOf(plan)).toEqual([
+      "TIME: у группы g1 на 18 мин практики нужно не меньше 6 карточек practice (с запасом), а их 4; добавь 2",
+    ]);
+  });
+
   it("ловит нехватку практики и «долгую» карточку, которой модель закрывает время", () => {
     const plan = full();
     for (const card of plan.groups[0].cards) card.minutes = 2;
