@@ -2,6 +2,7 @@ import { ExplanationSlides } from "./ExplanationSlides";
 import { t, type Dict, type Locale } from "@/lib/i18n";
 import type { Group, WorkedExample } from "@/lib/schema";
 import { Visual } from "./Visual";
+import { isMathOnly } from "@/lib/lesson";
 
 /**
  * Объяснение новой темы для каждого класса: то, что учитель говорит и показывает
@@ -114,7 +115,7 @@ function Example({ example: x, title, dict }: { example: WorkedExample; title: s
   return (
     <div className="rounded-card bg-surface p-5">
       <h4 className="text-[0.82rem] font-semibold tracking-[0.02em] text-muted uppercase">{title}</h4>
-      <p className="tabular mt-2 font-mono text-[1.3rem] font-medium">{x.problem}</p>
+      <p className={`tabular mt-2 font-medium ${isMathOnly(x.problem) ? "font-mono text-[1.3rem]" : "text-[1.1rem] leading-snug"}`}>{x.problem}</p>
       <div className="mt-3">
         <Numbered items={x.steps} />
       </div>

@@ -1,4 +1,4 @@
-import { findMixedScriptWord, findWrongEquation } from "./arithmetic";
+import { findMixedScriptWord, findWrongEquation, prettyMathDeep } from "./arithmetic";
 import { GeneratedExplanationSchema, type GeneratedExplanation } from "./generation-schema";
 import { columnResult, toVisual, visualTexts, type Visual, type VisualDraft } from "./visuals";
 import { ExplanationSchema, LessonPlanSchema, type Explanation, type LessonCore, type LessonPlan, type Segment, type TaskCard } from "./schema";
@@ -69,7 +69,7 @@ export function parseLessonPlan(input: unknown): Parsed<LessonPlan> {
  * просим модель исправить: наглядность — главное в объяснении.
  */
 export function parseExplanation(input: unknown): Parsed<Explanation> {
-  const parsed = GeneratedExplanationSchema.safeParse(input);
+  const parsed = GeneratedExplanationSchema.safeParse(prettyMathDeep(input));
   if (!parsed.success) return { ok: false, errors: schemaErrors(parsed.error.issues) };
   const g = parsed.data;
   const rejected: string[] = [];

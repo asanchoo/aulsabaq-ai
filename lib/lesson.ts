@@ -121,3 +121,8 @@ export function lessonToText(plan: LessonPlan, dict: Dict): string {
   if (plan.teacherNotes) lines.push("", `${dict.lesson.notesTitle}:`, plan.teacherNotes);
   return lines.join("\n");
 }
+
+/** Пример без слов («756 : 3», «x² − 4x + 3») показываем моноширинным шрифтом, задачу со словами — обычным. */
+export function isMathOnly(text: string): boolean {
+  return !/\p{L}{3,}/u.test(text);
+}

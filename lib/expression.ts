@@ -19,8 +19,7 @@ function tokenize(raw: string): string[] | null {
     .replace(/[−–]/g, "-")
     .replace(/[×·]/g, "*")
     .replace(/÷/g, "/")
-    .replace(/²/g, "^2")
-    .replace(/³/g, "^3")
+    .replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, (sup) => `^${[...sup].map((c) => "⁰¹²³⁴⁵⁶⁷⁸⁹".indexOf(c)).join("")}`)
     .replace(/√/g, "sqrt ")
     .replace(/π/g, "pi")
     .replace(/,/g, ".");

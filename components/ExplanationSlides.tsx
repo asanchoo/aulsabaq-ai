@@ -4,6 +4,7 @@ import { useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { getDict, t, type Locale } from "@/lib/i18n";
 import type { Explanation, WorkedExample } from "@/lib/schema";
 import { Visual } from "./Visual";
+import { isMathOnly } from "@/lib/lesson";
 
 type Props = { explanation: Explanation; grade: string; topic: string; lang: Locale };
 
@@ -35,7 +36,7 @@ export function ExplanationSlides({ explanation: e, grade, topic, lang }: Props)
     render: (n) => (
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
         <div className="min-w-0">
-          <p className="tabular font-mono text-[clamp(1.8rem,4.6vw,3.6rem)] leading-tight font-medium">{x.problem}</p>
+          <p className={`tabular leading-tight font-medium ${isMathOnly(x.problem) ? "font-mono text-[clamp(1.8rem,4.6vw,3.6rem)]" : "text-[clamp(1.4rem,3vw,2.4rem)] tracking-[-0.01em]"}`}>{x.problem}</p>
           <ol className="mt-6 grid gap-3">
             {x.steps.slice(0, n).map((step, i) => (
               <li key={i} className="pop flex gap-4 text-[clamp(1.1rem,2.1vw,1.6rem)] leading-[1.35]">

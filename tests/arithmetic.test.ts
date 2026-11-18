@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { findMixedScriptWord, findWrongEquation } from "@/lib/arithmetic";
+import { findMixedScriptWord, findWrongEquation, prettyMath } from "@/lib/arithmetic";
+import { compileExpression } from "@/lib/expression";
 
 describe("findWrongEquation", () => {
   it("находит неверное равенство и пропускает верные", () => {
@@ -54,5 +55,22 @@ describe("алгебра: хвосты выражений не пересчит�
     expect(findWrongEquation("Единицы: 8 + 14 = 14")).toBe("8 + 14 = 14");
     expect(findWrongEquation("Вычисли: 45 − 17 = 27")).toBe("45 − 17 = 27");
     expect(findWrongEquation("Осталось 16 − 12 = 5 мест")).toBe("16 − 12 = 5");
+  });
+});
+
+describe("prettyMath: школьная запись формул", () => {
+  it("степени и умножение как в тетради", () => {
+    expect(prettyMath("f(x) = 3*x^2 + 2")).toBe("f(x) = 3·x² + 2");
+    expect(prettyMath("F(x) = x^3, F(3) - F(1) = 3^3 - 1^3")).toBe("F(x) = x³, F(3) - F(1) = 3³ - 1³");
+    expect(prettyMath("(x + 1)^2")).toBe("(x + 1)²");
+    expect(prettyMath("x^10")).toBe("x¹⁰");
+  });
+  it("не трогает обычный текст и звёздочку без чисел", () => {
+    expect(prettyMath("Вычисли: 7 × 8")).toBe("Вычисли: 7 × 8");
+    expect(prettyMath("* Задание со звёздочкой")).toBe("* Задание со звёздочкой");
+  });
+  it("после замены график по-прежнему строится, а равенство проверяется", () => {
+    expect(compileExpression(prettyMath("3*x^2"))?.(2)).toBe(12);
+    expect(findWrongEquation(prettyMath("Осталось 3^2 = 9"))).toBeNull();
   });
 });

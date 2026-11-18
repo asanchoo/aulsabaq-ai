@@ -31,6 +31,12 @@ describe("checkAnswer", () => {
     expect(checkAnswer("кошка", "корова")).toBe(false);
   });
 
+  it("степени: ученик набирает x^2, в эталоне x²", () => {
+    expect(checkAnswer("x^2 + 1", "x² + 1")).toBe(true);
+    expect(checkAnswer("3*x^2", "3·x²")).toBe(true);
+    expect(checkAnswer("x^3", "x²")).toBe(false);
+  });
+
   it("варианты и перечисления", () => {
     expect(checkAnswer("тетрадь", "тетрадь / тетради")).toBe(true);
     expect(checkAnswer("собака, кот", "кот, собака")).toBe(true);

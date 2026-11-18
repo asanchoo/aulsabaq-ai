@@ -17,6 +17,9 @@ function clean(text: string): string {
   return text
     .toLowerCase()
     .replace(/ё/g, "е")
+    // Ученик на телефоне набирает «x^2», в эталоне «x²»: приводим к одной записи.
+    .replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, (sup) => `^${[...sup].map((c) => "⁰¹²³⁴⁵⁶⁷⁸⁹".indexOf(c)).join("")}`)
+    .replace(/[·×*]/g, "*")
     .replace(/[−–—]/g, "-")
     // «1 200» и «1 200» — одно число
     .replace(/(\d)[\s  ](?=\d{3}(?!\d))/g, "$1")

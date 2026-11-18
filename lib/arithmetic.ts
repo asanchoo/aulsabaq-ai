@@ -80,3 +80,26 @@ export function findMixedScriptWord(text: string): string | null {
   }
   return null;
 }
+
+const SUPERSCRIPT: Record<string, string> = { "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹" };
+
+/**
+ * Школьная запись формул: модель пишет как программист («3*x^2»), а в тетради и на доске «3·x²».
+ * Применяется ко всему тексту урока при приёме ответа модели (lib/validate.ts, lib/generation-schema.ts).
+ * Формулу графика это не ломает: lib/expression.ts понимает и «x²», и «·».
+ */
+export function prettyMath(text: string): string {
+  return text
+    .replace(/(?<=[\p{L}\d)])\^(\d{1,3})(?!\d)/gu, (_, d: string) => d.split("").map((c) => SUPERSCRIPT[c]).join(""))
+    .replace(/(?<=[\p{L}\d)²³¹⁰⁴-⁹])\s*\*\s*(?=[\p{L}\d(√])/gu, "·");
+}
+
+/** Применяет prettyMath ко всем строкам в ответе модели (объекты и массивы любой вложенности). */
+export function prettyMathDeep<T>(value: T): T {
+  if (typeof value === "string") return prettyMath(value) as T;
+  if (Array.isArray(value)) return value.map(prettyMathDeep) as T;
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, prettyMathDeep(v)])) as T;
+  }
+  return value;
+}

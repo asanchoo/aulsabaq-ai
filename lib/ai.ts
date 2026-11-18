@@ -4,7 +4,7 @@ import { cardInstructions, explanationInstructions, hintInstructions, lessonInst
 import { ProviderError, resolveProvider, type Provider, type ProviderImage } from "./providers";
 import { planSchedule } from "./schedule";
 import { checkSingleCard, hintRevealsAnswer, maxCardMinutes, minCards, parseExplanation, validateLessonPlan } from "./validate";
-import { findMixedScriptWord } from "./arithmetic";
+import { findMixedScriptWord, prettyMathDeep } from "./arithmetic";
 import { TaskCardSchema, type Explanation, type LessonCore, type LessonPlan, type TaskCard } from "./schema";
 
 /**
@@ -150,7 +150,7 @@ function planJob(input: LessonRequest, explanations: Explanation[]): Job<LessonC
     schemaName: "lesson_content",
     schema: contentSchema(),
     check: (value) => {
-      const content = GeneratedContentSchema.safeParse(value);
+      const content = GeneratedContentSchema.safeParse(prettyMathDeep(value));
       if (!content.success) return { ok: false, errors: content.error.issues.map((i) => `SCHEMA: ${i.path.join(".")}: ${i.message}`) };
       const built = contentToLesson(content.data, schedule);
       if (!built.ok) return built;
@@ -289,7 +289,7 @@ export async function regenerateCard(plan: LessonPlan, groupId: string, cardId: 
     schemaName: "task_card",
     schema: z.toJSONSchema(NewCardSchema, { target: "draft-7" }) as Record<string, unknown>,
     check: (value) => {
-      const parsed = NewCardSchema.safeParse(value);
+      const parsed = NewCardSchema.safeParse(prettyMathDeep(value));
       if (!parsed.success) return { ok: false, errors: parsed.error.issues.map((i) => `SCHEMA: ${i.path.join(".")}: ${i.message}`) };
       const card: TaskCard = { ...parsed.data, id: cardId, answer: parsed.data.answer ?? undefined };
       const errors = checkSingleCard(card);
