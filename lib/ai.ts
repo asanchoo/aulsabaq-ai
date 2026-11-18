@@ -96,9 +96,13 @@ async function generateChecked<T>(provider: Provider, job: Job<T>, startedAt: nu
       feedback = result.errors;
       if (result.fallback && (!fallback || result.errors.length < fallback.errors)) fallback = { plan: result.fallback, errors: result.errors.length };
     } catch { feedback = ["Return a complete JSON object matching the required schema."]; }
-    // Коды проверок (INV-1, EXP…) без текста урока; ошибки времени и количества карточек целиком:
-    // в них только номера групп, карточек и минуты.
-    const logged = feedback.map((e) => (/^(TIME|CARDS|SCHEMA):/.test(e) ? e.slice(0, 200) : e.split(":")[0]));
+    // Коды проверок (INV-1, TXT…) без текста урока. Целиком: ошибки времени и карточек (номера и минуты),
+    // и неверные равенства (EXP, INV-9) — только сама формула, чтобы находить ложные срабатывания проверки.
+    const logged = feedback.map((e) => {
+      if (/^(TIME|CARDS|SCHEMA):/.test(e)) return e.slice(0, 200);
+      const formula = /^(EXP|INV-9):/.test(e) ? e.match(/«([^»]{1,80})»|: (\S[^;]{0,80});/) : null;
+      return formula ? `${e.split(":")[0]} ${formula[1] ?? formula[2]}` : e.split(":")[0];
+    });
     console.warn(`[ai] ${provider.name} ${job.name}: attempt ${attempt + 1} rejected: ${logged.join(" | ")}`);
   }
   if (fallback) {
