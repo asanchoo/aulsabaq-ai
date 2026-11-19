@@ -17,6 +17,8 @@ export type ProviderRequest = {
   schema: Record<string, unknown>;
   /** Фото страниц учебника: идут после текста запроса, у каждого подпись («Группа 1, фото 1»). */
   images?: ProviderImage[];
+  /** Глубже подумать в этом запросе (OpenAI reasoning.effort), например проверка правил языка. Gemini не использует. */
+  reasoning?: "low" | "medium" | "high";
 };
 
 /** Текст ответа или null, если модель не закончила (отказ, обрыв по длине, блокировка). */
@@ -118,7 +120,7 @@ export function toOpenAISchema(schema: unknown): unknown {
 function openaiProvider(apiKey: string, model: string, reasoning?: string): Provider {
   return {
     name: "openai",
-    async call({ instructions, input, schemaName, schema, images }) {
+    async call({ instructions, input, schemaName, schema, images, reasoning: effort }) {
       const content = images?.length
         ? [{ role: "user", content: [
             { type: "input_text", text: input },
@@ -132,7 +134,8 @@ function openaiProvider(apiKey: string, model: string, reasoning?: string): Prov
         model, store: false, max_output_tokens: 24000, instructions, input: content,
         text: { format: { type: "json_schema", name: schemaName, strict: true, schema: toOpenAISchema(schema) } },
         // Уровень размышления у моделей, которые его поддерживают (OPENAI_REASONING=low и т.п.); пусто — по умолчанию.
-        ...(reasoning ? { reasoning: { effort: reasoning } } : {}),
+        // Отдельный запрос может попросить глубже (effort), но только у модели с размышлением (reasoning задан).
+        ...(reasoning ? { reasoning: { effort: effort ?? reasoning } } : {}),
       });
       const result = OpenAIResponse.safeParse(json);
       if (!result.success || result.data.status !== "completed") {

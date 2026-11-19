@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { compileExpression } from "@/lib/expression";
 import { parseExplanation } from "@/lib/validate";
-import { columnBorrows, columnCarries, longDivision, partialProducts, toDraft, toVisual, type VisualDraft } from "@/lib/visuals";
+import { columnBorrows, columnCarries, longDivision, partialProducts, toDraft, toVisual, visualMismatch, type Visual, type VisualDraft } from "@/lib/visuals";
 import { demoLesson } from "@/lib/demo";
 
 const draft = (patch: Partial<VisualDraft>): VisualDraft => ({
@@ -85,6 +85,47 @@ describe("toVisual: черновик модели → блок урока", () =
         expect(toVisual(toDraft(v))).toEqual({ ok: true, visual: v });
       }
     }
+  });
+});
+
+describe("блок «группы» не противоречит подписи", () => {
+  const groups = (a: number, b: number, op: "+" | "-" | "×" | null, caption: string) => {
+    const r = toVisual(draft({ kind: "groups", a, b, op, caption }));
+    if (!r.ok) throw new Error(r.error);
+    return r.visual;
+  };
+
+  it("сложение и вычитание рисуются своим знаком, умножение без op как раньше", () => {
+    expect(groups(4, 3, "+", "4 и ещё 3")).toMatchObject({ groups: 4, perGroup: 3, op: "+" });
+    expect(groups(7, 3, "-", "7 убрали 3")).toMatchObject({ op: "-" });
+    expect(groups(4, 3, null, "4 тарелки по 3")).toMatchObject({ op: "×" });
+    expect(toVisual(draft({ kind: "groups", a: 3, b: 5, op: "-" })).ok).toBe(false);
+    expect(toVisual(draft({ kind: "groups", a: 20, b: 15, op: "+" })).ok).toBe(false);
+  });
+
+  it("урок 1 класса 19 ноября: под «4 и ещё 3, всего 7» было нарисовано 4 × 3 = 12", () => {
+    expect(visualMismatch(groups(4, 3, "×", "4 и ещё 3, всего 7"), ["4 и ещё 3, всего 7"])).toContain("4 × 3 = 12");
+    expect(visualMismatch(groups(4, 3, "+", "4 и ещё 3, всего 7"), ["4 и ещё 3, всего 7"])).toBeNull();
+    // 3 класс: подпись про 23 · 4, а нарисовано 4 × 12 = 48.
+    expect(visualMismatch(groups(4, 12, "×", "23 · 4 = 92: 4 раза по 23"), ["23 · 4 = 92: 4 раза по 23"])).not.toBeNull();
+  });
+
+  it("подпись без чисел, с множителями или с результатом блок не выбрасывает", () => {
+    const v = groups(3, 4, "×", "Три тарелки");
+    for (const text of ["Три тарелки, на каждой яблоки", "3 тарелки по 4 яблока", "Всего 12 яблок", "3 · 4 = 4 · 3"]) {
+      expect(visualMismatch(v, [text]), text).toBeNull();
+    }
+    // «1 000» читается как одно число, а не как 1 и 0.
+    expect(visualMismatch(v, ["3 по 4, а не 1 000"])).toContain("1000");
+  });
+
+  it("неверный блок примера выбрасывается, а не ломает объяснение", () => {
+    const e = structuredClone(demoLesson.groups[1].explanation);
+    const ex = (x: typeof e.example) => ({ ...x, visual: x.visual ? toDraft(x.visual) : null });
+    const wrong: Visual = { kind: "groups", caption: "4 и ещё 3, всего 7", groups: 4, perGroup: 3, op: "×" };
+    const g = { ...e, visuals: [...e.visuals.map(toDraft), toDraft(wrong)], example: ex(e.example), examples: e.examples.map(ex), reviewCards: [] };
+    const result = parseExplanation(g);
+    expect(result.ok && result.plan.visuals.some((v) => v.kind === "groups")).toBe(false);
   });
 });
 

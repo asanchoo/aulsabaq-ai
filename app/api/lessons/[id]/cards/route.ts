@@ -2,7 +2,7 @@ import { z } from "zod";
 import { GenerationError, regenerateCard } from "@/lib/ai";
 import { fail, readJson, storageFailure, teacherToken } from "@/lib/api";
 import { StorageError } from "@/lib/db";
-import { checkLimit, clientIp, limited } from "@/lib/rate-limit";
+import { checkDailyCap, checkLimit, clientIp, dailyLimited, limited } from "@/lib/rate-limit";
 import { getLesson, isTeacher, updateLesson } from "@/lib/store";
 
 export const maxDuration = 120;
@@ -25,6 +25,8 @@ export async function POST(request: Request, ctx: RouteContext<"/api/lessons/[id
     if (!(await isTeacher(id, token))) return fail("forbidden", 403);
     const retryAfter = await checkLimit("card", clientIp(request));
     if (retryAfter) return limited(retryAfter);
+    const untilTomorrow = await checkDailyCap("card");
+    if (untilTomorrow) return dailyLimited(untilTomorrow);
     const lesson = await getLesson(id);
     const group = lesson?.plan.groups.find((g) => g.cards.some((c) => c.id === parsed.data.cardId));
     if (!lesson || !group) return fail("not_found", 404);

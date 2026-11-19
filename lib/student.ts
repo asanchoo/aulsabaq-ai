@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { checkAnswer } from "./check-answer";
+import { checkCardAnswer, expectsNumber } from "./check-answer";
 import type { Group, LessonPlan, TaskCard } from "./schema";
 
 /**
@@ -53,6 +53,10 @@ export type StudentCard = {
   difficulty: TaskCard["difficulty"];
   purpose: TaskCard["purpose"];
   state: CardState;
+  /** Как записать ответ («Впиши пропущенную букву»). */
+  inputHint?: string;
+  /** Ответ из одного числа: открыть цифровую клавиатуру. */
+  numeric?: boolean;
   /** Эталон виден только после «Сверить с ответом». */
   answer?: string;
 };
@@ -69,6 +73,8 @@ export function studentCards(group: Group, progress: Record<string, CardState>):
       difficulty: card.difficulty,
       purpose: card.purpose,
       state,
+      ...(card.inputHint ? { inputHint: card.inputHint } : {}),
+      ...(card.type === "closed" && expectsNumber(card) ? { numeric: true } : {}),
       ...(state.revealed && card.answer ? { answer: card.answer } : {}),
     };
   });
@@ -101,7 +107,7 @@ export function applyAction(card: TaskCard, current: CardState | undefined, acti
     case "answer": {
       if (card.type !== "closed" || !card.answer) return { ok: false, error: "not_closed" };
       if (state.status !== "todo" || state.revealed) return { ok: false, error: "finished" };
-      const correct = checkAnswer(action.answer, card.answer);
+      const correct = checkCardAnswer(action.answer, card);
       return {
         ok: true,
         correct,

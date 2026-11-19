@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { EXAMPLE_LEVELS, GroupCoreSchema, LangSchema, QuickTaskSchema, TaskCardSchema, TermSchema, type LessonCore } from "./schema";
 import { VisualDraftSchema } from "./visuals";
+import { acceptMismatch, inputHintReveals } from "./check-answer";
 import { buildTimeline, MAX_CARDS, MIN_PRACTICE_CARDS, type Schedule, type StageKind } from "./schedule";
 
 /** Фото страницы учебника: сжатый в браузере JPEG/PNG/WebP в base64 (до ~700 КБ). В базе не хранится. */
@@ -44,6 +45,8 @@ export const StagesSchema = z.object({
 /** Карточка от модели: id и назначение ставит код (повторение пишет запрос объяснения, практику — запрос содержания). */
 export const GeneratedCardSchema = TaskCardSchema.omit({ id: true, purpose: true }).extend({
   answer: z.string().nullable(),
+  accept: z.array(z.string().max(80)).max(6),
+  inputHint: z.string().max(120).nullable(),
   /** Минуты среднего ученика, можно с половиной: 0.5, 1, 1.5… */
   minutes: z.number().min(0.5).max(20),
 });
@@ -96,7 +99,7 @@ export function contentToLesson(
     cards: [
       ...(schedule.cards[i].reviewMinutes > 0 ? reviewCards[i] ?? [] : []).map((c) => ({ ...c, purpose: "review" as const })),
       ...g.cards.map((c) => ({ ...c, purpose: "practice" as const })),
-    ].map((c, k) => ({ ...c, id: `g${i + 1}-c${k + 1}`, answer: c.answer ?? undefined })),
+    ].map((c, k) => ({ ...cardFromModel(c), id: `g${i + 1}-c${k + 1}` })),
     homework: g.homework,
   }));
   const timeline = buildTimeline(schedule, groups.map((g, i) => ({
@@ -107,6 +110,28 @@ export function contentToLesson(
     ok: true,
     warnings,
     plan: { subject: content.subject, language: content.language, durationMin: content.durationMin, groups, timeline, teacherNotes: content.teacherNotes },
+  };
+}
+
+/**
+ * Карточка от модели → карточка урока: null и пустые списки убираем, у открытой карточки нечего проверять.
+ * Короткий ответ, который противоречит эталону, и inputHint, который выдаёт ответ, выбрасываем молча:
+ * проверка тогда идёт по answer, а повторять из-за этого весь урок дороже, чем потерять удобство.
+ */
+export function cardFromModel<T extends GeneratedCard>(c: T) {
+  const { accept, inputHint, answer, ...rest } = c;
+  const closed = c.type === "closed";
+  const base = { prompt: c.prompt, answer: answer ?? undefined };
+  const trimmed = closed ? accept.map((a) => a.trim()).filter(Boolean) : [];
+  const bad = new Set(acceptMismatch({ ...base, accept: trimmed }));
+  const kept = trimmed.filter((a) => !bad.has(a));
+  const hint = closed && inputHint?.trim() ? inputHint.trim() : undefined;
+  const showHint = hint && !inputHintReveals({ ...base, accept: kept, inputHint: hint });
+  return {
+    ...rest,
+    answer: base.answer,
+    ...(kept.length ? { accept: kept } : {}),
+    ...(showHint ? { inputHint: hint } : {}),
   };
 }
 

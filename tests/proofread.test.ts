@@ -40,7 +40,7 @@ describe("корректура: только безопасные исправл
 
 describe("карточки повторения из запроса объяснения", () => {
   const explanation = demoLesson.groups[1].explanation;
-  const card = (prompt: string, minutes = 3) => ({ type: "closed" as const, prompt, answer: "12", successCriteria: "Верно", hint: "Вспомни таблицу", difficulty: 1 as const, minutes });
+  const card = (prompt: string, minutes = 3) => ({ type: "closed" as const, prompt, answer: "12", successCriteria: "Верно", hint: "Вспомни таблицу", difficulty: 1 as const, minutes, accept: [], inputHint: null });
 
   it("повторение по новой теме — мягкая ошибка REVIEW, одно знакомое слово — нет", () => {
     const plain = ["Вычисли 6 × 2", "Вычисли 24 : 2", "Вычисли 3 × 4", "Вычисли 2 × 6", "Вычисли 60 : 5", "Вычисли 4 × 3", "Вычисли 36 : 3"].map((p) => card(p, 1.5));

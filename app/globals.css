@@ -13,7 +13,8 @@
   --color-surface: #f4f4f2;
   --color-ink: #232323;
   --color-muted: #616161;
-  --color-faint: #8a8a8a;
+  /* 5,1:1 на белом и 4,6:1 на surface: мелкие подписи минут читаются (было #8a8a8a, 3,45:1). */
+  --color-faint: #6e6e6e;
   --color-line: #e5e5e2;
   --color-line-strong: #cfcfcb;
   --color-mint: #a1ffcb;

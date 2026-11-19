@@ -28,7 +28,9 @@ export const VisualSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("long_division"), caption, dividend: int, divisor: int }),
   z.object({ kind: z.literal("column"), caption, a: int, b: int, op: z.enum(["+", "-", "×"]) }),
   z.object({ kind: z.literal("number_line"), caption, from: z.number(), to: z.number(), points: z.array(z.number()).min(1).max(6) }),
-  z.object({ kind: z.literal("groups"), caption, groups: int, perGroup: int }),
+  // op "×": groups групп по perGroup предметов; "+": groups и ещё perGroup; "-": из groups убрали perGroup.
+  // У уроков до 19 ноября op нет: это умножение.
+  z.object({ kind: z.literal("groups"), caption, groups: int, perGroup: int, op: z.enum(["+", "-", "×"]).default("×") }),
   z.object({ kind: z.literal("fraction"), caption, numerator: int, denominator: int }),
   z.object({ kind: z.literal("grid"), caption, columns: int, rows: int }),
   z.object({ kind: z.literal("plot"), caption, expression: z.string().min(1), from: z.number(), to: z.number(), areaFrom: z.number().nullable(), areaTo: z.number().nullable() }),
@@ -99,8 +101,12 @@ export function toVisual(d: VisualDraft): { ok: true; visual: Visual } | { ok: f
       break;
     }
     case "groups": {
-      if (!isInt(d.a) || !isInt(d.b) || d.a < 1 || d.a > 10 || d.b < 1 || d.b > 12) return fail("a groups 1..10, b items per group 1..12");
-      candidate = { kind: d.kind, ...base, groups: d.a, perGroup: d.b };
+      const op = d.op ?? "×";
+      if (!isInt(d.a) || !isInt(d.b)) return fail("a and b must be integers");
+      if (op === "×" && (d.a < 1 || d.a > 10 || d.b < 1 || d.b > 12)) return fail("for × a groups 1..10, b items per group 1..12");
+      if (op === "+" && (d.a < 0 || d.b < 0 || d.a + d.b < 1 || d.a + d.b > 30)) return fail("for + a and b from 0, a + b from 1 to 30");
+      if (op === "-" && (d.a < 1 || d.a > 30 || d.b < 0 || d.b > d.a)) return fail("for - a from 1 to 30 and 0 <= b <= a");
+      candidate = { kind: d.kind, ...base, groups: d.a, perGroup: d.b, op };
       break;
     }
     case "fraction": {
@@ -178,7 +184,7 @@ export function toDraft(v: Visual): VisualDraft {
     case "long_division": return { ...empty, a: v.dividend, b: v.divisor };
     case "column": return { ...empty, a: v.a, b: v.b, op: v.op };
     case "number_line": return { ...empty, from: v.from, to: v.to, points: v.points };
-    case "groups": return { ...empty, a: v.groups, b: v.perGroup };
+    case "groups": return { ...empty, a: v.groups, b: v.perGroup, op: v.op };
     case "fraction": return { ...empty, a: v.numerator, b: v.denominator };
     case "grid": return { ...empty, a: v.columns, b: v.rows };
     case "plot": return { ...empty, expression: v.expression, from: v.from, to: v.to, areaFrom: v.areaFrom, areaTo: v.areaTo };
@@ -202,6 +208,39 @@ export function visualTexts(v: Visual): string[] {
     case "bars": return [v.caption, ...v.labels];
     default: return [v.caption];
   }
+}
+
+/**
+ * Равенство, которое код пишет под блоком «группы» или «клетки»: «4 × 3 = 12», «4 + 3 = 7».
+ * null для блоков, под которыми равенства нет (или оно проверяется отдельно, как у столбика и уголка).
+ */
+export function shownEquation(v: Visual): { operands: number[]; result: number; text: string } | null {
+  if (v.kind === "grid") return { operands: [v.columns, v.rows], result: v.columns * v.rows, text: `${v.columns} × ${v.rows} = ${v.columns * v.rows}` };
+  if (v.kind !== "groups") return null;
+  const op = v.op;
+  const result = op === "+" ? v.groups + v.perGroup : op === "-" ? v.groups - v.perGroup : v.groups * v.perGroup;
+  return { operands: [v.groups, v.perGroup], result, text: `${v.groups} ${op === "-" ? "−" : op} ${v.perGroup} = ${result}` };
+}
+
+/** Числа в тексте: «1 000» — одно число, «2,5» — дробь. */
+export function numbersIn(text: string): number[] {
+  const joined = text.replace(/(\d)[\s\u00a0\u202f](?=\d{3}(?!\d))/g, "$1");
+  return (joined.match(/\d+(?:[.,]\d+)?/g) ?? []).map((n) => Number(n.replace(",", ".")));
+}
+
+/**
+ * Блок противоречит тексту: под подписью «4 и ещё 3, всего 7» нарисовано «4 × 3 = 12».
+ * Так было в уроке 1 класса 19 ноября. Число из подписи (или ответа примера) допустимо, если это
+ * множитель, слагаемое или результат равенства под блоком. Если в тексте есть другое число, а результата
+ * нет, блок показывает не то, о чём говорит учитель: такой блок выбрасываем.
+ */
+export function visualMismatch(v: Visual, texts: string[]): string | null {
+  const eq = shownEquation(v);
+  if (!eq) return null;
+  const nums = texts.flatMap(numbersIn);
+  if (!nums.length || nums.includes(eq.result)) return null;
+  const foreign = [...new Set(nums.filter((n) => !eq.operands.includes(n)))];
+  return foreign.length ? `VIS: ${v.kind}: the block shows ${eq.text}, but the text says ${foreign.join(", ")}; for addition use op "+", for subtraction op "-"` : null;
 }
 
 // ---------------------------------------------------------------------------

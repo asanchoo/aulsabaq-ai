@@ -28,7 +28,7 @@ function body(v: VisualData, labels: Labels, size: Size) {
     case "long_division": return <LongDivision dividend={v.dividend} divisor={v.divisor} labels={labels} />;
     case "column": return <Column a={v.a} b={v.b} op={v.op} />;
     case "number_line": return <NumberLine from={v.from} to={v.to} points={v.points} />;
-    case "groups": return <Groups groups={v.groups} perGroup={v.perGroup} />;
+    case "groups": return <Groups groups={v.groups} perGroup={v.perGroup} op={v.op} />;
     case "fraction": return <Fraction numerator={v.numerator} denominator={v.denominator} />;
     case "grid": return <Grid columns={v.columns} rows={v.rows} />;
     case "plot": return <Plot expression={v.expression} from={v.from} to={v.to} areaFrom={v.areaFrom} areaTo={v.areaTo} />;
@@ -192,17 +192,40 @@ function NumberLine({ from, to, points }: { from: number; to: number; points: nu
   );
 }
 
-function Groups({ groups, perGroup }: { groups: number; perGroup: number }) {
+/**
+ * Предметы кружками. «×»: groups кучек по perGroup. «+»: две кучки, вторая полыми кружками.
+ * «−»: groups кружков, последние perGroup зачёркнуты. Равенство под блоком считает код (shownEquation).
+ */
+function Groups({ groups, perGroup, op }: { groups: number; perGroup: number; op: "+" | "-" | "×" }) {
+  const result = op === "+" ? groups + perGroup : op === "-" ? groups - perGroup : groups * perGroup;
+  const equation = `${groups} ${op === "-" ? "−" : op} ${perGroup} = ${result}`;
+  const pile = "flex max-w-[7.5em] flex-wrap content-center justify-center gap-[0.25em] rounded-full border-2 border-ink bg-mint-soft p-[0.6em]";
+  const dot = "size-[0.55em] rounded-full bg-ink";
+  const hollow = "size-[0.55em] rounded-full border-2 border-ink bg-white";
+  const dots = (n: number, className: string) => Array.from({ length: n }, (_, i) => <span key={i} className={className} />);
   return (
     <div className="grid gap-3">
-      <div className="flex flex-wrap gap-3" role="img" aria-label={`${groups} × ${perGroup} = ${groups * perGroup}`}>
-        {Array.from({ length: groups }, (_, g) => (
-          <div key={g} className="flex max-w-[7.5em] flex-wrap content-center justify-center gap-[0.25em] rounded-full border-2 border-ink bg-mint-soft p-[0.6em]">
-            {Array.from({ length: perGroup }, (_, i) => <span key={i} className="size-[0.55em] rounded-full bg-ink" />)}
+      <div className="flex flex-wrap items-center gap-3" role="img" aria-label={equation}>
+        {op === "×" && Array.from({ length: groups }, (_, g) => <div key={g} className={pile}>{dots(perGroup, dot)}</div>)}
+        {op === "+" && (
+          <>
+            {groups > 0 && <div className={pile}>{dots(groups, dot)}</div>}
+            <span aria-hidden className="font-mono font-semibold">+</span>
+            {perGroup > 0 && <div className={pile}>{dots(perGroup, hollow)}</div>}
+          </>
+        )}
+        {op === "-" && (
+          <div className={pile}>
+            {dots(groups - perGroup, dot)}
+            {Array.from({ length: perGroup }, (_, i) => (
+              <span key={`x${i}`} className="relative size-[0.55em] rounded-full border-2 border-ink bg-white">
+                <span className="absolute top-1/2 left-[-0.15em] h-[2px] w-[0.85em] -rotate-45 bg-ink" />
+              </span>
+            ))}
           </div>
-        ))}
+        )}
       </div>
-      <p className="tabular font-mono font-semibold">{groups} × {perGroup} = {groups * perGroup}</p>
+      <p className="tabular font-mono font-semibold">{equation}</p>
     </div>
   );
 }

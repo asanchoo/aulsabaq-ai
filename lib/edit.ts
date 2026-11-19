@@ -75,7 +75,13 @@ export function applyEdit(plan: LessonPlan, edit: LessonEdit): EditResult {
       const answer = ce.answer?.trim() || undefined;
       if (c.type === "closed" && !answer) issues.push({ code: "closed_answer", cardId: c.id });
       if (answer && hintContainsAnswer(ce.hint, answer)) issues.push({ code: "hint_answer", cardId: c.id });
-      return { ...c, prompt: ce.prompt, answer: c.type === "closed" ? answer : answer ?? c.answer, hint: ce.hint, successCriteria: ce.successCriteria };
+      const next: TaskCard = { ...c, prompt: ce.prompt, answer: c.type === "closed" ? answer : answer ?? c.answer, hint: ce.hint, successCriteria: ce.successCriteria };
+      // Учитель поменял задание или эталон: короткие ответы модели и «что вписать» могли устареть, проверяем по эталону.
+      if (next.prompt !== c.prompt || next.answer !== c.answer) {
+        delete next.accept;
+        delete next.inputHint;
+      }
+      return next;
     });
     return { ...g, learningGoal: e.learningGoal, homework: e.homework, explanation: e.explanation, cards };
   });

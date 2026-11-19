@@ -27,7 +27,7 @@ const reviewOf = (grade: unknown) => {
     const c: Partial<typeof card> = { ...card };
     delete c.id;
     delete c.purpose;
-    return { ...c, answer: card.answer ?? null, minutes: 1.5 };
+    return { ...c, answer: card.answer ?? null, accept: card.accept ?? [], inputHint: card.inputHint ?? null, minutes: 1.5 };
   });
 };
 /** Сколько карточек: повторение из объяснения, практика по темпу (1,5 минуты в начальной школе) и одна в запас. */
@@ -48,7 +48,7 @@ function generated() {
         const c: Partial<typeof card> = { ...card };
         delete c.id;
         delete c.purpose;
-        return { ...c, answer: card.answer ?? null, minutes: 1.5 };
+        return { ...c, answer: card.answer ?? null, accept: card.accept ?? [], inputHint: card.inputHint ?? null, minutes: 1.5 };
       }),
       stages: { review: "Повторяют", explain: "Учитель объясняет", practice: "Решают карточки", check: "Учитель проверяет" },
     })),

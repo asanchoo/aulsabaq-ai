@@ -115,7 +115,11 @@ export function StudentApp({ lang, sessionId }: { lang: Locale; sessionId: strin
     const result = await send({ action: "answer", cardId: card.id, answer }, "answer");
     if (result && typeof result.correct === "boolean") {
       setFeedback({ cardId: card.id, correct: result.correct });
-      if (result.correct) setAnswer("");
+      // Верный ответ: карточка остаётся на экране с «Верно!» и кнопкой «Дальше», а не перескакивает сразу.
+      if (result.correct) {
+        setSelected(card.id);
+        setAnswer("");
+      }
     }
   }
 
@@ -139,6 +143,7 @@ export function StudentApp({ lang, sessionId }: { lang: Locale; sessionId: strin
   }
 
   function leave() {
+    if (!window.confirm(d.leaveConfirm)) return;
     forgetStudent();
     router.push(`/${lang}/join`);
   }
@@ -210,15 +215,20 @@ export function StudentApp({ lang, sessionId }: { lang: Locale; sessionId: strin
           <form onSubmit={check} className="mt-5 grid gap-3" noValidate>
             <div>
               <label htmlFor="answer" className="field-label">{d.answer}</label>
+              {card.inputHint && <p id="input-hint" className="mb-2 text-[0.92rem] leading-snug text-muted">{card.inputHint}</p>}
               <input
                 id="answer"
                 className="field text-[1.1rem]"
                 autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                inputMode={card.numeric ? "decimal" : "text"}
                 maxLength={200}
                 placeholder={d.answerPlaceholder}
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
-                aria-describedby={showFeedback ? "feedback" : undefined}
+                aria-describedby={[card.inputHint ? "input-hint" : "", showFeedback ? "feedback" : ""].filter(Boolean).join(" ") || undefined}
               />
             </div>
             <button type="submit" className="btn btn-primary w-full" disabled={!answer.trim() || busy !== null} aria-busy={busy === "answer"}>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { getDict, t, type Locale } from "@/lib/i18n";
+import { formatDay, getDict, t, type Locale } from "@/lib/i18n";
 import { forgetLesson, useSavedLessons } from "@/lib/local";
 
 /** Уроки, созданные на этом устройстве: учитель вернётся к вчерашнему уроку без регистрации. */
@@ -9,7 +9,6 @@ export function RecentLessons({ lang }: { lang: Locale }) {
   const dict = getDict(lang);
   const lessons = useSavedLessons().slice(0, 6);
   if (lessons.length === 0) return null;
-  const date = new Intl.DateTimeFormat(lang === "kk" ? "kk-KZ" : "ru-RU", { day: "numeric", month: "long" });
 
   return (
     <section aria-labelledby="recent" className="mb-12">
@@ -20,13 +19,15 @@ export function RecentLessons({ lang }: { lang: Locale }) {
             <Link href={`/${lang}/teacher/${l.id}`} className="min-w-0 flex-1">
               <span className="block truncate font-semibold">{l.subject}</span>
               <span className="tabular block text-[0.85rem] text-muted">
-                {l.grades.map((n) => t(dict.common.gradeShort, { n })).join(", ")} · {date.format(l.createdAt)}
+                {l.grades.map((n) => t(dict.common.gradeShort, { n })).join(", ")} · {formatDay(l.createdAt, lang)}
                 {l.demo ? ` · ${dict.lesson.demoBadge}` : ""}
               </span>
             </Link>
             <button
               type="button"
-              onClick={() => forgetLesson(l.id)}
+              onClick={() => {
+                if (window.confirm(t(dict.teacher.forgetConfirm, { subject: l.subject }))) forgetLesson(l.id);
+              }}
               className="grid size-10 shrink-0 place-items-center rounded-btn text-muted hover:bg-surface hover:text-ink"
               aria-label={`${dict.teacher.forget}: ${l.subject}`}
               title={dict.teacher.forget}

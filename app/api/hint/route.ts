@@ -2,7 +2,7 @@ import { z } from "zod";
 import { generateHint } from "@/lib/ai";
 import { fail, readJson, storageFailure } from "@/lib/api";
 import { getDict, t } from "@/lib/i18n";
-import { checkLimit, clientIp, limited } from "@/lib/rate-limit";
+import { checkDailyCap, checkLimit, clientIp, limited } from "@/lib/rate-limit";
 import { getSession, updateSession } from "@/lib/store";
 import { emptyState, findCard, MAX_HINTS, readProgress } from "@/lib/student";
 
@@ -38,10 +38,12 @@ export async function POST(request: Request) {
     if (state.hints === 0) {
       hint = card.hint;
     } else {
-      hint = await generateHint({
+      // Общий суточный предел ИИ-подсказок исчерпан: ученик всё равно получает запасную подсказку.
+      const aiAllowed = (await checkDailyCap("hint")) === 0;
+      hint = aiAllowed ? await generateHint({
         language: session.plan.language, subject: session.plan.subject, grade: group.grade, topic: group.topic,
         card, studentAnswer: state.lastAnswer, previousHints: state.hintTexts,
-      });
+      }) : null;
       source = hint ? "ai" : "fallback";
       if (!hint) {
         const fallback = getDict(session.plan.language).student.fallbackHints;

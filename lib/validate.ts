@@ -1,7 +1,8 @@
 import { findMixedScriptWord, findWrongEquation, prettyMathDeep } from "./arithmetic";
-import { GeneratedExplanationSchema, type GeneratedCard, type GeneratedExplanation } from "./generation-schema";
+import { acceptMismatch, inputHintReveals } from "./check-answer";
+import { cardFromModel, GeneratedExplanationSchema, type GeneratedCard, type GeneratedExplanation } from "./generation-schema";
 import { MAX_CARDS, MIN_PRACTICE_CARDS } from "./schedule";
-import { columnResult, toVisual, visualTexts, type Visual, type VisualDraft } from "./visuals";
+import { columnResult, toVisual, visualMismatch, visualTexts, type Visual, type VisualDraft } from "./visuals";
 import { ExplanationSchema, LessonPlanSchema, type Explanation, type LessonCore, type LessonPlan, type Segment, type TaskCard } from "./schema";
 
 /**
@@ -80,14 +81,22 @@ export function parseExplained(input: unknown): Parsed<{ explanation: Explanatio
   if (!parsed.success) return { ok: false, errors: schemaErrors(parsed.error.issues) };
   const g = parsed.data;
   const rejected: string[] = [];
-  const convert = (draft: VisualDraft | null) => {
+  // texts: с чем блок должен совпадать по числам (подпись, у примера ещё и ответ), см. visualMismatch.
+  const convert = (draft: VisualDraft | null, texts: string[] = []) => {
     if (!draft) return null;
     const result = toVisual(draft);
-    if (result.ok) return result.visual;
-    rejected.push(result.error);
-    return null;
+    if (!result.ok) {
+      rejected.push(result.error);
+      return null;
+    }
+    const mismatch = visualMismatch(result.visual, [result.visual.caption, ...texts]);
+    if (mismatch) {
+      rejected.push(mismatch);
+      return null;
+    }
+    return result.visual;
   };
-  const example = (e: GeneratedExplanation["example"]) => ({ problem: e.problem, steps: e.steps, answer: e.answer, visual: convert(e.visual), level: e.level });
+  const example = (e: GeneratedExplanation["example"]) => ({ problem: e.problem, steps: e.steps, answer: e.answer, visual: convert(e.visual, [e.answer]), level: e.level });
   const explanation = ExplanationSchema.parse({
     hook: g.hook,
     prerequisites: g.prerequisites,
@@ -96,7 +105,7 @@ export function parseExplained(input: unknown): Parsed<{ explanation: Explanatio
     summary: g.summary,
     keyIdea: g.keyIdea,
     steps: g.steps,
-    visuals: g.visuals.map(convert).filter((v): v is NonNullable<typeof v> => v !== null),
+    visuals: g.visuals.map((v) => convert(v)).filter((v): v is NonNullable<typeof v> => v !== null),
     example: example(g.example),
     examples: g.examples.map(example),
     practice: g.practice,
@@ -134,7 +143,7 @@ export function checkReviewCards(
   const withNewTerms: string[] = [];
   cards.forEach((card, i) => {
     const id = `review-${i + 1}`;
-    for (const e of checkSingleCard({ ...card, id, purpose: "review", answer: card.answer ?? undefined })) hard.push(e.replace(":", ` (${id}):`));
+    for (const e of checkSingleCard({ ...cardFromModel(card), id, purpose: "review" })) hard.push(e.replace(":", ` (${id}):`));
     const text = ` ${[card.prompt, card.hint].join(" ").toLowerCase()} `;
     const term = explanation.terms.find((t) => {
       const longest = stemsOf(t.term).sort((a, b) => b.length - a.length)[0];
@@ -527,6 +536,8 @@ export function checkSingleCard(card: TaskCard): string[] {
   const errors: string[] = [];
   if (card.type === "closed" && !card.answer?.trim()) errors.push("INV-5: у закрытой карточки нет ответа для самопроверки");
   if (hintContainsAnswer(card.hint, card.answer ?? "")) errors.push("INV-8: подсказка содержит ответ; подсказка должна вести к решению, не называя ответ");
+  if (inputHintReveals(card)) errors.push("INV-8: inputHint содержит ответ; в inputHint только то, в каком виде вписать ответ");
+  for (const a of acceptMismatch(card)) errors.push(`INV-5: accept «${a}» не совпадает с answer «${card.answer}»; в accept только полные верные ответы`);
   for (const text of [card.prompt, card.hint, card.successCriteria]) {
     const wrong = findWrongEquation(text);
     if (wrong) errors.push(`INV-9: неверное равенство «${wrong}»; пересчитай`);

@@ -3,7 +3,7 @@ import { LessonRequestSchema } from "@/lib/generation-schema";
 import { generateLesson, GenerationError } from "@/lib/ai";
 import { fail, readJson } from "@/lib/api";
 import { storageConfigured } from "@/lib/db";
-import { checkLimit, clientIp, limited } from "@/lib/rate-limit";
+import { checkDailyCap, checkLimit, clientIp, dailyLimited, limited } from "@/lib/rate-limit";
 import { saveLesson } from "@/lib/store";
 
 export const maxDuration = 300;
@@ -23,6 +23,10 @@ export async function POST(request: Request) {
   if (!parsed.success) return fail("bad_request", 400);
 
   const demo = process.env.DEMO_MODE === "true";
+  if (!demo) {
+    const untilTomorrow = await checkDailyCap("lesson");
+    if (untilTomorrow) return dailyLimited(untilTomorrow);
+  }
   let plan;
   try {
     plan = demo ? demoLesson : await generateLesson(parsed.data);

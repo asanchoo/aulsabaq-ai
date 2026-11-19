@@ -43,6 +43,40 @@ const memory = Object.fromEntries(
  */
 export const rateLimitsEnabled = (env: Record<string, string | undefined> = process.env) => env.RATE_LIMITS === "on";
 
+/**
+ * Общий предел на весь сайт за сутки для запросов к платной модели. Работает всегда, даже когда лимиты по IP
+ * выключены: один человек со скриптом не потратит кредиты OpenAI и не выключит сайт в дни проверки.
+ * Значения с запасом на настоящую работу (десятки учителей в день); поменять можно в env:
+ * DAILY_LESSON_CAP, DAILY_CARD_CAP, DAILY_HINT_CAP.
+ */
+export const DAILY_CAPS = { lesson: 150, card: 400, hint: 5000 } as const;
+export type DailyBucket = keyof typeof DAILY_CAPS;
+
+export function dailyCap(bucket: DailyBucket, env: Record<string, string | undefined> = process.env): number {
+  const fromEnv = Number(env[`DAILY_${bucket.toUpperCase()}_CAP`]);
+  return Number.isInteger(fromEnv) && fromEnv > 0 ? fromEnv : DAILY_CAPS[bucket];
+}
+
+const dailyMemory = Object.fromEntries(
+  (Object.keys(DAILY_CAPS) as DailyBucket[]).map((name) => [name, createRateLimiter(dailyCap(name), 86_400_000)]),
+) as Record<DailyBucket, ReturnType<typeof createRateLimiter>>;
+
+/** 0 — можно; иначе через сколько секунд сутки закончатся. Счётчик в базе общий для всех серверов. */
+export async function checkDailyCap(bucket: DailyBucket): Promise<number> {
+  if (storageConfigured()) {
+    try {
+      return await rpc<number>("hit_rate_limit", { p_key: `daily:${bucket}`, p_limit: dailyCap(bucket), p_window_seconds: 86_400 });
+    } catch {
+      // база недоступна: считаем в памяти этого сервера
+    }
+  }
+  return dailyMemory[bucket]("site");
+}
+
+export function dailyLimited(retryAfter: number): Response {
+  return Response.json({ error: "daily_limit" }, { status: 429, headers: { "Retry-After": String(retryAfter) } });
+}
+
 /** 0 — можно; иначе через сколько секунд повторить. */
 export async function checkLimit(bucket: LimitBucket, ip: string): Promise<number> {
   if (!rateLimitsEnabled()) return 0;

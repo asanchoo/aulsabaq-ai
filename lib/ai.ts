@@ -1,10 +1,11 @@
 import { z } from "zod";
-import { contentToLesson, GeneratedContentSchema, GeneratedExplanationSchema, requestForModel, type GeneratedCard, type LessonRequest } from "./generation-schema";
-import { cardInstructions, explanationInstructions, hintInstructions, lessonInstructions, proofreadInstructions } from "./prompts";
+import { cardFromModel, contentToLesson, GeneratedCardSchema, GeneratedContentSchema, GeneratedExplanationSchema, requestForModel, type GeneratedCard, type LessonRequest } from "./generation-schema";
+import { cardInstructions, explanationInstructions, hintInstructions, lessonInstructions, proofreadInstructions, rulesInstructions } from "./prompts";
+import { applyRulesReview, introducesSuspects, isLanguageSubject, rulesRequest, RulesReviewSchema, type RulesReview } from "./rules";
 import { applyCorrections, collectTexts, safeCorrections } from "./proofread";
 import { ProviderError, resolveProvider, type Provider, type ProviderImage } from "./providers";
 import { planSchedule } from "./schedule";
-import { checkReviewCards, checkSingleCard, hintRevealsAnswer, maxCardMinutes, minCards, parseExplained, validateLessonPlan } from "./validate";
+import { checkExplanation, checkReviewCards, checkSingleCard, hintRevealsAnswer, maxCardMinutes, minCards, parseExplained, validateLessonPlan } from "./validate";
 import { findMixedScriptWord, prettyMathDeep } from "./arithmetic";
 import { TaskCardSchema, type Explanation, type LessonCore, type LessonPlan, type TaskCard } from "./schema";
 
@@ -234,7 +235,75 @@ export async function generateLesson(input: LessonRequest): Promise<LessonPlan> 
       };
     }),
   };
-  return proofreadLesson(provider, lesson, startedAt);
+  const reviewed = isLanguageSubject(input.subject) ? await reviewRules(provider, lesson, startedAt) : lesson;
+  return proofreadLesson(provider, reviewed, startedAt);
+}
+
+// ---------------------------------------------------------------------------
+// Правила языка: второй взгляд на урок по русскому или казахскому (lib/rules.ts)
+
+const RULES_TIMEOUT_MS = 75_000;
+/** Если урок собирался долго, проверку правил пропускаем: после неё ещё корректура, а роут живёт 300 секунд. */
+const RULES_BUDGET_MS = 170_000;
+
+/** Карточка от рецензента → карточка урока, или null, если она не проходит прежние проверки. */
+function reviewedCard(fix: RulesReview["cards"][number], old: TaskCard): TaskCard | null {
+  const card: TaskCard = {
+    ...cardFromModel({
+      type: old.type, prompt: fix.prompt, answer: fix.answer, accept: fix.accept, inputHint: fix.inputHint, hint: fix.hint,
+      successCriteria: old.successCriteria, difficulty: old.difficulty, minutes: old.minutes ?? 1,
+    }),
+    id: old.id, purpose: old.purpose, minutes: old.minutes,
+  };
+  if (old.type === "closed" && !card.answer) return null;
+  const text = (c: TaskCard) => [c.prompt, c.answer ?? "", c.hint].join("\n");
+  if (introducesSuspects(text(old), text(card))) return null;
+  return checkSingleCard(card).length ? null : card;
+}
+
+/**
+ * Каждый класс проверяет отдельный запрос (параллельно), с размышлением medium. Исправление класса применяем,
+ * только если после него не появилось ни одной новой ошибки проверок; иначе этот класс остаётся как был.
+ * Любой сбой рецензента — урок без этой проверки, а не ошибка учителю.
+ */
+export async function reviewRules(provider: Provider, plan: LessonPlan, startedAt: number): Promise<LessonPlan> {
+  if (Date.now() - startedAt > RULES_BUDGET_MS) {
+    console.warn(`[ai] ${provider.name} rules: skipped, lesson took too long`);
+    return plan;
+  }
+  const schema = z.toJSONSchema(RulesReviewSchema, { target: "draft-7" }) as Record<string, unknown>;
+  const reviews = await Promise.all(plan.groups.map(async (_, i) => {
+    try {
+      const text = await withTimeout(provider.call({
+        instructions: rulesInstructions(plan.language),
+        input: JSON.stringify(rulesRequest(plan, i)),
+        schemaName: "rules_review",
+        schema,
+        reasoning: "medium",
+      }), RULES_TIMEOUT_MS);
+      const parsed = text ? RulesReviewSchema.safeParse(prettyMathDeep(JSON.parse(text))) : null;
+      return parsed?.success ? parsed.data : null;
+    } catch {
+      return null;
+    }
+  }));
+  const errorsOf = (p: LessonPlan) => { const r = validateLessonPlan(p); return r.ok ? [] : r.errors; };
+  let next = plan;
+  reviews.forEach((review, i) => {
+    if (!review) return console.warn(`[ai] ${provider.name} rules-g${i + 1}: no answer`);
+    const before = next.groups[i];
+    const { group, fixed } = applyRulesReview(before, review, reviewedCard);
+    // Пример или «Попробуй сам» с новой ошибкой счёта или опечаткой: объяснение оставляем прежним, карточки берём.
+    const oldExp = new Set(checkExplanation(before.explanation));
+    const expBroken = checkExplanation(group.explanation).some((e) => !oldExp.has(e));
+    const candidate = { ...next, groups: next.groups.map((g, k) => (k === i ? { ...group, explanation: expBroken ? before.explanation : group.explanation } : g)) };
+    const oldPlan = new Set(errorsOf(next));
+    if (errorsOf(candidate).some((e) => !oldPlan.has(e))) return console.warn(`[ai] ${provider.name} rules-g${i + 1}: rolled back, fixes broke a check`);
+    next = candidate;
+    const exp = expBroken ? "explanation rolled back" : `examples ${fixed.examples}, practice ${fixed.practice}${fixed.keyIdea ? ", keyIdea" : ""}`;
+    console.warn(`[ai] ${provider.name} rules-g${i + 1}: found ${review.cards.length + review.examples.length + review.practice.length}, fixed cards ${fixed.cards}, ${exp}`);
+  });
+  return next;
 }
 
 // ---------------------------------------------------------------------------
@@ -314,6 +383,7 @@ export async function generateHint(req: HintRequest): Promise<string | null> {
         input: JSON.stringify({
           subject: req.subject, grade: req.grade, topic: req.topic,
           task: req.card.prompt, successCriteria: req.card.successCriteria, correctAnswer: req.card.answer ?? null,
+          acceptedAnswers: req.card.accept ?? [],
           studentAnswer: req.studentAnswer ?? null, previousHints: req.previousHints, hintNumber: req.previousHints.length + 1,
           rejectedBecauseTheyRevealTheAnswer: rejected,
         }),
@@ -323,7 +393,8 @@ export async function generateHint(req: HintRequest): Promise<string | null> {
       const parsed = text ? HintSchema.safeParse(JSON.parse(text)) : null;
       if (!parsed?.success) continue;
       const hint = parsed.data.hint.trim();
-      if (hintRevealsAnswer(hint, req.card.answer ?? "", req.card.prompt) || findMixedScriptWord(hint)) {
+      const secrets = [req.card.answer ?? "", ...(req.card.accept ?? [])];
+      if (secrets.some((a) => hintRevealsAnswer(hint, a, req.card.prompt)) || findMixedScriptWord(hint)) {
         console.warn(`[ai] ${provider.name} hint: attempt ${attempt + 1} rejected by guard`);
         rejected = [...rejected, hint];
         continue;
@@ -340,7 +411,7 @@ export async function generateHint(req: HintRequest): Promise<string | null> {
 // ---------------------------------------------------------------------------
 // Замена одной карточки по просьбе учителя
 
-const NewCardSchema = TaskCardSchema.omit({ id: true }).extend({ answer: z.string().nullable(), minutes: z.number().min(0.5).max(20) });
+const NewCardSchema = GeneratedCardSchema.extend({ purpose: TaskCardSchema.shape.purpose });
 
 export async function regenerateCard(plan: LessonPlan, groupId: string, cardId: string, wish: string | undefined): Promise<TaskCard> {
   const provider = resolveProvider();
@@ -364,7 +435,7 @@ export async function regenerateCard(plan: LessonPlan, groupId: string, cardId: 
     check: (value) => {
       const parsed = NewCardSchema.safeParse(prettyMathDeep(value));
       if (!parsed.success) return { ok: false, errors: parsed.error.issues.map((i) => `SCHEMA: ${i.path.join(".")}: ${i.message}`) };
-      const card: TaskCard = { ...parsed.data, id: cardId, answer: parsed.data.answer ?? undefined };
+      const card: TaskCard = { ...cardFromModel(parsed.data), purpose: parsed.data.purpose, id: cardId };
       const errors = checkSingleCard(card);
       if (card.type !== old.type || card.purpose !== old.purpose) errors.push(`REQUEST: keep type "${old.type}" and purpose "${old.purpose}"`);
       if (card.prompt.trim() === old.prompt.trim()) errors.push("REQUEST: write a different task, not the current one");
