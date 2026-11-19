@@ -135,6 +135,10 @@ body {
   .btn[aria-busy="true"] {
     cursor: progress;
   }
+  .btn[aria-busy="true"]:hover,
+  .btn[aria-busy="true"]:active {
+    transform: none;
+  }
   .btn-primary {
     background: var(--color-ink);
     color: #fff;
@@ -278,6 +282,36 @@ body {
 }
 .live-dot {
   animation: live 1.6s ease-out infinite;
+}
+
+/* Сборка урока: по партитуре бежит световая полоса, готовые отрезки заливаются слева направо */
+@keyframes build-scan {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(420%);
+  }
+}
+.build-scan {
+  animation: build-scan 2.6s linear infinite;
+}
+@keyframes build-fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+.build-fill {
+  transform-origin: left center;
+  animation: build-fill 700ms var(--ease-out) both;
+}
+@keyframes build-breathe {
+  50% {
+    opacity: 0.45;
+  }
+}
+.build-breathe {
+  animation: build-breathe 1.6s ease-in-out infinite;
 }
 
 /* Блок проявляется, когда до него доскроллили. Без JS и при «уменьшить движение» виден сразу. */

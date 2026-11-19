@@ -12,7 +12,7 @@ import type { Lang } from "./schema";
 
 export const TRAINER_SKILLS = [
   "add_within_10", "sub_within_10", "add_within_20", "sub_within_20",
-  "add_2d_1d_carry", "add_2d_2d_carry", "sub_2d_borrow", "add_3d", "sub_3d",
+  "add_2d_1d_carry", "sub_2d_1d_borrow", "addsub_2d_1d", "add_2d_2d_carry", "sub_2d_borrow", "add_3d", "sub_3d",
   "mul_table", "div_table", "mul_2d_1d", "div_2d_1d", "div_3d_1d", "div_remainder", "mul_10_100",
   "equation_add", "equation_sub", "equation_mul", "fraction_of", "round_tens", "round_hundreds",
   "percent_of", "integers_add", "integers_mul", "linear_equation", "decimal_add",
@@ -103,6 +103,9 @@ export function seededTask(skill: TrainerSkill, seed: string, index: number, lan
     case "add_within_20": { const a = int(3, 9); const b = int(11 - a, 9); return compute(`${a} + ${b}`, a + b, t.hints.carry); }
     case "sub_within_20": { const a = int(11, 18); const b = int(a - 9, 9); return compute(`${a} − ${b}`, a - b, t.hints.borrow); }
     case "add_2d_1d_carry": { const u = int(2, 9); const a = int(1, 8) * 10 + u; const b = int(10 - u, 9); return compute(`${a} + ${b}`, a + b, t.hints.carry); }
+    case "sub_2d_1d_borrow": { const u = int(0, 7); const a = int(2, 9) * 10 + u; const b = int(u + 1, 9); return compute(`${a} − ${b}`, a - b, t.hints.borrow); }
+    // Тема «сложение и вычитание»: чётные задания на сложение, нечётные на вычитание, оба с переходом через десяток.
+    case "addsub_2d_1d": return seededTask(index % 2 === 0 ? "add_2d_1d_carry" : "sub_2d_1d_borrow", seed, index, lang);
     case "add_2d_2d_carry": {
       const ua = int(2, 9); const ub = int(10 - ua, 9); const ta = int(1, 7); const tb = int(1, 8 - ta);
       return compute(`${ta * 10 + ua} + ${tb * 10 + ub}`, ta * 10 + ua + tb * 10 + ub, t.hints.carry);

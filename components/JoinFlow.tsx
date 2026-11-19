@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getDict, t, type Locale } from "@/lib/i18n";
 import { groupTitle } from "@/lib/lesson";
@@ -28,8 +28,7 @@ export function JoinFlow({ lang }: { lang: Locale }) {
 
   const errorOf = (code: unknown): keyof typeof d.errors => (typeof code === "string" && code in d.errors ? (code as keyof typeof d.errors) : "storage");
 
-  async function findLesson(event: FormEvent) {
-    event.preventDefault();
+  async function lookup() {
     if (code.length !== 6) return setError("not_found");
     setBusy(true);
     setError(null);
@@ -45,6 +44,19 @@ export function JoinFlow({ lang }: { lang: Locale }) {
       setBusy(false);
     }
   }
+
+  async function findLesson(event: FormEvent) {
+    event.preventDefault();
+    await lookup();
+  }
+
+  // Пришли по QR со слайда или по ссылке с кодом: урок ищем сразу, ученику остаётся выбрать класс и вписать имя.
+  // Один раз при открытии страницы: код уже в адресе, нажимать «Дальше» незачем.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (code.length === 6) void lookup();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function join(event: FormEvent) {
     event.preventDefault();

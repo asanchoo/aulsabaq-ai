@@ -14,7 +14,8 @@ type Size = "slide" | "page";
 export function Visual({ visual, labels, size = "page" }: { visual: VisualData; labels: Labels; size?: Size }) {
   const text = size === "slide" ? "text-[clamp(1.4rem,3.2vw,2.6rem)]" : "text-[1.15rem]";
   return (
-    <figure className="grid min-w-0 gap-3">
+    // @container: схема подстраивается под место, которое ей дали (половина слайда, колонка страницы), а не под экран.
+    <figure className="@container grid min-w-0 gap-3">
       <div className={`min-w-0 overflow-x-auto ${text}`}>{body(visual, labels, size)}</div>
       <figcaption className={size === "slide" ? "max-w-[50ch] text-[clamp(1rem,1.8vw,1.35rem)] leading-snug text-muted" : "text-[0.9rem] leading-snug text-muted"}>
         {visual.caption}
@@ -157,7 +158,9 @@ const fmt = (n: number) => String(Math.round(n * 1000) / 1000).replace(".", ",")
 function NumberLine({ from, to, points }: { from: number; to: number; points: number[] }) {
   const W = 640, left = 30, right = 610, y = 120;
   const x = (v: number) => left + ((v - from) / (to - from)) * (right - left);
-  const step = niceStep(to - from, 10);
+  // На целом луче деления только целые: 58, 59, 60, а не 58,5 (полшага путают младших школьников).
+  const integral = [from, to, ...points].every(Number.isInteger);
+  const step = Math.max(niceStep(to - from, 10), integral ? 1 : 0);
   const ticks: number[] = [];
   for (let v = Math.ceil(from / step) * step; v <= to + 1e-9; v += step) ticks.push(v);
   return (
@@ -461,15 +464,17 @@ function Word({ parts, labels }: { parts: { text: string; part: "prefix" | "root
 function Flow({ items, cycle, labels }: { items: string[]; cycle: boolean; labels: Labels }) {
   return (
     <div className="grid gap-3">
-      <ol className="flex flex-col items-stretch gap-2 md:flex-row md:flex-wrap md:items-center">
+      {/* Всегда столбиком со стрелками вниз: строкой длинные шаги переносились, и стрелки «→» в конце строк
+          указывали в пустоту (на слайде рядом с правилом, на странице урока). */}
+      <ol className="flex max-w-[34em] flex-col items-stretch gap-2">
         {items.map((item, i) => (
-          <li key={i} className="flex flex-col items-center gap-2 md:flex-row">
+          <li key={i} className="flex flex-col items-stretch gap-2">
             <span className="flex min-h-[2.4em] items-center gap-[0.5em] rounded-card border-2 border-ink bg-white px-[0.7em] py-[0.35em] text-[0.8em] leading-snug">
               <span className="tabular grid size-[1.5em] shrink-0 place-items-center rounded-full bg-mint text-[0.8em] font-semibold">{i + 1}</span>
               {item}
             </span>
             {i < items.length - 1 && (
-              <svg aria-hidden viewBox="0 0 24 24" className="size-[1em] shrink-0 rotate-90 md:rotate-0" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg aria-hidden viewBox="0 0 24 24" className="size-[1em] shrink-0 rotate-90 self-center" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4 12h15M13 6l6 6-6 6" />
               </svg>
             )}

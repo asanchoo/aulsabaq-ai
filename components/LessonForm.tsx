@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { LessonRequestSchema } from "@/lib/generation-schema";
 import { parseLessonPlan } from "@/lib/validate";
 import { getCreationDict, getDict, t, type Locale } from "@/lib/i18n";
-import { rememberLesson } from "@/lib/local";
+import { forgetPending, readPending, rememberLesson, rememberPending, type PendingLesson } from "@/lib/local";
+import type { JobView, LessonProgress } from "@/lib/progress";
+import { initialProgress } from "@/lib/progress";
+import { LessonBuilding } from "./LessonBuilding";
 import { AutoTextarea } from "./AutoTextarea";
 
 type Photo = { mimeType: "image/jpeg"; data: string; preview: string };
@@ -17,6 +20,8 @@ type GroupDraft = {
 };
 
 const MAX_PHOTOS = 2;
+/** Как часто спрашиваем сервер о сборке урока. */
+const POLL_MS = 2500;
 
 /**
  * Фото страницы учебника сжимаем в браузере: телефон снимает 3–8 МБ, а модели хватает ~1600 px по длинной стороне.
@@ -59,7 +64,14 @@ export function LessonForm({ lang }: { lang: Locale }) {
   const [duration, setDuration] = useState("45");
   const [groups, setGroups] = useState<GroupDraft[]>([newGroup(1, 2, lang), newGroup(2, 4, lang)]);
   const [busy, setBusy] = useState(false);
-  const [step, setStep] = useState(0);
+  // Сборка урока на сервере: номер, ход и время. resumed: вернулись к сборке после перезагрузки страницы.
+  const [job, setJob] = useState<PendingLesson | null>(null);
+  const [progress, setProgress] = useState<LessonProgress | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+  const [offline, setOffline] = useState(false);
+  const [resumed, setResumed] = useState(false);
+  const buildingRef = useRef<HTMLElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<keyof typeof d.errors | null>(null);
   const [photoError, setPhotoError] = useState<number | null>(null);
   const mixed = new Set(groups.map((g) => g.language)).size > 1;
@@ -77,12 +89,74 @@ export function LessonForm({ lang }: { lang: Locale }) {
     }
   }
 
-  // Пока ждём ответ модели, отмечаем шаги по очереди: учителю видно, что работа идёт.
+  // Сборка урока идёт на сервере: спрашиваем, что готово, пока урок не готов или не сломался.
+  // Номер сборки лежит в браузере (rememberPending): после обрыва связи или закрытой вкладки форма вернётся к ней.
   useEffect(() => {
-    if (!busy) return;
-    const timer = setInterval(() => setStep((s) => Math.min(s + 1, d.steps.length - 1)), 4000);
-    return () => clearInterval(timer);
-  }, [busy, d.steps.length]);
+    const pending = readPending();
+    if (!pending) return;
+    // Возврат к сборке после перезагрузки: состояние берём из браузера один раз, при открытии формы.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setJob(pending);
+    setResumed(true);
+    setBusy(true);
+    // Форма снова показывает, что собирается: предмет, длительность, классы и темы.
+    setSubject(pending.subject);
+    setDuration(String(pending.durationMin));
+    if (pending.draft?.length) setGroups(pending.draft.map((g, i) => ({ ...newGroup(i + 1, g.grade, g.language), ...g })));
+  }, []);
+
+  useEffect(() => {
+    if (!job) return;
+    let stopped = false;
+    const finish = (code: keyof typeof d.errors | null) => {
+      stopped = true;
+      forgetPending();
+      setJob(null);
+      setBusy(false);
+      if (code) setError(code);
+    };
+    const poll = async () => {
+      try {
+        const response = await fetch(`/api/lessons/jobs/${job.job}`, { headers: { "x-teacher-token": job.token }, cache: "no-store" });
+        if (stopped) return;
+        if (response.status === 404) return finish("provider");
+        if (!response.ok) return setOffline(true);
+        const view = (await response.json()) as JobView;
+        setOffline(false);
+        setProgress(view.progress);
+        setElapsed(view.elapsed);
+        if (view.status === "ready" && view.lessonId) {
+          rememberLesson({ id: view.lessonId, token: job.token, subject: job.subject, grades: job.grades, language: job.language, demo: false });
+          stopped = true;
+          forgetPending();
+          // Урок открываем сверху: иначе браузер оставит прокрутку длинной формы, и урок откроется с середины.
+          window.scrollTo(0, 0);
+          router.push(`/${lang}/teacher/${view.lessonId}`);
+        } else if (view.status === "failed") {
+          finish(Object.hasOwn(d.errors, view.error ?? "") ? (view.error as keyof typeof d.errors) : "provider");
+        } else if (view.stale) {
+          finish("provider");
+        }
+      } catch {
+        if (!stopped) setOffline(true);
+      }
+    };
+    void poll();
+    const timer = setInterval(() => void poll(), POLL_MS);
+    // Секундомер между опросами: сервер присылает точное время раз в несколько секунд.
+    const tick = setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => {
+      stopped = true;
+      clearInterval(timer);
+      clearInterval(tick);
+    };
+  }, [job, lang, router, d]);
+
+  // Ошибка появляется у кнопки, а на телефоне учитель смотрит на блок сборки выше формы: подводим к тексту ошибки.
+  useEffect(() => {
+    if (!error) return;
+    errorRef.current?.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }, [error]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -107,8 +181,13 @@ export function LessonForm({ lang }: { lang: Locale }) {
       setError("bad_request");
       return;
     }
-    setStep(0);
     setBusy(true);
+    setProgress(null);
+    setElapsed(0);
+    setResumed(false);
+    // На телефоне блок сборки стоит под длинной формой: показываем его, иначе кажется, что ничего не происходит.
+    requestAnimationFrame(() => buildingRef.current?.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }));
+    let started = false;
     try {
       const response = await fetch("/api/lessons", {
         method: "POST",
@@ -118,6 +197,18 @@ export function LessonForm({ lang }: { lang: Locale }) {
       const result = await response.json();
       if (!response.ok) {
         setError(Object.hasOwn(d.errors, result.error) ? result.error : "provider");
+        return;
+      }
+      // Сборка в фоне: дальше форма спрашивает статус (эффект выше).
+      if (typeof result.job === "string" && typeof result.token === "string") {
+        const pending: PendingLesson = {
+          job: result.job, token: result.token, subject: input.data.subject, grades: input.data.groups.map((g) => g.grade),
+          language: input.data.language, durationMin: input.data.durationMin, startedAt: Date.now(),
+          draft: groups.map(({ grade, language, topic, count, notes, pages }) => ({ grade, language, topic, count, notes, pages })),
+        };
+        rememberPending(pending);
+        setJob(pending);
+        started = true;
         return;
       }
       const plan = parseLessonPlan(result.plan);
@@ -130,6 +221,7 @@ export function LessonForm({ lang }: { lang: Locale }) {
           id: result.id, token: result.token, subject: plan.plan.subject, grades: plan.plan.groups.map((g) => g.grade),
           language: plan.plan.language, demo: result.demo === true,
         });
+        window.scrollTo(0, 0);
         router.push(`/${lang}/teacher/${result.id}`);
         return;
       }
@@ -143,7 +235,7 @@ export function LessonForm({ lang }: { lang: Locale }) {
     } catch {
       setError("provider");
     } finally {
-      setBusy(false);
+      if (!started) setBusy(false);
     }
   }
 
@@ -407,7 +499,7 @@ export function LessonForm({ lang }: { lang: Locale }) {
         </fieldset>
 
         {error && (
-          <div role="alert" className="mt-6 flex gap-3 rounded-card border border-danger/30 bg-danger-soft p-4 text-ink">
+          <div ref={errorRef} role="alert" className="mt-6 flex scroll-mt-24 gap-3 rounded-card border border-danger/30 bg-danger-soft p-4 text-ink">
             <svg aria-hidden viewBox="0 0 24 24" className="mt-0.5 size-5 shrink-0 text-danger" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <circle cx="12" cy="12" r="9" />
               <path d="M12 8v5M12 16.5v.5" />
@@ -417,7 +509,9 @@ export function LessonForm({ lang }: { lang: Locale }) {
         )}
 
         <div className="mt-8 grid gap-3">
-          <button type="submit" disabled={busy} aria-busy={busy} className="btn btn-primary w-full">
+          {/* Во время сборки кнопка не гаснет, как запрещённая: она полного цвета, с крутилкой, и повторно не отправляет. */}
+          <button type="submit" aria-disabled={busy} aria-busy={busy} className="btn btn-primary w-full">
+            {busy && <span aria-hidden className="size-4 animate-spin rounded-full border-2 border-white/35 border-t-white" />}
             {busy ? d.loading : d.submit}
             {!busy && (
               <svg aria-hidden viewBox="0 0 16 16" className="arrow size-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -431,49 +525,41 @@ export function LessonForm({ lang }: { lang: Locale }) {
         </div>
       </form>
 
-      {/* Предпросмотр: дорожки выбранных классов, а во время сборки шаги проверки */}
-      <aside aria-live="polite" className="lg:col-span-5">
+      {/* Предпросмотр: дорожки выбранных классов, а во время сборки настоящий ход сборки урока */}
+      {/* Пока урок собирается, на телефоне ход сборки стоит над формой: смотреть больше не на что. */}
+      <aside ref={buildingRef} aria-live="polite" className={`scroll-mt-20 lg:col-span-5 ${busy ? "max-lg:order-first" : ""}`}>
         <div className="rounded-frame bg-stage p-5 sm:p-6 lg:sticky lg:top-24">
           <div className="rounded-card bg-white p-5">
-            <div className="flex items-center justify-between gap-3">
-              <p className="font-semibold">{d.previewTitle}</p>
-              <span className="font-mono text-[0.8rem] text-faint">{subject.trim() || "…"}</span>
-            </div>
-            <div className="mt-5 grid gap-2.5">
-              {groups.map((g) => (
-                  <div key={g.id} className="grid grid-cols-[minmax(4.5rem,auto)_1fr] items-center gap-3">
-                    <span className="text-[0.85rem] font-semibold whitespace-nowrap">
-                      {t(dict.common.grade, { n: g.grade })}
-                      {mixed && <span className="ml-1.5 font-normal text-muted uppercase">{g.language}</span>}
-                    </span>
-                    <span className={`h-9 rounded-md border border-dashed border-line-strong ${busy ? "animate-pulse bg-mint-soft" : ""}`} />
-                  </div>
-                ))}
-            </div>
-            {!busy ? (
-              <p className="mt-5 text-[0.88rem] text-muted">{d.previewEmpty}</p>
+            {busy ? (
+              <LessonBuilding
+                lang={lang}
+                grades={job?.grades ?? groups.map((g) => g.grade)}
+                durationMin={job?.durationMin ?? (Number(duration) || 45)}
+                progress={progress ?? initialProgress(job?.grades.length ?? groups.length)}
+                elapsed={elapsed}
+                offline={offline}
+                resumed={resumed}
+              />
             ) : (
-              <ol className="mt-6 grid gap-2.5 border-t border-line pt-5">
-                {d.steps.map((label, i) => (
-                  <li key={label} className={`flex items-center gap-3 text-[0.9rem] ${i <= step ? "text-ink" : "text-faint"}`}>
-                    <span
-                      aria-hidden
-                      className={`grid size-5 shrink-0 place-items-center rounded-full ${
-                        i < step ? "bg-ink text-white" : i === step ? "border-2 border-ink" : "border border-line-strong"
-                      }`}
-                    >
-                      {i < step && (
-                        <svg viewBox="0 0 24 24" className="size-3" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M20 6 9 17l-5-5" />
-                        </svg>
-                      )}
-                    </span>
-                    {label}
-                  </li>
-                ))}
-              </ol>
+              <>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-semibold">{d.previewTitle}</p>
+                  <span className="font-mono text-[0.8rem] text-faint">{subject.trim() || "…"}</span>
+                </div>
+                <div className="mt-5 grid gap-2.5">
+                  {groups.map((g) => (
+                    <div key={g.id} className="grid grid-cols-[minmax(4.5rem,auto)_1fr] items-center gap-3">
+                      <span className="text-[0.85rem] font-semibold whitespace-nowrap">
+                        {t(dict.common.grade, { n: g.grade })}
+                        {mixed && <span className="ml-1.5 font-normal text-muted uppercase">{g.language}</span>}
+                      </span>
+                      <span className="h-9 rounded-md border border-dashed border-line-strong" />
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-5 text-[0.88rem] text-muted">{d.previewEmpty}</p>
+              </>
             )}
-            {busy && <p className="mt-5 text-[0.85rem] leading-snug text-muted">{d.waiting}</p>}
           </div>
         </div>
       </aside>

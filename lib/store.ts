@@ -24,8 +24,8 @@ export function hashToken(token: string): string {
 
 export type SavedLesson = { id: string; joinCode: string; token: string };
 
-export async function saveLesson(plan: LessonPlan, isDemo = false): Promise<SavedLesson> {
-  const token = newTeacherToken();
+/** token: ключ учителя, если он уже выдан (сборка урока выдаёт его заранее, и тот же ключ становится ключом урока). */
+export async function saveLesson(plan: LessonPlan, isDemo = false, token = newTeacherToken()): Promise<SavedLesson> {
   const rows = await rpc<{ id: string; join_code: string }[]>("create_lesson", {
     p_plan: plan,
     p_language: plan.language,
@@ -131,4 +131,36 @@ export async function updateSession(sessionId: string, change: {
     p_needs_help: change.needsHelp ?? null,
     p_help_card: change.helpCard ?? null,
   });
+}
+
+// ---------------------------------------------------------------------------
+// Сборка урока: номер сразу, урок в фоне, браузер спрашивает статус (supabase/schema.sql, lesson_jobs)
+
+export type JobStatus = "running" | "ready" | "failed";
+export type StoredJob = {
+  status: JobStatus; progress: unknown; lessonId: string | null; joinCode: string | null; error: string | null;
+  updatedAt: string; createdAt: string;
+};
+
+export async function createJob(token: string, progress: unknown): Promise<string> {
+  const id = await rpc<string>("create_job", { p_token_hash: hashToken(token), p_progress: progress });
+  if (typeof id !== "string") throw new StorageError(500);
+  return id;
+}
+
+/** null в поле значит «не менять». */
+export async function updateJob(id: string, token: string, change: { status?: JobStatus; progress?: unknown; lessonId?: string; error?: string }): Promise<boolean> {
+  return rpc<boolean>("update_job", {
+    p_id: id, p_token_hash: hashToken(token), p_status: change.status ?? null, p_progress: change.progress ?? null,
+    p_lesson_id: change.lessonId ?? null, p_error: change.error ?? null,
+  });
+}
+
+export async function getJob(id: string, token: string): Promise<StoredJob | null> {
+  if (!isUuid(id) || !token) return null;
+  const rows = await rpc<{ status: JobStatus; progress: unknown; lesson_id: string | null; join_code: string | null; error: string | null; updated_at: string; created_at: string }[]>(
+    "get_job", { p_id: id, p_token_hash: hashToken(token) },
+  );
+  const row = rows[0];
+  return row ? { status: row.status, progress: row.progress, lessonId: row.lesson_id, joinCode: row.join_code, error: row.error, updatedAt: row.updated_at, createdAt: row.created_at } : null;
 }

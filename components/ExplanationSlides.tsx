@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { getDict, t, type Locale } from "@/lib/i18n";
 import type { Explanation, WorkedExample } from "@/lib/schema";
 import { Visual } from "./Visual";
@@ -41,22 +41,22 @@ export function ExplanationSlides({ explanation: e, grade, topic, lang, joinCode
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
         <div className="min-w-0">
           <p className={`tabular leading-tight font-medium ${isMathOnly(x.problem) ? "font-mono text-[clamp(1.8rem,4.6vw,3.6rem)]" : "text-[clamp(1.4rem,3vw,2.4rem)] tracking-[-0.01em]"}`}>{x.problem}</p>
+          {/* Все шаги, ответ и схема стоят на своих местах с самого начала, скрытые невидимы: слайд не прыгает
+              при каждом нажатии, и размер подбирается один раз (FitBox). */}
           <ol className="mt-6 grid gap-3">
-            {x.steps.slice(0, n).map((step, i) => (
-              <li key={i} className="pop flex gap-4 text-[clamp(1.1rem,2.1vw,1.6rem)] leading-[1.35]">
+            {x.steps.map((step, i) => (
+              <li key={i} aria-hidden={i >= n} className={`flex gap-4 text-[clamp(1.1rem,2.1vw,1.6rem)] leading-[1.35] ${i < n ? "pop" : "invisible"}`}>
                 <span className="tabular w-7 shrink-0 font-mono text-muted">{i + 1}</span>
                 <span>{step}</span>
               </li>
             ))}
           </ol>
-          {n > x.steps.length && (
-            <p className="pop mt-6 inline-flex rounded-card bg-mint px-5 py-3 text-[clamp(1.2rem,2.4vw,1.8rem)] font-semibold">
-              {l.answer}: <span className="tabular ml-2 font-mono">{x.answer}</span>
-            </p>
-          )}
+          <p aria-hidden={n <= x.steps.length} className={`mt-6 rounded-card bg-mint px-5 py-3 text-[clamp(1.2rem,2.4vw,1.8rem)] font-semibold ${n > x.steps.length ? "pop" : "invisible"}`}>
+            {l.answer}: <span className="tabular">{x.answer}</span>
+          </p>
         </div>
-        {x.visual && n > x.steps.length && (
-          <div className="pop min-w-0">
+        {x.visual && (
+          <div aria-hidden={n <= x.steps.length} className={`min-w-0 ${n > x.steps.length ? "pop" : "invisible"}`}>
             <Visual visual={x.visual} labels={dict.visual} size="slide" />
           </div>
         )}
@@ -69,6 +69,9 @@ export function ExplanationSlides({ explanation: e, grade, topic, lang, joinCode
   // Презентация на 10–13 слайдов, примерно минута на слайд: на экран идут 3 примера, 2 ошибки и до 6 заданий.
   // Остальное (все примеры, все задания, третья схема) остаётся на странице урока и в памятке ученика.
   const [ruleVisual, stepsVisual] = e.visuals;
+  // Рядом с шагами только схема, которая их показывает (уголок, столбик, луч, таблица). Схема-«алгоритм» (flow)
+  // повторяет те же шаги в рамках: рядом с шагами это одно и то же дважды, и слайд не помещался.
+  const stepsSide = [stepsVisual, ruleVisual].find((v) => v && v.kind !== "flow") ?? null;
   const practiceChunks = chunk(e.practice.slice(0, 6), 3);
   const mistakes = e.mistakes.slice(0, 2).map(splitMistake);
   const shownExamples = pickExamples([e.example, ...e.examples]);
@@ -79,11 +82,12 @@ export function ExplanationSlides({ explanation: e, grade, topic, lang, joinCode
       kicker: grade,
       frames: 0,
       render: () => (
-        <div className="grid gap-8">
-          <p className="display max-w-[18ch] text-[clamp(2.4rem,6vw,4.8rem)]">{topic}</p>
-          <div className="max-w-[44ch] rounded-frame bg-mint-soft p-6 sm:p-8">
+        // Тема и вопрос классу рядом: длинная тема и вопрос из нескольких предложений не помещались столбиком.
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-12">
+          <p className="display text-[clamp(2.2rem,4.6vw,4rem)]">{topic}</p>
+          <div className="rounded-frame bg-mint-soft p-6 sm:p-8">
             <p className="text-[clamp(0.95rem,1.6vw,1.2rem)] font-semibold tracking-[0.02em] text-ink/70 uppercase">{labels.question}</p>
-            <p className="mt-2 text-[clamp(1.3rem,2.6vw,2rem)] leading-[1.35]">{e.hook}</p>
+            <p className="mt-2 text-[clamp(1.2rem,2.2vw,1.75rem)] leading-[1.4]">{e.hook}</p>
           </div>
         </div>
       ),
@@ -102,7 +106,8 @@ export function ExplanationSlides({ explanation: e, grade, topic, lang, joinCode
               {e.intuition && <p className="max-w-[34ch] text-[clamp(1.4rem,3vw,2.3rem)] leading-[1.35]">{e.intuition}</p>}
               {e.terms.length > 0 && (
                 <dl className="grid gap-3">
-                  {e.terms.map((x) => (
+                  {/* На слайд до трёх новых слов, иначе пояснения становятся мелкими; все слова есть на странице урока. */}
+                  {e.terms.slice(0, 3).map((x) => (
                     <div key={x.term} className="rounded-card border border-line p-4">
                       <dt className="text-[clamp(1.2rem,2.2vw,1.7rem)] font-semibold tracking-[-0.01em]">{x.term}</dt>
                       <dd className="mt-1 text-[clamp(1rem,1.7vw,1.3rem)] leading-[1.35] text-ink/80">{x.meaning}</dd>
@@ -134,8 +139,8 @@ export function ExplanationSlides({ explanation: e, grade, topic, lang, joinCode
       kicker: labels.show,
       frames: e.steps.length,
       render: (n) => (
-        <div className={`grid gap-10 ${stepsVisual ?? ruleVisual ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start" : ""}`}>
-          <ol className="grid max-w-[40ch] gap-4">
+        <div className={`grid gap-10 ${stepsSide ? "lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start" : ""}`}>
+          <ol className="grid max-w-[60ch] gap-4">
             {e.steps.map((step, i) => (
               <li key={i} className={`flex gap-4 text-[clamp(1.2rem,2.3vw,1.8rem)] leading-[1.35] transition-opacity ${i < n ? "pop opacity-100" : "opacity-15"}`}>
                 <span className="tabular grid size-[1.6em] shrink-0 place-items-center rounded-full bg-mint text-[0.75em] font-semibold">{i + 1}</span>
@@ -143,9 +148,9 @@ export function ExplanationSlides({ explanation: e, grade, topic, lang, joinCode
               </li>
             ))}
           </ol>
-          {(stepsVisual ?? ruleVisual) && (
+          {stepsSide && (
             <div className="min-w-0">
-              <Visual visual={(stepsVisual ?? ruleVisual)!} labels={dict.visual} size="slide" />
+              <Visual visual={stepsSide} labels={dict.visual} size="slide" />
             </div>
           )}
         </div>
@@ -169,7 +174,7 @@ export function ExplanationSlides({ explanation: e, grade, topic, lang, joinCode
                     return (
                       <div key={i} className="grid content-start gap-4">
                         <p className="rounded-frame border-2 border-dashed border-help/50 bg-help-soft p-5 text-[clamp(1.25rem,2.6vw,2rem)] leading-[1.3] font-medium">{m.lead}</p>
-                        {show && <p className="pop text-[clamp(1.05rem,1.9vw,1.45rem)] leading-[1.4]">{m.rest}</p>}
+                        {m.rest && <p aria-hidden={!show} className={`text-[clamp(1.05rem,1.9vw,1.45rem)] leading-[1.4] ${show ? "pop" : "invisible"}`}>{m.rest}</p>}
                       </div>
                     );
                   })}
@@ -186,12 +191,20 @@ export function ExplanationSlides({ explanation: e, grade, topic, lang, joinCode
       render: (n) => (
         <div className="grid gap-6">
           <p className="text-[clamp(0.95rem,1.6vw,1.2rem)] text-muted">{labels.yourTurnLead}</p>
-          <ol className="grid max-w-[52ch] gap-6">
+          {/* Задания рядом в колонки: так они используют всю ширину экрана, а не узкую полосу слева, и слайд
+              не приходится сильно уменьшать. */}
+          <ol className={`grid items-start gap-x-10 gap-y-7 ${tasks.length > 1 ? "lg:grid-cols-[repeat(auto-fit,minmax(0,1fr))]" : "max-w-[56ch]"}`}>
             {tasks.map((p, i) => (
-              <li key={i} className="flex flex-wrap items-baseline gap-x-5 gap-y-2 text-[clamp(1.4rem,2.9vw,2.2rem)] leading-[1.3]">
-                <span className="tabular grid size-[1.5em] shrink-0 place-items-center self-start rounded-full bg-mint text-[0.7em] font-semibold">{k * 3 + i + 1}</span>
-                <span className={`min-w-0 flex-1 ${isMathOnly(p.task) ? "tabular font-mono" : ""}`}>{p.task}</span>
-                {i < n && <span className="pop tabular rounded-btn bg-surface px-3 py-1 font-mono font-semibold">{p.answer}</span>}
+              <li key={i} className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-5 gap-y-2 text-[clamp(1.4rem,2.9vw,2.2rem)] leading-[1.3]">
+                <span className="tabular grid size-[1.5em] place-items-center rounded-full bg-mint text-[0.7em] font-semibold">{k * 3 + i + 1}</span>
+                <span className="min-w-0">{p.task}</span>
+                {/* Ответ отдельной строкой под заданием: в одну строку он сжимал задание до слова на строку. */}
+                <span
+                  aria-hidden={i >= n}
+                  className={`col-start-2 justify-self-start rounded-btn bg-surface px-3 py-1 text-[0.8em] font-semibold ${i < n ? "pop" : "invisible"}`}
+                >
+                  {l.answer}: <span className="tabular">{p.answer}</span>
+                </span>
               </li>
             ))}
           </ol>
@@ -203,7 +216,7 @@ export function ExplanationSlides({ explanation: e, grade, topic, lang, joinCode
       kicker: l.explain.summary,
       frames: 0,
       render: () => (
-        <div className="grid gap-10 lg:grid-cols-2 lg:items-start">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
           <div>
             <p className="mb-4 text-[clamp(1rem,1.8vw,1.3rem)] font-semibold">{labels.summary}</p>
             <NumberedList items={e.summary.length ? e.summary : [e.keyIdea]} />
@@ -211,7 +224,7 @@ export function ExplanationSlides({ explanation: e, grade, topic, lang, joinCode
           {e.checkQuestions.length > 0 && (
             <div className="rounded-frame bg-surface p-6">
               <p className="mb-4 text-[clamp(1rem,1.8vw,1.3rem)] font-semibold">{labels.questions}</p>
-              <ul className="grid gap-4 text-[clamp(1.15rem,2.1vw,1.6rem)] leading-[1.35]">
+              <ul className="grid gap-4 text-[clamp(1.2rem,2.2vw,1.7rem)] leading-[1.35]">
                 {e.checkQuestions.map((q, i) => <li key={i}>{q}</li>)}
               </ul>
             </div>
@@ -330,10 +343,10 @@ export function ExplanationSlides({ explanation: e, grade, topic, lang, joinCode
             </div>
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col justify-center overflow-y-auto py-8">
+          <FitBox key={slide}>
             <p className="mb-6 text-[clamp(0.95rem,1.6vw,1.2rem)] font-semibold tracking-[0.02em] text-muted uppercase">{current.kicker}</p>
-            <div key={slide}>{current.render(shown)}</div>
-          </div>
+            {current.render(shown)}
+          </FitBox>
 
           <div className="flex items-center justify-between gap-3 border-t border-line pt-4">
             <p className="hidden text-[0.85rem] text-muted md:block">{labels.keys}</p>
@@ -368,7 +381,7 @@ export function ExplanationSlides({ explanation: e, grade, topic, lang, joinCode
 
 function NumberedList({ items }: { items: string[] }) {
   return (
-    <ol className="grid max-w-[46ch] gap-5">
+    <ol className="grid max-w-[60ch] gap-5">
       {items.map((item, i) => (
         <li key={i} className="flex gap-5 text-[clamp(1.25rem,2.5vw,1.9rem)] leading-[1.35]">
           <span className="tabular grid size-[1.6em] shrink-0 place-items-center rounded-full bg-mint text-[0.75em] font-semibold">{i + 1}</span>
@@ -393,6 +406,50 @@ function pickExamples(all: WorkedExample[]): WorkedExample[] {
   }
   for (const x of all) if (picked.length < 3 && !picked.includes(x)) picked.push(x);
   return all.filter((x) => picked.includes(x));
+}
+
+/** Меньше этого слайд не уменьшаем: дальше текст с задних парт не прочитать, лучше прокрутка. */
+const MIN_ZOOM = 0.55;
+
+/**
+ * Слайд всегда помещается в экран проектора. Если содержимое выше или шире области слайда (длинные шаги, большая
+ * схема), уменьшаем его целиком через CSS zoom шагами по 5%, но не меньше MIN_ZOOM; что не поместилось и тогда,
+ * можно прокрутить. Размер считаем один раз на слайд (скрытые шаги уже занимают своё место) и заново при изменении
+ * окна: ResizeObserver срабатывает и когда показ открылся, и когда учитель развернул окно на весь экран.
+ */
+function FitBox({ children }: { children: ReactNode }) {
+  const outer = useRef<HTMLDivElement>(null);
+  const inner = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const box = outer.current;
+    const content = inner.current;
+    if (!box || !content) return;
+    const fit = () => {
+      if (box.clientHeight === 0) return; // показ закрыт: размеров ещё нет
+      const style = getComputedStyle(box);
+      const height = box.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+      const width = box.clientWidth;
+      let zoom = 1;
+      content.style.zoom = "1";
+      const fits = () => {
+        const r = content.getBoundingClientRect();
+        return r.height <= height + 1 && r.width <= width + 1;
+      };
+      while (zoom > MIN_ZOOM && !fits()) {
+        zoom = Math.round((zoom - 0.05) * 100) / 100;
+        content.style.zoom = String(zoom);
+      }
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(box);
+    return () => observer.disconnect();
+  }, []);
+  return (
+    <div ref={outer} className="flex min-h-0 flex-1 flex-col justify-center-safe overflow-y-auto py-8">
+      <div ref={inner} className="min-w-0">{children}</div>
+    </div>
+  );
 }
 
 /** Делит список на части по size: «Твоя очередь» по три задания на слайде, чтобы задания были крупными. */

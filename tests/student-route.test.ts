@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { looseMatch, RuleCard, similarExample, WorkedExample } from "@/components/StudentGuide";
-import { demoLesson } from "@/lib/demo";
+import { demoFor, demoLesson } from "@/lib/demo";
 import { compileExpression } from "@/lib/expression";
 import { getDict } from "@/lib/i18n";
 import type { StoredSession } from "@/lib/store";
@@ -138,12 +138,28 @@ describe("презентация из урока", () => {
 });
 
 describe("демо-урок показывает новый маршрут", () => {
-  it("у обоих классов есть запас (каждое задание проходит проверки карточки) и тренажёр", async () => {
+  it.each(["ru", "kk"] as const)("%s: у обоих классов есть запас (каждое задание проходит проверки карточки) и тренажёр", async (lang) => {
     const { checkSingleCard } = await import("@/lib/validate");
-    for (const g of demoLesson.groups) {
-      expect(g.extraCards?.length).toBe(8);
+    const plan = demoFor(lang);
+    expect(plan.language).toBe(lang);
+    for (const g of plan.groups) {
+      expect(g.extraCards?.length).toBeGreaterThanOrEqual(8);
       expect(g.trainer).toBeDefined();
       for (const c of g.extraCards ?? []) expect(checkSingleCard(c), c.prompt).toEqual([]);
+    }
+  });
+
+  it("казахский демо-урок на тех же темах и классах, что и русский", () => {
+    expect(demoFor("kk").groups.map((g) => g.grade)).toEqual(demoLesson.groups.map((g) => g.grade));
+    expect(demoFor("kk").subject).toBe(demoLesson.subject);
+  });
+
+  it("смешанный навык чередует сложение и вычитание, оба с переходом через десяток", () => {
+    const tasks = [0, 1, 2, 3].map((i) => seededTask("addsub_2d_1d", "s", i, "kk"));
+    expect(tasks.map((t) => (t.prompt.includes("+") ? "+" : "−"))).toEqual(["+", "−", "+", "−"]);
+    for (let i = 0; i < 40; i++) {
+      const [a, b] = seededTask("sub_2d_1d_borrow", "s", i, "ru").prompt.match(/\d+/g)!.map(Number);
+      expect(b).toBeGreaterThan(a % 10);
     }
   });
 });

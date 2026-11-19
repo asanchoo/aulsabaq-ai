@@ -207,3 +207,57 @@ grant execute on function
   public.update_session(uuid, text, jsonb, text, boolean, text),
   public.hit_rate_limit(text, int, int)
 to anon, service_role;
+
+-- ---------------------------------------------------------------------------
+-- Сборка урока (19 ноября). Урок собирается 2–4 минуты: сервер сразу отвечает номером сборки и собирает урок
+-- в фоне, а браузер учителя раз в несколько секунд спрашивает, что готово. Если связь оборвалась, браузер
+-- вернётся к той же сборке и получит урок: он уже собран и оплачен, терять его нельзя.
+-- Сборку видит и меняет только тот, у кого ключ учителя (в базе его SHA-256, тот же ключ потом у урока).
+
+create table if not exists public.lesson_jobs (
+  id uuid primary key default gen_random_uuid(),
+  token_hash text not null check (char_length(token_hash) = 64),
+  status text not null default 'running' check (status in ('running', 'ready', 'failed')),
+  -- Что уже готово: { "stage": "content", "explained": 2, "classes": 2, "cards": 28, ... }.
+  progress jsonb not null default '{}'::jsonb,
+  lesson_id uuid references public.lessons (id) on delete set null,
+  error text check (error is null or char_length(error) <= 40),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.lesson_jobs enable row level security;
+revoke all on public.lesson_jobs from anon, authenticated;
+
+create or replace function public.create_job(p_token_hash text, p_progress jsonb)
+returns uuid
+language sql security definer set search_path = public as $$
+  insert into lesson_jobs (token_hash, progress) values (p_token_hash, p_progress) returning id;
+$$;
+
+-- null в p_status, p_lesson_id, p_error значит «не менять».
+create or replace function public.update_job(p_id uuid, p_token_hash text, p_status text, p_progress jsonb, p_lesson_id uuid, p_error text)
+returns boolean
+language plpgsql security definer set search_path = public as $$
+begin
+  update lesson_jobs set
+    status = coalesce(p_status, status),
+    progress = coalesce(p_progress, progress),
+    lesson_id = coalesce(p_lesson_id, lesson_id),
+    error = coalesce(p_error, error),
+    updated_at = now()
+  where id = p_id and token_hash = p_token_hash;
+  return found;
+end $$;
+
+create or replace function public.get_job(p_id uuid, p_token_hash text)
+returns table (status text, progress jsonb, lesson_id uuid, join_code text, error text, updated_at timestamptz, created_at timestamptz)
+language sql stable security definer set search_path = public as $$
+  select j.status, j.progress, j.lesson_id, l.join_code, j.error, j.updated_at, j.created_at
+  from lesson_jobs j left join lessons l on l.id = j.lesson_id
+  where j.id = p_id and j.token_hash = p_token_hash;
+$$;
+
+revoke execute on function public.create_job(text, jsonb), public.update_job(uuid, text, text, jsonb, uuid, text),
+  public.get_job(uuid, text) from public, anon, authenticated;
+grant execute on function public.create_job(text, jsonb), public.update_job(uuid, text, text, jsonb, uuid, text),
+  public.get_job(uuid, text) to anon, service_role;

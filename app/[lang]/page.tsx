@@ -6,7 +6,7 @@ import { LessonScore, ModeLegend } from "@/components/LessonScore";
 import { Reveal } from "@/components/Reveal";
 import { LogoMark } from "@/components/Logo";
 import { HeroDemo } from "@/components/HeroDemo";
-import { DEMO_LESSON_ID, demoLesson } from "@/lib/demo";
+import { DEMO_LESSON_ID, demoFor } from "@/lib/demo";
 import { getDict, isLocale, t } from "@/lib/i18n";
 
 
@@ -16,6 +16,8 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
   const dict = getDict(lang);
   const create = `/${lang}/teacher/new`;
   const demo = `/${lang}/teacher/${DEMO_LESSON_ID}`;
+  // Демо-урок на языке страницы: партитура и карточки на лендинге говорят на том же языке, что и интерфейс.
+  const demoPlan = demoFor(lang);
 
   return (
     <main id="main" className="flex-1">
@@ -84,7 +86,7 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
                   <p className="text-[0.88rem] text-muted">{dict.score.hint}</p>
                   <ModeLegend dict={dict} />
                 </div>
-                <LessonScore plan={demoLesson} dict={dict} showActivity={demoLesson.language === lang} autoplay />
+                <LessonScore plan={demoPlan} dict={dict} showActivity autoplay />
               </div>
             </div>
           </Reveal>
@@ -166,7 +168,7 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
 
         {/* Карточки из демо-урока: так их получает учитель для печати */}
         <div aria-hidden className="relative hidden h-[420px] lg:col-span-5 lg:col-start-8 lg:block">
-          {demoLesson.groups[0].cards.slice(0, 3).map((card, i) => (
+          {demoPlan.groups[0].cards.slice(0, 3).map((card, i) => (
             <Reveal
               key={card.id}
               delay={i * 140}
@@ -174,7 +176,7 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
               style={{ left: `${i * 18}%`, top: `${i * 22}%` }}
             >
               <p className="font-mono text-[0.75rem] text-muted">
-                {t(dict.common.card, { n: i + 1 })} · {t(dict.common.gradeShort, { n: demoLesson.groups[0].grade })}
+                {t(dict.common.card, { n: i + 1 })} · {t(dict.common.gradeShort, { n: demoPlan.groups[0].grade })}
               </p>
               <p className="mt-2 text-[1.1rem] leading-snug font-medium">{card.prompt}</p>
               <div className="mt-4 grid gap-2.5">

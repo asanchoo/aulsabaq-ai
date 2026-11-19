@@ -470,7 +470,7 @@
           "purpose": "practice"
         }
       ],
-      "trainer": "add_2d_1d_carry"
+      "trainer": "addsub_2d_1d"
     },
     {
       "id": "g2",

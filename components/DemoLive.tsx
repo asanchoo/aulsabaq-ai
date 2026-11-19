@@ -20,10 +20,12 @@ export function DemoLive({ lang, plan }: { lang: Locale; plan: LessonPlan }) {
     setBusy(true);
     setFailed(false);
     try {
-      const response = await fetch("/api/lessons/demo", { method: "POST" });
+      // Язык копии берёт сервер из адреса запроса: урок из его фикстуры, клиент урок не присылает.
+      const response = await fetch(`/api/lessons/demo?lang=${lang}`, { method: "POST" });
       if (!response.ok) throw new Error(String(response.status));
       const { id, token } = await response.json();
       rememberLesson({ id, token, subject: plan.subject, grades: plan.groups.map((g) => g.grade), language: plan.language, demo: true });
+      window.scrollTo(0, 0);
       router.push(`/${lang}/teacher/${id}`);
     } catch {
       setFailed(true);

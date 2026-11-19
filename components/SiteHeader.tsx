@@ -26,9 +26,9 @@ export function SiteHeader({ lang, dict }: { lang: Locale; dict: Dict }) {
           <span className="text-[1.2rem] font-semibold tracking-[-0.03em]">AulSabaq</span>
         </Link>
 
-        <nav aria-label={dict.nav.how} className="hidden items-center gap-7 lg:flex">
+        <nav aria-label={dict.nav.main} className="hidden items-center gap-5 lg:flex">
           {links.map((l) => (
-            <Link key={l.href} href={l.href} className="text-[0.92rem] font-medium text-ink/80 transition-colors hover:text-ink">
+            <Link key={l.href} href={l.href} className="py-2.5 text-[0.92rem] font-medium text-ink/80 transition-colors hover:text-ink">
               {l.label}
             </Link>
           ))}

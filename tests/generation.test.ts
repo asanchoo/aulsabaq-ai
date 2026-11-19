@@ -259,6 +259,26 @@ describe("provider choice", () => {
     expect(resolveProvider({ OPENAI_API_KEY: "o", AI_PROVIDER: "openai" })).toBeNull();
     expect(resolveProvider({ GEMINI_API_KEY: "g" })).toBeNull();
   });
+  it("OpenAI: main model overloaded (503 after retries) -> the same request goes to the next model in OPENAI_MODEL", async () => {
+    const models: string[] = [];
+    const fetch = vi.fn(async (_url: string, init: RequestInit) => {
+      const { model } = JSON.parse(String(init.body));
+      models.push(model);
+      if (model === "terra") return new Response('{"error":{"code":"server_is_overloaded"}}', { status: 503 });
+      return Response.json({ status: "completed", output: [{ type: "message", content: [{ type: "output_text", text: "ok" }] }] });
+    });
+    vi.stubGlobal("fetch", fetch);
+    const provider = resolveProvider({ OPENAI_API_KEY: "o", OPENAI_MODEL: "terra, luna" });
+    await expect(provider?.call({ instructions: "i", input: "x", schemaName: "s", schema: {} })).resolves.toBe("ok");
+    expect(models).toEqual(["terra", "terra", "terra", "luna"]);
+  });
+  it("OpenAI: a bad request (400) does not switch models", async () => {
+    const fetch = vi.fn(async () => new Response("bad", { status: 400 }));
+    vi.stubGlobal("fetch", fetch);
+    const provider = resolveProvider({ OPENAI_API_KEY: "o", OPENAI_MODEL: "terra,luna" });
+    await expect(provider?.call({ instructions: "i", input: "x", schemaName: "s", schema: {} })).rejects.toThrow();
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("gemini", () => {

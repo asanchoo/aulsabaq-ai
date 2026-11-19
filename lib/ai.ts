@@ -6,6 +6,7 @@ import {
 import { cardInstructions, explanationInstructions, extraInstructions, hintInstructions, lessonInstructions, proofreadInstructions, rulesInstructions, verifyInstructions } from "./prompts";
 import { checkCardAnswer } from "./check-answer";
 import { TrainerSkillSchema, type TrainerSkill } from "./trainer";
+import { initialProgress, type LessonProgress } from "./progress";
 import { applyRulesReview, introducesSuspects, isLanguageSubject, rulesRequest, RulesReviewSchema, type RulesReview } from "./rules";
 import { applyCorrections, collectTexts, safeCorrections } from "./proofread";
 import { ProviderError, resolveFastProvider, resolveProvider, type Provider, type ProviderImage } from "./providers";
@@ -64,6 +65,8 @@ type Job<T> = {
   images?: ProviderImage[];
   /** После стольких миллисекунд от начала урока повторную попытку не начинаем. */
   noRetryAfterMs?: number;
+  /** Проверка отклонила ответ, модель пишет заново: для хода сборки на экране учителя. */
+  onRejected?: () => void;
 };
 
 /**
@@ -101,6 +104,7 @@ async function generateChecked<T>(provider: Provider, job: Job<T>, startedAt: nu
       const result = job.check(JSON.parse(text));
       if (result.ok) return result.plan;
       feedback = result.errors;
+      job.onRejected?.();
       if (result.fallback && (!fallback || result.errors.length < fallback.errors)) fallback = { plan: result.fallback, errors: result.errors.length };
     } catch { feedback = ["Return a complete JSON object matching the required schema."]; }
     // Коды проверок (INV-1, TXT…) без текста урока. Целиком: ошибки времени и карточек (номера и минуты),
@@ -261,17 +265,38 @@ async function extraBank(provider: Provider, input: LessonRequest, index: number
   }
 }
 
-export async function generateLesson(input: LessonRequest): Promise<LessonPlan> {
+/**
+ * onProgress: что уже готово (lib/progress.ts). Сервер пишет это в базу, и учитель видит настоящий ход сборки:
+ * какие объяснения готовы, сколько карточек, какая проверка идёт, сколько раз ИИ переписывал найденную ошибку.
+ */
+export async function generateLesson(input: LessonRequest, onProgress?: (progress: LessonProgress) => void): Promise<LessonPlan> {
   const provider = resolveProvider();
   if (!provider) throw new GenerationError("not_configured");
   const startedAt = Date.now();
+  const progress = initialProgress(input.groups.length);
+  const emit = (change: Partial<LessonProgress> = {}) => {
+    Object.assign(progress, change);
+    onProgress?.({ ...progress });
+  };
+  const onRejected = () => emit({ repairs: progress.repairs + 1 });
   // Сначала объяснения всех классов (параллельно), потом содержание урока, которое на них опирается.
-  const explained = await Promise.all(input.groups.map((_, i) => generateChecked(provider, explanationJob(input, i), startedAt)));
+  const explained = await Promise.all(input.groups.map((_, i) =>
+    generateChecked(provider, { ...explanationJob(input, i), onRejected }, startedAt).then((x) => {
+      emit({ explained: progress.explained + 1 });
+      return x;
+    })));
   const explanations = explained.map((x) => x.explanation);
+  emit({ stage: "content" });
   // Содержание урока и запас для каждого класса идут одновременно: запас не удлиняет ожидание.
   const [core, banks] = await Promise.all([
-    generateChecked(provider, planJob(input, explained), startedAt),
-    Promise.all(input.groups.map((_, i) => extraBank(provider, input, i, explanations[i]))),
+    generateChecked(provider, { ...planJob(input, explained), onRejected }, startedAt).then((x) => {
+      emit({ cards: x.groups.reduce((n, g) => n + g.cards.length, 0) });
+      return x;
+    }),
+    Promise.all(input.groups.map((_, i) => extraBank(provider, input, i, explanations[i]))).then((x) => {
+      emit({ extra: x.reduce((n, b) => n + b.cards.length, 0) });
+      return x;
+    }),
   ]);
   // Язык у класса храним, только когда языки в уроке разные: у обычного урока он совпадает с языком урока.
   const mixed = requestLanguages(input).length > 1;
@@ -290,7 +315,10 @@ export async function generateLesson(input: LessonRequest): Promise<LessonPlan> 
   };
   // Проверки делает быстрая модель (OPENAI_FAST_MODEL), если она задана: так они успевают и после медленной основной.
   const checker = resolveFastProvider() ?? provider;
-  const reviewed = isLanguageSubject(input.subject) ? await reviewRules(checker, lesson, startedAt) : await verifyAnswers(checker, lesson, startedAt);
+  const language = isLanguageSubject(input.subject);
+  emit({ stage: "check", check: language ? "rules" : "verify" });
+  const reviewed = language ? await reviewRules(checker, lesson, startedAt) : await verifyAnswers(checker, lesson, startedAt);
+  emit({ stage: "proof", extra: reviewed.groups.reduce((n, g) => n + (g.extraCards?.length ?? 0), 0) });
   return proofreadLesson(checker, reviewed, startedAt);
 }
 

@@ -39,9 +39,11 @@ const TIMEOUT_MS = 90_000;
  * Нет ни одного: null, и API честно отвечает «не подключено».
  */
 export function resolveProvider(env: Record<string, string | undefined> = process.env): Provider | null {
-  const openai = env.OPENAI_API_KEY && env.OPENAI_MODEL ? openaiProvider(env.OPENAI_API_KEY, env.OPENAI_MODEL, env.OPENAI_REASONING?.trim() || undefined) : null;
-  // GEMINI_MODEL может перечислять запасные модели через запятую: «gemini-3.5-flash-lite,gemini-3.1-flash-lite».
-  const geminiModels = (env.GEMINI_MODEL ?? "").split(",").map((m) => m.trim()).filter(Boolean);
+  // OPENAI_MODEL и GEMINI_MODEL могут перечислять запасные модели через запятую: «gpt-6.1-terra,gpt-6-luna».
+  // Основная модель перегружена (503) или упёрлась в лимит: тот же запрос уходит следующей.
+  const openaiModels = modelList(env.OPENAI_MODEL);
+  const openai = env.OPENAI_API_KEY && openaiModels.length ? openaiProvider(env.OPENAI_API_KEY, openaiModels, env.OPENAI_REASONING?.trim() || undefined) : null;
+  const geminiModels = modelList(env.GEMINI_MODEL);
   const gemini = env.GEMINI_API_KEY && geminiModels.length ? geminiProvider(env.GEMINI_API_KEY, geminiModels) : null;
   const choice = env.AI_PROVIDER?.trim().toLowerCase();
   if (choice === "openai") return openai;
@@ -49,6 +51,8 @@ export function resolveProvider(env: Record<string, string | undefined> = proces
   if (choice) return null; // опечатка в AI_PROVIDER не должна тихо выбрать другого провайдера
   return openai ?? gemini;
 }
+
+const modelList = (value: string | undefined) => (value ?? "").split(",").map((m) => m.trim()).filter(Boolean);
 
 /**
  * Быстрая модель для проверок и подсказок: рецензент правил, проверка решением, корректура, подсказка ученику.
@@ -60,7 +64,7 @@ export function resolveFastProvider(env: Record<string, string | undefined> = pr
   const main = resolveProvider(env);
   const fast = env.OPENAI_FAST_MODEL?.trim();
   if (!main || main.name !== "openai" || !fast || !env.OPENAI_API_KEY) return main;
-  return openaiProvider(env.OPENAI_API_KEY, fast, env.OPENAI_REASONING?.trim() || undefined);
+  return openaiProvider(env.OPENAI_API_KEY, modelList(fast), env.OPENAI_REASONING?.trim() || undefined);
 }
 
 /**
@@ -130,7 +134,7 @@ export function toOpenAISchema(schema: unknown): unknown {
   );
 }
 
-function openaiProvider(apiKey: string, model: string, reasoning?: string): Provider {
+function openaiProvider(apiKey: string, models: string[], reasoning?: string): Provider {
   return {
     name: "openai",
     async call({ instructions, input, schemaName, schema, images, reasoning: effort }) {
@@ -143,13 +147,13 @@ function openaiProvider(apiKey: string, model: string, reasoning?: string): Prov
             ]),
           ] }]
         : input;
-      const json = await post("openai", "https://api.openai.com/v1/responses", { Authorization: `Bearer ${apiKey}` }, {
+      const json = await withFallback("openai", models, (model) => post("openai", "https://api.openai.com/v1/responses", { Authorization: `Bearer ${apiKey}` }, {
         model, store: false, max_output_tokens: 24000, instructions, input: content,
         text: { format: { type: "json_schema", name: schemaName, strict: true, schema: toOpenAISchema(schema) } },
         // Уровень размышления у моделей, которые его поддерживают (OPENAI_REASONING=low и т.п.); пусто — по умолчанию.
         // Отдельный запрос может попросить глубже (effort), но только у модели с размышлением (reasoning задан).
         ...(reasoning ? { reasoning: { effort: effort ?? reasoning } } : {}),
-      });
+      }));
       const result = OpenAIResponse.safeParse(json);
       if (!result.success || result.data.status !== "completed") {
         console.warn(`[ai] openai: response not completed (${result.success ? result.data.status : "unexpected shape"})`);
@@ -193,22 +197,26 @@ export function toGeminiSchema(schema: unknown): unknown {
 }
 
 /**
- * Запрос к Gemini с запасными моделями: если модель перегружена (503), упёрлась в лимит (429)
- * или не ответила вовремя, тот же запрос уходит следующей модели из GEMINI_MODEL.
+ * Запрос с запасными моделями: если модель перегружена (503), упёрлась в лимит (429)
+ * или не ответила вовремя, тот же запрос уходит следующей модели из списка (OPENAI_MODEL, GEMINI_MODEL).
  * Ошибку в самом запросе (400, 401) запасная модель не исправит, её отдаём сразу.
  */
-async function postGemini(apiKey: string, models: string[], body: (model: string) => unknown): Promise<unknown> {
+export async function withFallback<T>(name: ProviderName, models: string[], send: (model: string) => Promise<T>): Promise<T> {
   for (let i = 0; ; i++) {
     const model = models[i];
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
     try {
-      return await post("gemini", url, { "x-goog-api-key": apiKey }, body(model));
+      return await send(model);
     } catch (error) {
       const next = models[i + 1];
       if (!(error instanceof ProviderError) || !error.transient || !next) throw error;
-      console.warn(`[ai] gemini: ${model} unavailable, switching to ${next}`);
+      console.warn(`[ai] ${name}: ${model} unavailable, switching to ${next}`);
     }
   }
+}
+
+async function postGemini(apiKey: string, models: string[], body: (model: string) => unknown): Promise<unknown> {
+  return withFallback("gemini", models, (model) =>
+    post("gemini", `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, { "x-goog-api-key": apiKey }, body(model)));
 }
 
 function geminiProvider(apiKey: string, models: string[]): Provider {

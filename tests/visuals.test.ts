@@ -173,3 +173,16 @@ describe("числовой луч с концами в обратном поря
     expect(toVisual(draft({ kind: "number_line", from: 10, to: -10, points: [-3, 4] }))).toMatchObject({ ok: true, visual: { from: -10, to: 10 } });
   });
 });
+
+describe("числовой луч с целыми числами", () => {
+  it("делит только по целым: 58, 59, 60, без 58,5", async () => {
+    const { createElement } = await import("react");
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const { Visual: VisualBlock } = await import("@/components/Visual");
+    const { getDict } = await import("@/lib/i18n");
+    const visual = { kind: "number_line", from: 58, to: 64, points: [58, 60, 64], caption: "" } as Visual;
+    const html = renderToStaticMarkup(createElement(VisualBlock, { visual, labels: getDict("kk").visual }));
+    expect(html).toContain(">59<");
+    expect(html).not.toMatch(/58[,.]5/);
+  });
+});

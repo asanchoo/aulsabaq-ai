@@ -69,8 +69,10 @@ app/
   [lang]/teacher/[lessonId]/page.tsx  # урок из базы (или demo): код для учеников, панель, таймер, правка, печать
   [lang]/join/page.tsx              # ученик вводит код урока, класс и имя
   [lang]/student/[sessionId]/page.tsx # карточки ученика: проверка ответа, «Подсказка», «Мне нужна помощь»
-  api/lessons/route.ts     # POST: генерация урока и сохранение (id, код, ключ учителя)
-  api/lessons/demo/route.ts          # POST: своя копия демо-урока с кодом, без модели
+  [lang]/not-found.tsx, [lang]/[...rest]/page.tsx  # «Такой страницы нет» на языке адреса, с шапкой сайта
+  api/lessons/route.ts     # POST: сборка урока в фоне (after): номер сборки и ключ учителя; без базы сразу урок
+  api/lessons/jobs/[id]/route.ts     # GET: ход сборки урока (x-teacher-token), готовый урок или ошибка
+  api/lessons/demo/route.ts          # POST ?lang=: своя копия демо-урока с кодом, без модели
   api/lessons/[id]/route.ts          # PATCH: правка текстов учителем (x-teacher-token)
   api/lessons/[id]/cards/route.ts    # POST: заменить одну карточку через ИИ
   api/lessons/[id]/students/route.ts # GET: панель учителя; POST: «Помощь оказана»
@@ -79,6 +81,7 @@ app/
   api/hint/route.ts        # POST: подсказка ученику (урок → ИИ с guard → запасная)
 components/
   LessonScore.tsx          # «партитура» урока с ползунком (лендинг)
+  LessonBuilding.tsx       # сборка урока: расписание заливается по готовым частям, этапы с цифрами
   modes.ts                 # цвета режимов урока: графит / мята / серый
   StudentPhone.tsx, Logo.tsx, LessonForm.tsx, LessonView.tsx, LessonPreview.tsx
   AutoTextarea.tsx         # поле, которое растёт вниз с текстом (тема, ответ ученика, правка урока)
@@ -101,23 +104,24 @@ lib/
   schema.ts                # Zod-схемы: ФОРМА данных
   validate.ts              # validateLessonPlan(): СМЫСЛ — инварианты 1–9 (коды INV-1…9, EXP)
   lesson.ts                # чистые помощники: segmentAt, timeSlots, lessonToText
-  demo.ts                  # демо-урок (проходит те же проверки при сборке)
+  demo.ts                  # демо-урок на ru и kk (оба проходят те же проверки при сборке)
+  progress.ts              # этапы сборки урока, которые сервер пишет в базу, и ответ о ходе сборки
   i18n.ts                  # словарь ru/kk
   schedule.ts              # расписание по минутам считает код: очередь учителя, раскладка карточек
   ai.ts                    # генерация: содержание и объяснения параллельными запросами, проверка, повторные попытки
   arithmetic.ts            # пересчёт равенств вида «6 + 8 = 14» в тексте урока
   rules.ts                 # уроки по языкам: рецензент правил, словарные слова и корни с чередованием
-  trainer.ts               # тренажёр: 27 навыков, задания и ответы составляет код по зерну сессии
-  providers.ts             # HTTP к OpenAI или Gemini, выбор провайдера по env
+  trainer.ts               # тренажёр: 29 навыков, задания и ответы составляет код по зерну сессии
+  providers.ts             # HTTP к OpenAI или Gemini, выбор провайдера по env, запасная модель при перегрузке
   prompts.ts, generation-schema.ts
   rate-limit.ts            # лимиты по IP (RATE_LIMITS=on) и общий дневной предел на платную модель (всегда)
   db.ts, store.ts          # вызовы функций Supabase (RPC); уроки, ключ учителя (SHA-256), сессии учеников
   student.ts, student-view.ts, check-answer.ts  # правила карточки ученика, что видит ученик, проверка ответа
   edit.ts                  # правка урока учителем: только тексты, расписание не меняется
   visuals.ts, expression.ts # наглядные блоки: схема данных, проверка, вычисления; разбор формулы графика без eval
-  local.ts                 # что помнит браузер: уроки учителя с ключом, последняя сессия ученика
+  local.ts                 # что помнит браузер: уроки учителя с ключом, идущая сборка, последняя сессия ученика
 proxy.ts                   # / → /ru или /kk по Accept-Language
-fixtures/demo-lesson.ru.json
+fixtures/demo-lesson.ru.json, fixtures/demo-lesson.kk.json   # демо-урок на двух языках (те же темы)
 tests/                     # validate, schedule, arithmetic, generation, hint-guard, hint-ai, check-answer, student, edit
 supabase/schema.sql        # таблицы, функции и права базы
 ```

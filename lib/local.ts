@@ -90,3 +90,36 @@ export function parseStudent(raw: string): StudentRef | null {
 export const useLastStudent = () => parseStudent(useLocal(STUDENT_KEY));
 export const rememberStudent = (ref: StudentRef) => write(STUDENT_KEY, JSON.stringify(ref));
 export const forgetStudent = () => write(STUDENT_KEY, "");
+
+// ---------------------------------------------------------------------------
+// Урок, который ещё собирается: номер сборки и ключ учителя. Если учитель закрыл вкладку или пропала сеть,
+// форма найдёт сборку здесь и дождётся того же урока (он уже собирается и оплачен).
+
+const PENDING_KEY = "aulsabaq-pending";
+/** Дольше сборка не живёт (лимит сервера 300 с) — старую запись не возобновляем. */
+const PENDING_MAX_MS = 10 * 60_000;
+
+export type PendingLesson = {
+  job: string;
+  token: string;
+  subject: string;
+  grades: number[];
+  language: "kk" | "ru";
+  durationMin: number;
+  startedAt: number;
+  /** Что учитель ввёл в форму (без фото): после перезагрузки форма снова заполнена, и при ошибке не надо вводить всё заново. */
+  draft?: { grade: number; language: "kk" | "ru"; topic: string; count: string; notes: string; pages: string }[];
+};
+
+export function readPending(): PendingLesson | null {
+  try {
+    const value = JSON.parse(read(PENDING_KEY) || "null");
+    if (!value || typeof value.job !== "string" || typeof value.token !== "string") return null;
+    return Date.now() - value.startedAt < PENDING_MAX_MS ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+export const rememberPending = (ref: PendingLesson) => write(PENDING_KEY, JSON.stringify(ref));
+export const forgetPending = () => write(PENDING_KEY, "");

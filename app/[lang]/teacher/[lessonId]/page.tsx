@@ -5,7 +5,7 @@ import { DemoLive } from "@/components/DemoLive";
 import { LessonView } from "@/components/LessonView";
 import { TeacherWorkspace } from "@/components/TeacherWorkspace";
 import { storageConfigured } from "@/lib/db";
-import { DEMO_LESSON_ID, demoLesson } from "@/lib/demo";
+import { DEMO_LESSON_ID, demoFor } from "@/lib/demo";
 import { getCreationDict, getDict, isLocale } from "@/lib/i18n";
 import { getLesson, isUuid } from "@/lib/store";
 
@@ -46,11 +46,11 @@ async function LessonContent({ params }: { params: PageProps<"/[lang]/teacher/[l
   if (lessonId === DEMO_LESSON_ID) {
     return (
       <LessonView
-        plan={demoLesson}
+        plan={demoFor(lang)}
         lang={lang}
         dict={dict}
         badge={dict.lesson.demoBadge}
-        workspace={storageConfigured() ? <DemoLive lang={lang} plan={demoLesson} /> : undefined}
+        workspace={storageConfigured() ? <DemoLive lang={lang} plan={demoFor(lang)} /> : undefined}
       />
     );
   }
