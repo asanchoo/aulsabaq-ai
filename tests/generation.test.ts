@@ -82,11 +82,18 @@ function gemini(plan: unknown, finishReason = "STOP") {
 }
 
 /** Что спросили у модели: содержание (в запросе есть request), корректуру (texts) или объяснение одного класса. */
-function requestOf(init: RequestInit): { kind: "plan" | "explain" | "proof" | "extra"; data: Record<string, unknown> } {
+function requestOf(init: RequestInit): { kind: "plan" | "explain" | "proof" | "extra" | "verify"; data: Record<string, unknown> } {
   const body = JSON.parse(String(init.body));
   const input = typeof body.input === "string" ? body.input : Array.isArray(body.input) ? body.input[0].content[0].text : body.contents[0].parts[0].text;
   const data = JSON.parse(input);
-  return { kind: "request" in data ? "plan" : "texts" in data ? "proof" : "count" in data ? "extra" : "explain", data };
+  return { kind: "request" in data ? "plan" : "texts" in data ? "proof" : "count" in data ? "extra" : "tasks" in data ? "verify" : "explain", data };
+}
+
+/** Проверка решением: подставная модель «решает» каждое задание верно, по эталону демо-урока. */
+function solve(data: Record<string, unknown>) {
+  const all = demoLesson.groups.flatMap((g) => g.cards);
+  const tasks = data.tasks as { id: string; task: string }[];
+  return { answers: tasks.map((t) => ({ id: t.id, answer: all.find((c) => t.task.startsWith(c.prompt))?.answer ?? null })) };
 }
 
 /** Запас от модели: две карточки практики демо-урока и тренажёр для 4 класса. */
@@ -113,6 +120,7 @@ function fakeModel(format: (value: unknown) => Response, plans: unknown[] = [gen
     if (kind === "explain") return format(draftOf(data.grade));
     if (kind === "proof") return format({ corrections: [] });
     if (kind === "extra") return format(extraOf(Number(data.grade)));
+    if (kind === "verify") return format(solve(data));
     const next = plans[Math.min(planCalls++, plans.length - 1)];
     return next instanceof Response ? next.clone() : format(next);
   });
@@ -155,7 +163,8 @@ describe("generation", () => {
     const fetch = fakeModel(provider); vi.stubGlobal("fetch", fetch);
     expectLesson(await generateLesson(input));
     // Одно расписание и по объяснению на каждый класс.
-    expect(fetch).toHaveBeenCalledTimes(1 + 2 * input.groups.length + 1); // объяснения, содержание, запас каждому классу, корректура
+    // объяснения, содержание, запас и проверка решением каждому классу, корректура
+    expect(fetch).toHaveBeenCalledTimes(1 + 3 * input.groups.length + 1);
     const body = JSON.parse(planCalls(fetch)[0][1].body);
     expect(body.model).toBe("test-model"); expect(body.store).toBe(false);
     expect(body.text.format.strict).toBe(true);
@@ -165,7 +174,7 @@ describe("generation", () => {
     const fetch = fakeModel(provider); vi.stubGlobal("fetch", fetch);
     await generateLesson(input);
     const kinds = fetch.mock.calls.map(([, init]) => requestOf(init as RequestInit).kind);
-    expect(kinds).toEqual(["explain", "explain", "plan", "extra", "extra", "proof"]);
+    expect(kinds).toEqual(["explain", "explain", "plan", "extra", "extra", "verify", "verify", "proof"]);
     const request = requestOf(planCalls(fetch)[0][1] as RequestInit).data as { explanations: Record<string, unknown>[] };
     // Содержание строится на объяснении: ситуация, лестница примеров, ошибки, итог, готовые карточки повторения.
     expect(request.explanations[1]).toMatchObject({
@@ -209,6 +218,7 @@ describe("generation", () => {
       const { kind, data } = requestOf(init);
       if (kind === "plan") return provider(generated());
       if (kind === "extra") return provider(extraOf(Number(data.grade)));
+      if (kind === "verify") return provider(solve(data));
       if (data.grade === 2 && explainCalls++ === 0) return provider(wrong);
       return provider(draftOf(data.grade));
     });
@@ -317,12 +327,12 @@ describe("gemini", () => {
     const fetch = vi.fn(async (url: string, init: RequestInit) => {
       if (url.includes("gemini-main")) return new Response("high demand", { status: 503 });
       const { kind, data } = requestOf(init);
-      return gemini(kind === "plan" ? generated() : kind === "extra" ? extraOf(Number(data.grade)) : draftOf(data.grade));
+      return gemini(kind === "plan" ? generated() : kind === "extra" ? extraOf(Number(data.grade)) : kind === "verify" ? solve(data) : draftOf(data.grade));
     });
     vi.stubGlobal("fetch", fetch);
     expectLesson(await generateLesson(input));
     const spare = fetch.mock.calls.filter(([url]) => url.includes("gemini-2.5-spare"));
-    expect(spare).toHaveLength(1 + 2 * input.groups.length + 1);
+    expect(spare).toHaveLength(1 + 3 * input.groups.length + 1);
     // У моделей 2.5 нет thinkingLevel: параметр не отправляем.
     expect(JSON.parse(String(spare[0][1].body)).generationConfig.thinkingConfig).toBeUndefined();
   });
@@ -384,5 +394,43 @@ describe("запас заданий и тренажёр", () => {
     vi.stubGlobal("fetch", broken);
     const without = await generateLesson(input);
     expect(without.groups.every((g) => !g.extraCards && !g.trainer)).toBe(true);
+  });
+});
+
+describe("проверка решением", () => {
+  it("задание запаса с другим ответом выбрасывается, трудная основная карточка становится открытой", async () => {
+    const { verifyAnswers, cardsToVerify } = await import("@/lib/ai");
+    const plan = structuredClone(demoLesson);
+    const g = plan.groups[1];
+    g.cards = g.cards.map((c, i) => (i === g.cards.length - 1 ? { ...c, difficulty: 3 as const } : c));
+    const hard = g.cards[g.cards.length - 1];
+    const extra = g.extraCards![g.extraCards!.length - 1];
+    expect(cardsToVerify(g).map((c) => c.id)).toEqual(expect.arrayContaining([hard.id, extra.id]));
+    const call = vi.fn(async (req: { input: string }) => {
+      const tasks = JSON.parse(req.input).tasks as { id: string }[];
+      // Проверяющий не согласен с последней карточкой и последним заданием запаса, с остальными согласен.
+      return JSON.stringify({ answers: tasks.map((t) => {
+        const card = [...plan.groups.flatMap((x) => [...x.cards, ...(x.extraCards ?? [])])].find((c) => c.id === t.id)!;
+        return { id: t.id, answer: t.id === hard.id || t.id === extra.id ? "999999" : card.answer };
+      }) });
+    });
+    const result = await verifyAnswers({ name: "openai", call } as never, plan, Date.now());
+    const after = result.groups[1];
+    expect(after.cards.find((c) => c.id === hard.id)?.type).toBe("open");
+    expect(after.extraCards?.some((c) => c.id === extra.id)).toBe(false);
+    expect(after.extraCards).toHaveLength(g.extraCards!.length - 1);
+  });
+});
+
+describe("быстрая модель для проверок", () => {
+  it("OPENAI_FAST_MODEL задаёт модель проверок и подсказок, без неё берётся основная", async () => {
+    const { resolveFastProvider } = await import("@/lib/providers");
+    const env = { OPENAI_API_KEY: "k", OPENAI_MODEL: "gpt-6.1-terra" };
+    const fetch = vi.fn(async () => new Response(JSON.stringify({ status: "completed", output: [{ type: "message", content: [{ type: "output_text", text: "{}" }] }] })));
+    vi.stubGlobal("fetch", fetch);
+    await resolveFastProvider({ ...env, OPENAI_FAST_MODEL: "gpt-6-luna" })!.call({ instructions: "", input: "{}", schemaName: "s", schema: {} });
+    await resolveFastProvider(env)!.call({ instructions: "", input: "{}", schemaName: "s", schema: {} });
+    const models = fetch.mock.calls.map((c) => JSON.parse(String((c as unknown as [string, RequestInit])[1].body)).model);
+    expect(models).toEqual(["gpt-6-luna", "gpt-6.1-terra"]);
   });
 });

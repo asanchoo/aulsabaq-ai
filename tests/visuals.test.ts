@@ -167,3 +167,9 @@ describe("parseExplanation: объяснение от модели", () => {
     expect(parseExplanation(none)).toMatchObject({ ok: false, errors: [expect.stringContaining("VIS")] });
   });
 });
+
+describe("числовой луч с концами в обратном порядке", () => {
+  it("разворачивается, а не выбрасывается", () => {
+    expect(toVisual(draft({ kind: "number_line", from: 10, to: -10, points: [-3, 4] }))).toMatchObject({ ok: true, visual: { from: -10, to: 10 } });
+  });
+});

@@ -20,7 +20,8 @@ const OPERAND_END = String.raw`[\d²³⁰¹⁴-⁹)\]]`;
 const EQUATION = new RegExp(
   String.raw`(?<![\p{L}\d.,)^/(²³⁰¹⁴-⁹])(?<!${OPERAND_END}\s*[=+\-−–×·*:÷/^]\s*)(?<!\p{L}\s*[=+\-−–×·*÷/^]\s*)(?<!\p{L}\s+:\s*)(?<!\d[  ])(?<![-−–]\s*)` +
     String.raw`(${NUM})((?:${OP}(?:${NUM}))+)\s*=\s*(${NUM})` +
-    String.raw`(?![\d.,]?\d)(?!${OP}[\d\p{L}])(?![\p{L}(^/²³⁰¹⁴-⁹])`,
+    // Результат, после которого выражение продолжается («= 1200 − (1200 + 300)», «= 6,4 − √x»), — не результат.
+    String.raw`(?![\d.,]?\d)(?!${OP}[\d\p{L}(√])(?![\p{L}(^/²³⁰¹⁴-⁹])`,
   "gu",
 );
 
@@ -54,7 +55,7 @@ function evaluate(first: string, rest: string): { value: number; onlyDivision: b
  * Задание «найди ошибку» нарочно содержит неверное равенство («Данияр вычислил 58 + 17 = 615. Найди ошибку»).
  * Такой текст не пересчитываем: иначе проверка отклоняла бы правильный урок.
  */
-const FIND_THE_ERROR = /ошиб|неверн|неправильн|қате|дұрыс емес|қателес/iu;
+const FIND_THE_ERROR = /ошиб|неверн|неправильн|верно ли|правильно ли|қате|дұрыс емес|қателес|дұрыс па|дұрыс шыққан ба/iu;
 
 /** Первое неверное равенство в тексте или null, если всё сходится. */
 export function findWrongEquation(text: string): string | null {
@@ -83,7 +84,9 @@ export function findMixedScriptWord(text: string): string | null {
     const latin = word.match(/\p{Script=Latin}/gu)?.length ?? 0;
     const arabic = /\p{Script=Arabic}/u.test(word);
     // Одна латинская буква рядом с кириллицей — переменная с окончанием («xтің»), так пишут в учебниках.
-    if ((cyrillic && latin >= 2) || (arabic && (cyrillic || latin > 0))) return word;
+    // Одна латинская буква допустима только в начале («xтің»: переменная и окончание); «ноz» в конце — опечатка.
+    const strayLatin = cyrillic && latin === 1 && !/^\p{Script=Latin}/u.test(word);
+    if ((cyrillic && latin >= 2) || strayLatin || (arabic && (cyrillic || latin > 0))) return word;
   }
   return null;
 }

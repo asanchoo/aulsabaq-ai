@@ -51,6 +51,19 @@ export function resolveProvider(env: Record<string, string | undefined> = proces
 }
 
 /**
+ * Быстрая модель для проверок и подсказок: рецензент правил, проверка решением, корректура, подсказка ученику.
+ * Урок пишет основная модель (OPENAI_MODEL, например gpt-6.1-terra), а проверять быстрее и дешевле облегчённой
+ * (OPENAI_FAST_MODEL, например gpt-6-luna): с одной terra урок по языку не успевал пройти рецензента правил
+ * за 300 секунд, а ученик ждал бы подсказку слишком долго. Не задана — та же модель, что пишет урок.
+ */
+export function resolveFastProvider(env: Record<string, string | undefined> = process.env): Provider | null {
+  const main = resolveProvider(env);
+  const fast = env.OPENAI_FAST_MODEL?.trim();
+  if (!main || main.name !== "openai" || !fast || !env.OPENAI_API_KEY) return main;
+  return openaiProvider(env.OPENAI_API_KEY, fast, env.OPENAI_REASONING?.trim() || undefined);
+}
+
+/**
  * Временные ошибки провайдера: перегрузка (503 «high demand» у Gemini бывает часто), лимит (429), сбой (500, 504).
  * Такой запрос повторяем с паузой; ошибки в самом запросе (400, 401, 404) не повторяем: повтор не поможет.
  * Паузы вынесены в объект, чтобы тесты могли их обнулить.

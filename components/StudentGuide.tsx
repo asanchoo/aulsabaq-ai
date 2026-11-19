@@ -54,7 +54,7 @@ export function WorkedExample({ example, dict, tryIt = true }: { example: Exampl
   function check(event: FormEvent) {
     event.preventDefault();
     if (!answer.trim()) return;
-    setResult(checkAnswer(answer, example.answer) ? "right" : "wrong");
+    setResult(checkAnswer(answer, example.answer) || looseMatch(answer, example.answer) ? "right" : "wrong");
   }
 
   return (
@@ -123,4 +123,25 @@ export function similarExample(guide: Guide, difficulty: 1 | 2 | 3): Example | n
     if (found) return found;
   }
   return usable[0] ?? null;
+}
+
+/** Без регистра, ё/е и знаков ударения («тра́вы» и «травы» одно слово). */
+const plain = (text: string) => text.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").replace(/[^\p{L}\p{N},.\-]+/gu, " ").trim();
+
+/**
+ * Мягкая проверка для разбора «реши со мной»: это образец, а не задание на оценку. Ответ образца часто длинный
+ * («Трава. Проверочное слово — тра́вы.» или «36 + 48 = 84»), поэтому засчитываем, если ученик написал итоговое число
+ * или слова из ответа образца.
+ */
+export function looseMatch(given: string, expected: string): boolean {
+  const g = plain(given);
+  const e = plain(expected);
+  if (!g) return false;
+  const numbers = (s: string) => s.match(/-?\d+(?:[.,]\d+)?/g) ?? [];
+  const gNums = numbers(g);
+  const eNums = numbers(e);
+  if (gNums.length > 0) return gNums.length === 1 && eNums.length > 0 && gNums[0].replace(",", ".") === eNums[eNums.length - 1].replace(",", ".");
+  const gWords = g.split(/[\s,.\-]+/).filter((w) => w.length >= 2);
+  const eWords = new Set(e.split(/[\s,.\-]+/));
+  return gWords.length > 0 && gWords.every((w) => eWords.has(w));
 }

@@ -21,7 +21,7 @@ export const VISUAL_KINDS = [
 
 const caption = z.string().trim().min(1).max(160);
 const int = z.number().int();
-const cell = z.string().trim().min(1).max(80);
+const cell = z.string().trim().min(1).max(120);
 
 /** Как блок хранится в уроке: у каждого вида только свои поля. */
 export const VisualSchema = z.discriminatedUnion("kind", [
@@ -35,7 +35,7 @@ export const VisualSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("grid"), caption, columns: int, rows: int }),
   z.object({ kind: z.literal("plot"), caption, expression: z.string().min(1), from: z.number(), to: z.number(), areaFrom: z.number().nullable(), areaTo: z.number().nullable() }),
   z.object({ kind: z.literal("formula"), caption, formula: z.string().min(1), legend: z.array(z.tuple([cell, cell])), steps: z.array(cell) }),
-  z.object({ kind: z.literal("table"), caption, headers: z.array(cell).min(1).max(6), rows: z.array(z.array(cell)).min(1).max(10) }),
+  z.object({ kind: z.literal("table"), caption, headers: z.array(cell).min(1).max(8), rows: z.array(z.array(cell)).min(1).max(10) }),
   z.object({ kind: z.literal("sentence"), caption, tokens: z.array(z.object({ text: cell, role: z.enum(SENTENCE_ROLES) })).min(2).max(20) }),
   z.object({ kind: z.literal("word"), caption, parts: z.array(z.object({ text: cell, part: z.enum(WORD_PARTS) })).min(1).max(8) }),
   z.object({ kind: z.literal("flow"), caption, items: z.array(cell).min(2).max(8), cycle: z.boolean() }),
@@ -95,9 +95,12 @@ export function toVisual(d: VisualDraft): { ok: true; visual: Visual } | { ok: f
     }
     case "number_line": {
       if (d.from === null || d.to === null || !d.points?.length) return fail("from, to and points are required");
-      if (d.to <= d.from || d.to - d.from > 10_000) return fail("need from < to and a range up to 10000");
-      if (d.points.length > 6 || d.points.some((p) => p < d.from! || p > d.to!)) return fail("1 to 6 points inside [from, to]");
-      candidate = { kind: d.kind, ...base, from: d.from, to: d.to, points: d.points };
+      // Модель иногда даёт концы луча в обратном порядке (from 10, to −10): разворачиваем, а не выбрасываем схему.
+      const from = Math.min(d.from, d.to);
+      const to = Math.max(d.from, d.to);
+      if (to <= from || to - from > 10_000) return fail("need from < to and a range up to 10000");
+      if (d.points.length > 6 || d.points.some((p) => p < from || p > to)) return fail("1 to 6 points inside [from, to]");
+      candidate = { kind: d.kind, ...base, from, to, points: d.points };
       break;
     }
     case "groups": {

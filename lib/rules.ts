@@ -124,6 +124,8 @@ export const RulesReviewSchema = z.object({
     answer: z.string().min(1),
   })),
   practice: z.array(z.object({ index: z.number().int(), problem: z.string(), task: z.string().min(1), answer: z.string().min(1) })),
+  /** Типичные ошибки учеников: их класс видит на слайде «Найди ошибку», объяснение в них должно быть верным. */
+  mistakes: z.array(z.object({ index: z.number().int(), problem: z.string(), text: z.string().min(1) })),
   keyIdea: z.string().nullable(),
 });
 export type RulesReview = z.infer<typeof RulesReviewSchema>;
@@ -144,10 +146,11 @@ export function rulesRequest(plan: LessonPlan, groupIndex: number) {
   return {
     subject: plan.subject, language: groupLanguage(plan, g), grade: g.grade, topic: g.topic,
     keyIdea: e.keyIdea, steps: e.steps, examples, practice, cards, suspects,
+    mistakes: e.mistakes.map((text, index) => ({ index, text })),
   };
 }
 
-export type RulesFixCount = { cards: number; examples: number; practice: number; keyIdea: boolean };
+export type RulesFixCount = { cards: number; examples: number; practice: number; mistakes: number; keyIdea: boolean };
 
 /**
  * Применяет исправления к одному классу. Карточку меняем, только если исправленная проходит checkCard
@@ -159,7 +162,7 @@ export function applyRulesReview(
   review: RulesReview,
   toCard: (fix: RulesReview["cards"][number], old: TaskCard) => TaskCard | null,
 ): { group: LessonPlan["groups"][number]; fixed: RulesFixCount } {
-  const fixed: RulesFixCount = { cards: 0, examples: 0, practice: 0, keyIdea: false };
+  const fixed: RulesFixCount = { cards: 0, examples: 0, practice: 0, mistakes: 0, keyIdea: false };
   const fixCard = (c: TaskCard) => {
     const fix = review.cards.find((f) => f.id === c.id);
     const next = fix ? toCard(fix, c) : null;
@@ -182,8 +185,14 @@ export function applyRulesReview(
     fixed.practice++;
     return { task: fix.task, answer: fix.answer };
   });
+  const mistakes = e.mistakes.map((m, i) => {
+    const fix = review.mistakes.find((f) => f.index === i);
+    if (!fix?.text.trim() || introducesSuspects(m, fix.text)) return m;
+    fixed.mistakes++;
+    return fix.text.trim();
+  });
   const keyIdea = review.keyIdea?.trim();
   if (keyIdea && keyIdea !== e.keyIdea) fixed.keyIdea = true;
-  const explanation: Explanation = { ...e, keyIdea: fixed.keyIdea && keyIdea ? keyIdea : e.keyIdea, example: all[0], examples: all.slice(1), practice };
+  const explanation: Explanation = { ...e, keyIdea: fixed.keyIdea && keyIdea ? keyIdea : e.keyIdea, example: all[0], examples: all.slice(1), practice, mistakes };
   return { group: { ...group, cards, explanation, ...(extraCards ? { extraCards } : {}) }, fixed };
 }

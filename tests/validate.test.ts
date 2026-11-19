@@ -289,3 +289,14 @@ describe("названия классов в уроке", () => {
     expect(groupTitle(groups, groups[2], getDict("kk").common)).toBe("5-сынып, 2-топ");
   });
 });
+
+describe("ответ «Попробуй сам» с отрицательными числами", () => {
+  it("«−9 + 9», ответ 0, и «(−5 + 25) : 4», ответ 5, не считаются ошибкой; «9 + 9», ответ 0, считается", async () => {
+    const { checkExplanation } = await import("@/lib/validate");
+    const e = structuredClone(demoFixture.groups[1].explanation) as unknown as Parameters<typeof checkExplanation>[0];
+    e.practice = [{ task: "Вычисли: −9 + 9", answer: "0" }, { task: "Вычисли: (−5 + 25) : 4", answer: "5" }];
+    expect(checkExplanation(e).filter((x) => x.includes("неверный ответ"))).toEqual([]);
+    e.practice = [{ task: "Вычисли: 9 + 9", answer: "0" }];
+    expect(checkExplanation(e).some((x) => x.includes("неверный ответ"))).toBe(true);
+  });
+});

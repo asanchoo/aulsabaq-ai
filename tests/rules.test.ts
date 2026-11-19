@@ -33,7 +33,7 @@ describe("правила языка: рецензент и код", () => {
   const g = plan.groups[0];
   const closed = g.cards.find((c) => c.type === "closed")!;
   const provider = (review: RulesReview | null): Provider => ({ name: "openai", call: vi.fn(async () => (review ? JSON.stringify(review) : null)) });
-  const empty: RulesReview = { cards: [], examples: [], practice: [], keyIdea: null };
+  const empty: RulesReview = { cards: [], examples: [], practice: [], mistakes: [], keyIdea: null };
 
   it("верное исправление карточки применяется, и запрос идёт с размышлением medium", async () => {
     const fix = { id: closed.id, problem: "пример", prompt: `${closed.prompt} (исправлено)`, answer: closed.answer ?? null, accept: [], inputHint: null, hint: closed.hint };
@@ -56,5 +56,16 @@ describe("правила языка: рецензент и код", () => {
     const result = await reviewRules(provider({ ...empty, examples: [fix] }), plan, Date.now());
     expect(result.groups[0].explanation.example).toMatchObject({ problem: "Новое условие примера", visual: null });
     expect(await reviewRules(provider(null), plan, Date.now())).toEqual(plan);
+  });
+});
+
+describe("рецензент правил проверяет и типичные ошибки (серия 19 ноября: «дуб — дубок»)", () => {
+  it("исправленная ошибка заменяет неверную, ошибка со словарным словом не применяется", async () => {
+    const plan = structuredClone(demoLesson);
+    const provider = (mistakes: RulesReview["mistakes"]): Provider => ({ name: "openai", call: vi.fn(async () => JSON.stringify({ cards: [], examples: [], practice: [], mistakes, keyIdea: null })) });
+    const fixed = await reviewRules(provider([{ index: 0, problem: "неверное объяснение", text: "Ученик сложил 27 и 16 и получил 313. Он не перенёс десяток." }]), plan, Date.now());
+    expect(fixed.groups[0].explanation.mistakes[0]).toBe("Ученик сложил 27 и 16 и получил 313. Он не перенёс десяток.");
+    const kept = await reviewRules(provider([{ index: 0, problem: "x", text: "Ученик написал к_ртофель с буквой а. Проверочное слово картошка." }]), plan, Date.now());
+    expect(kept.groups[0].explanation.mistakes[0]).toBe(plan.groups[0].explanation.mistakes[0]);
   });
 });

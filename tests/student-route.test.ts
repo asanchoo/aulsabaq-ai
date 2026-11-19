@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { RuleCard, similarExample, WorkedExample } from "@/components/StudentGuide";
+import { looseMatch, RuleCard, similarExample, WorkedExample } from "@/components/StudentGuide";
 import { demoLesson } from "@/lib/demo";
 import { compileExpression } from "@/lib/expression";
 import { getDict } from "@/lib/i18n";
@@ -115,11 +115,17 @@ describe("презентация", () => {
       rest: "Он забыл перенести десяток. Заметно по ответу меньше 80.",
     });
     expect(splitMistake("Путают 2,5 и 25")).toEqual({ lead: "Путают 2,5 и 25", rest: "" });
+    // Пояснение после двоеточия в первой фразе прячем, само неверное решение после двоеточия оставляем.
+    expect(splitMistake("Ученик сложил 27 + 16 и записал 313: он приписал 13 единиц к трём десяткам. Это неверно.")).toEqual({
+      lead: "Ученик сложил 27 + 16 и записал 313.",
+      rest: "Он приписал 13 единиц к трём десяткам. Это неверно.",
+    });
+    expect(splitMistake("Ученик решил так: 36 + 48 = 74. Он забыл перенос.").lead).toBe("Ученик решил так: 36 + 48 = 74.");
   });
 });
 
 describe("презентация из урока", () => {
-  it("рисуется, начинается с обложки и вопроса, слайдов меньше, чем раньше (было 15–19)", async () => {
+  it("рисуется, начинается с обложки и вопроса, слайдов не больше 13 (было 15–20)", async () => {
     const { ExplanationSlides } = await import("@/components/ExplanationSlides");
     const g = demoLesson.groups[1];
     const html = renderToStaticMarkup(createElement(ExplanationSlides, { explanation: g.explanation, grade: "4 класс", topic: g.topic, lang: "ru", joinCode: "123456" }));
@@ -127,7 +133,7 @@ describe("презентация из урока", () => {
     expect(html).toContain(g.explanation.hook);
     const total = Number(html.match(/1 из (\d+)/)?.[1]);
     expect(total).toBeGreaterThan(6);
-    expect(total).toBeLessThanOrEqual(16);
+    expect(total).toBeLessThanOrEqual(13);
   });
 });
 
@@ -139,5 +145,17 @@ describe("демо-урок показывает новый маршрут", () 
       expect(g.trainer).toBeDefined();
       for (const c of g.extraCards ?? []) expect(checkSingleCard(c), c.prompt).toEqual([]);
     }
+  });
+});
+
+describe("разбор «реши со мной»: мягкая проверка образца", () => {
+  it("итоговое число, слово из ответа и слово с ударением засчитываются; чужое — нет", () => {
+    expect(looseMatch("84", "36 + 48 = 84")).toBe(true);
+    expect(looseMatch("36", "36 + 48 = 84")).toBe(false);
+    expect(looseMatch("трава", "Трава. Проверочное слово — тра́вы.")).toBe(true);
+    expect(looseMatch("травы", "Трава. Проверочное слово — тра́вы.")).toBe(true);
+    expect(looseMatch("трова", "Трава. Проверочное слово — тра́вы.")).toBe(false);
+    expect(looseMatch("балалар", "Балалар")).toBe(true);
+    expect(looseMatch("а", "Трава.")).toBe(false);
   });
 });

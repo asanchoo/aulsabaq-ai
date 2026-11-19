@@ -112,7 +112,8 @@ export function parseExplained(input: unknown): Parsed<{ explanation: Explanatio
     mistakes: g.mistakes,
     checkQuestions: g.checkQuestions,
   });
-  if (rejected.length) console.warn(`[ai] dropped visuals: ${rejected.map((r) => r.split(":").slice(0, 2).join(":")).join(", ")}`);
+  // Причина из кода (не текст урока): по ней видно, какую проверку схема не прошла.
+  if (rejected.length) console.warn(`[ai] dropped visuals: ${rejected.map((r) => r.slice(0, 90)).join(" | ")}`);
   const visualCount = explanation.visuals.length + [explanation.example, ...explanation.examples].filter((e) => e.visual).length;
   const errors = checkExplanation(explanation);
   if (visualCount === 0) errors.push(`VIS: no valid visual block; add at least one (${rejected.join("; ") || "visuals is empty"})`);
@@ -519,9 +520,12 @@ function wrongCardAnswer(card: TaskCard): string | null {
 }
 
 function wrongExpressionAnswer(task: string, answer: string): string | null {
-  const expression = task.match(/^[^\d]*?(\d+(?:\s*[+\-−×·:]\s*\d+)+)\s*(?:=\s*\?)?\s*[.?]?$/);
+  const expression = task.match(/^([^\d]*?)(\d+(?:\s*[+\-−×·:]\s*\d+)+)\s*(?:=\s*\?)?\s*[.?]?$/);
   if (!expression || !/^\d+$/.test(answer.trim())) return null;
-  return findWrongEquation(`${expression[1]} = ${answer.trim()}`);
+  // «Вычисли: −9 + 9» или «(−5 + 25) : 4»: выражение начинается со знака или скобки, которые мы бы отрезали
+  // («9 + 9 = 0»). Такое не пересчитываем: правильный урок про отрицательные числа отклонялся трижды.
+  if (/[-−–(]\s*$/.test(expression[1])) return null;
+  return findWrongEquation(`${expression[2]} = ${answer.trim()}`);
 }
 
 /** Результат, который код посчитал для блока: частное, сумма, произведение. null, если блок не про число. */

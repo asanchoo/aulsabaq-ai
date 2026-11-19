@@ -3,11 +3,12 @@ import {
   cardFromModel, contentToLesson, GeneratedCardSchema, GeneratedContentSchema, GeneratedExplanationSchema, requestForModel,
   requestLanguage, requestLanguages, type GeneratedCard, type LessonRequest,
 } from "./generation-schema";
-import { cardInstructions, explanationInstructions, extraInstructions, hintInstructions, lessonInstructions, proofreadInstructions, rulesInstructions } from "./prompts";
+import { cardInstructions, explanationInstructions, extraInstructions, hintInstructions, lessonInstructions, proofreadInstructions, rulesInstructions, verifyInstructions } from "./prompts";
+import { checkCardAnswer } from "./check-answer";
 import { TrainerSkillSchema, type TrainerSkill } from "./trainer";
 import { applyRulesReview, introducesSuspects, isLanguageSubject, rulesRequest, RulesReviewSchema, type RulesReview } from "./rules";
 import { applyCorrections, collectTexts, safeCorrections } from "./proofread";
-import { ProviderError, resolveProvider, type Provider, type ProviderImage } from "./providers";
+import { ProviderError, resolveFastProvider, resolveProvider, type Provider, type ProviderImage } from "./providers";
 import { planSchedule } from "./schedule";
 import { checkExplanation, checkReviewCards, checkSingleCard, hintRevealsAnswer, maxCardMinutes, minCards, parseExplained, validateLessonPlan } from "./validate";
 import { findMixedScriptWord, prettyMathDeep } from "./arithmetic";
@@ -225,7 +226,7 @@ function explanationJob(input: LessonRequest, index: number): Job<Explained> {
 
 const ExtraSchema = z.object({ cards: z.array(GeneratedCardSchema).max(25), trainer: TrainerSkillSchema.nullable() });
 export const EXTRA_COUNT = 15;
-const EXTRA_TIMEOUT_MS = 75_000;
+const EXTRA_TIMEOUT_MS = 90_000;
 type Bank = { cards: TaskCard[]; trainer?: TrainerSkill };
 
 /** Нормализованный текст задания: так ловим запас, который повторяет основную карточку. */
@@ -287,8 +288,64 @@ export async function generateLesson(input: LessonRequest): Promise<LessonPlan> 
       };
     }),
   };
-  const reviewed = isLanguageSubject(input.subject) ? await reviewRules(provider, lesson, startedAt) : lesson;
-  return proofreadLesson(provider, reviewed, startedAt);
+  // Проверки делает быстрая модель (OPENAI_FAST_MODEL), если она задана: так они успевают и после медленной основной.
+  const checker = resolveFastProvider() ?? provider;
+  const reviewed = isLanguageSubject(input.subject) ? await reviewRules(checker, lesson, startedAt) : await verifyAnswers(checker, lesson, startedAt);
+  return proofreadLesson(checker, reviewed, startedAt);
+}
+
+// ---------------------------------------------------------------------------
+// Проверка решением: модель сама решает трудные задания, не видя ответа (не для языков, там рецензент правил)
+
+const SolvedSchema = z.object({ answers: z.array(z.object({ id: z.string(), answer: z.string().nullable() })) });
+const VERIFY_TIMEOUT_MS = 70_000;
+const VERIFY_BUDGET_MS = 210_000;
+
+/** Что решаем заново: трудные закрытые основные карточки и задания запаса средней и высокой сложности. */
+export function cardsToVerify(group: LessonPlan["groups"][number]): TaskCard[] {
+  return [
+    ...group.cards.filter((c) => c.type === "closed" && c.difficulty === 3),
+    ...(group.extraCards ?? []).filter((c) => c.type === "closed" && c.difficulty >= 2),
+  ].filter((c) => c.answer);
+}
+
+/**
+ * Код пересчитывает равенства, но не задачи вроде «найди все p, при которых уравнение имеет два корня»: в серии
+ * 19 ноября модель дала там неверный ответ. Отдельный запрос решает такие задания сам, ответа не видя. Если его
+ * ответ не совпал с эталоном (или задача без единственного ответа), задание запаса выбрасываем, а основную
+ * карточку делаем открытой: ученик отмечает «Готово», сайт не скажет «неверно» на верный ответ.
+ */
+export async function verifyAnswers(provider: Provider, plan: LessonPlan, startedAt: number): Promise<LessonPlan> {
+  if (Date.now() - startedAt > VERIFY_BUDGET_MS) return plan;
+  const schema = z.toJSONSchema(SolvedSchema, { target: "draft-7" }) as Record<string, unknown>;
+  const groups = await Promise.all(plan.groups.map(async (g) => {
+    const todo = cardsToVerify(g);
+    if (!todo.length) return g;
+    let solved: Map<string, string | null>;
+    try {
+      const text = await withTimeout(provider.call({
+        instructions: verifyInstructions(groupLanguage(plan, g)),
+        input: JSON.stringify({ subject: plan.subject, grade: g.grade, topic: g.topic, tasks: todo.map((c) => ({ id: c.id, task: c.prompt, format: c.inputHint ?? null })) }),
+        schemaName: "solved_tasks",
+        schema,
+        reasoning: "medium",
+      }), VERIFY_TIMEOUT_MS);
+      const parsed = text ? SolvedSchema.safeParse(JSON.parse(text)) : null;
+      if (!parsed?.success) return g;
+      solved = new Map(parsed.data.answers.map((a) => [a.id, a.answer]));
+    } catch {
+      return g;
+    }
+    // Нет ответа для задания в ответе проверяющего — не наказываем задание.
+    const disagrees = (c: TaskCard) => solved.has(c.id) && !(solved.get(c.id) && checkCardAnswer(solved.get(c.id)!, c));
+    const cards = g.cards.map((c): TaskCard => (todo.includes(c) && disagrees(c) ? { ...c, type: "open", accept: undefined, inputHint: undefined } : c));
+    const extraCards = g.extraCards?.filter((c) => !(todo.includes(c) && disagrees(c)));
+    const opened = cards.filter((c, i) => c !== g.cards[i]).length;
+    const dropped = (g.extraCards?.length ?? 0) - (extraCards?.length ?? 0);
+    console.warn(`[ai] ${provider.name} verify-${g.id}: checked ${todo.length}, opened ${opened}, dropped ${dropped}`);
+    return { ...g, cards, ...(extraCards ? { extraCards } : {}) };
+  }));
+  return { ...plan, groups };
 }
 
 /** Запас без повторов основных карточек; пустой запас и тренажёр не храним. */
@@ -303,7 +360,7 @@ function bankFor(bank: Bank, main: TaskCard[]): Pick<LessonPlan["groups"][number
 
 const RULES_TIMEOUT_MS = 75_000;
 /** Если урок собирался долго, проверку правил пропускаем: после неё ещё корректура, а роут живёт 300 секунд. */
-const RULES_BUDGET_MS = 170_000;
+const RULES_BUDGET_MS = 205_000;
 
 /** Карточка от рецензента → карточка урока, или null, если она не проходит прежние проверки. */
 function reviewedCard(fix: RulesReview["cards"][number], old: TaskCard): TaskCard | null {
@@ -359,8 +416,8 @@ export async function reviewRules(provider: Provider, plan: LessonPlan, startedA
     const oldPlan = new Set(errorsOf(next));
     if (errorsOf(candidate).some((e) => !oldPlan.has(e))) return console.warn(`[ai] ${provider.name} rules-g${i + 1}: rolled back, fixes broke a check`);
     next = candidate;
-    const exp = expBroken ? "explanation rolled back" : `examples ${fixed.examples}, practice ${fixed.practice}${fixed.keyIdea ? ", keyIdea" : ""}`;
-    console.warn(`[ai] ${provider.name} rules-g${i + 1}: found ${review.cards.length + review.examples.length + review.practice.length}, fixed cards ${fixed.cards}, ${exp}`);
+    const exp = expBroken ? "explanation rolled back" : `examples ${fixed.examples}, practice ${fixed.practice}, mistakes ${fixed.mistakes}${fixed.keyIdea ? ", keyIdea" : ""}`;
+    console.warn(`[ai] ${provider.name} rules-g${i + 1}: found ${review.cards.length + review.examples.length + review.practice.length + review.mistakes.length}, fixed cards ${fixed.cards}, ${exp}`);
   });
   return next;
 }
@@ -371,7 +428,7 @@ export async function reviewRules(provider: Provider, plan: LessonPlan, startedA
 const ProofSchema = z.object({ corrections: z.array(z.object({ wrong: z.string(), right: z.string() })) });
 const PROOF_TIMEOUT_MS = 25_000;
 /** Если урок собирался долго, корректуру пропускаем: роут живёт не дольше 300 секунд. */
-const PROOF_BUDGET_MS = 230_000;
+const PROOF_BUDGET_MS = 250_000;
 
 /**
  * Модель ищет опечатки, код применяет только безопасные исправления (lib/proofread.ts) и откатывает их,
@@ -431,7 +488,8 @@ export type HintRequest = {
  * Guard: hintRevealsAnswer отбрасывает подсказку, где есть ответ или число из ответа, которого нет в условии.
  */
 export async function generateHint(req: HintRequest): Promise<string | null> {
-  const provider = resolveProvider();
+  // Ученик ждёт подсказку с телефона: её пишет быстрая модель, если она задана.
+  const provider = resolveFastProvider();
   if (!provider) return null;
   const schema = z.toJSONSchema(HintSchema, { target: "draft-7" }) as Record<string, unknown>;
   let rejected: string[] = [];

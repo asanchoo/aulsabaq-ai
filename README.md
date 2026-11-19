@@ -32,7 +32,8 @@
 ## Зависимости, лицензии и расходы
 - Next.js, React, Tailwind CSS, Zod, Vitest: лицензия MIT. Шрифты Manrope и JetBrains Mono: SIL OFL 1.1.
 - Хостинг Vercel (тариф Hobby, бесплатно). База Supabase (бесплатный тариф, Франкфурт).
-  Модель: OpenAI `gpt-6-luna` (около 1–2 центов за урок, платит автор); можно переключить на Gemini.
+  Модели OpenAI (платит автор): урок пишет `gpt-6.1-terra`, проверки и подсказки ученику делает `gpt-6-luna`
+  (`OPENAI_FAST_MODEL`); урок стоит около 9–17 центов. Можно переключить на Gemini.
 - Расходы для проверяющего: 0 ₸. Ключ модели хранится только на сервере, в репозитории его нет.
 
 ## Запуск у себя
@@ -63,7 +64,7 @@ npm run dev                  # http://localhost:3000
 
 | Провайдер | Переменные в `.env.local` (или в Vercel) |
 |---|---|
-| OpenAI | `OPENAI_API_KEY`, `OPENAI_MODEL` |
+| OpenAI | `OPENAI_API_KEY`, `OPENAI_MODEL`; по желанию `OPENAI_FAST_MODEL` для проверок и подсказок |
 | Gemini | `GEMINI_API_KEY` (из Google AI Studio), `GEMINI_MODEL` |
 
 `AI_PROVIDER=openai|gemini` выбирает провайдера явно. Если он не задан, используется тот, у кого заполнены

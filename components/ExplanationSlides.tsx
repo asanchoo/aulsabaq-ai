@@ -66,9 +66,12 @@ export function ExplanationSlides({ explanation: e, grade, topic, lang, joinCode
 
   // Схемы: первая идёт к правилу, вторая к шагам (если её нет, шаги показываются рядом с первой),
   // остальные отдельными слайдами. Так схема всегда стоит рядом с тем, что она объясняет.
-  const [ruleVisual, stepsVisual, ...moreVisuals] = e.visuals;
-  const practiceChunks = chunk(e.practice, 3);
-  const mistakes = e.mistakes.map(splitMistake);
+  // Презентация на 10–13 слайдов, примерно минута на слайд: на экран идут 3 примера, 2 ошибки и до 6 заданий.
+  // Остальное (все примеры, все задания, третья схема) остаётся на странице урока и в памятке ученика.
+  const [ruleVisual, stepsVisual] = e.visuals;
+  const practiceChunks = chunk(e.practice.slice(0, 6), 3);
+  const mistakes = e.mistakes.slice(0, 2).map(splitMistake);
+  const shownExamples = pickExamples([e.example, ...e.examples]);
 
   const slides: Slide[] = [
     // 1. Обложка: тема и вопрос классу из ситуации.
@@ -148,21 +151,34 @@ export function ExplanationSlides({ explanation: e, grade, topic, lang, joinCode
         </div>
       ),
     },
-    ...moreVisuals.map((v): Slide => ({ kicker: l.explain.visual, frames: 0, render: () => <Visual visual={v} labels={dict.visual} size="slide" /> })),
     // 6. Примеры: шаг за шагом, ответ и схема в конце.
-    ...[e.example, ...e.examples].map((x, i) => exampleSlide(x, exampleKicker(x, i + 1))),
-    // 7. Найди ошибку: сначала ошибка, по нажатию — почему и как заметить.
-    ...mistakes.map((m): Slide => ({
-      kicker: labels.findMistake,
-      frames: m.rest ? 1 : 0,
-      render: (n) => (
-        <div className="grid max-w-[48ch] gap-6">
-          <p className="text-[clamp(0.95rem,1.6vw,1.2rem)] text-muted">{labels.findMistakeLead}</p>
-          <p className="rounded-frame border-2 border-dashed border-help/50 bg-help-soft p-6 text-[clamp(1.4rem,3vw,2.3rem)] leading-[1.3] font-medium">{m.lead}</p>
-          {n > 0 && m.rest && <p className="pop text-[clamp(1.2rem,2.2vw,1.7rem)] leading-[1.4]">{m.rest}</p>}
-        </div>
-      ),
-    })),
+    ...shownExamples.map((x, i) => exampleSlide(x, exampleKicker(x, i + 1))),
+    // 7. Найди ошибку: сначала только ошибки, по нажатию объяснение каждой по очереди.
+    ...(mistakes.length
+      ? [{
+          kicker: labels.findMistake,
+          frames: mistakes.filter((m) => m.rest).length,
+          render: (n: number) => {
+            let opened = 0;
+            return (
+              <div className="grid gap-5">
+                <p className="text-[clamp(0.95rem,1.6vw,1.2rem)] text-muted">{labels.findMistakeLead}</p>
+                <div className={`grid gap-6 ${mistakes.length > 1 ? "lg:grid-cols-2" : "max-w-[48ch]"}`}>
+                  {mistakes.map((m, i) => {
+                    const show = m.rest && opened++ < n;
+                    return (
+                      <div key={i} className="grid content-start gap-4">
+                        <p className="rounded-frame border-2 border-dashed border-help/50 bg-help-soft p-5 text-[clamp(1.25rem,2.6vw,2rem)] leading-[1.3] font-medium">{m.lead}</p>
+                        {show && <p className="pop text-[clamp(1.05rem,1.9vw,1.45rem)] leading-[1.4]">{m.rest}</p>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          },
+        } satisfies Slide]
+      : []),
     // 8. Твоя очередь: по три задания, ответы по одному.
     ...practiceChunks.map((tasks, k): Slide => ({
       kicker: practiceChunks.length > 1 ? `${labels.yourTurn} · ${k + 1}/${practiceChunks.length}` : labels.yourTurn,
@@ -363,6 +379,22 @@ function NumberedList({ items }: { items: string[] }) {
   );
 }
 
+/**
+ * Три примера для экрана: простой, как в учебнике и с подвохом (или из жизни), в порядке лестницы.
+ * Если уровней нет (старые уроки), первые три.
+ */
+function pickExamples(all: WorkedExample[]): WorkedExample[] {
+  if (all.length <= 3) return all;
+  const order = ["simple", "typical", "tricky", "life", "counter"] as const;
+  const picked: WorkedExample[] = [];
+  for (const level of order) {
+    const found = all.find((x) => x.level === level && !picked.includes(x));
+    if (found && picked.length < 3) picked.push(found);
+  }
+  for (const x of all) if (picked.length < 3 && !picked.includes(x)) picked.push(x);
+  return all.filter((x) => picked.includes(x));
+}
+
 /** Делит список на части по size: «Твоя очередь» по три задания на слайде, чтобы задания были крупными. */
 function chunk<T>(items: T[], size: number): T[][] {
   return Array.from({ length: Math.ceil(items.length / size) }, (_, i) => items.slice(i * size, i * size + size));
@@ -374,5 +406,14 @@ function chunk<T>(items: T[], size: number): T[][] {
  */
 export function splitMistake(text: string): { lead: string; rest: string } {
   const match = text.match(/^([\s\S]+?[.!?])\s+([\s\S]+)$/);
-  return match ? { lead: match[1], rest: match[2] } : { lead: text, rest: "" };
+  const first = match ? match[1] : text;
+  const after = match ? match[2] : "";
+  // «Ученик записал 313: он приписал 13 единиц…» — объяснение после двоеточия в той же фразе. Делим по двоеточию,
+  // если до него уже есть неверный ответ (цифры), а после идёт пояснение с маленькой буквы. «Ученик решил: 36 + 48 = 74»
+  // не делим: там после двоеточия само неверное решение, его класс и должен увидеть.
+  const colon = first.match(/^([^:]*\d[^:]*):\s+(\p{Ll}[\s\S]*)$/u);
+  if (colon) return { lead: `${colon[1]}.`, rest: [capitalize(colon[2]), after].filter(Boolean).join(" ") };
+  return { lead: first, rest: after };
 }
+
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
