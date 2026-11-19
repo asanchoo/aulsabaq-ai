@@ -7,9 +7,14 @@ import { LessonRequestSchema } from "@/lib/generation-schema";
 import { parseLessonPlan } from "@/lib/validate";
 import { getCreationDict, getDict, t, type Locale } from "@/lib/i18n";
 import { rememberLesson } from "@/lib/local";
+import { AutoTextarea } from "./AutoTextarea";
 
 type Photo = { mimeType: "image/jpeg"; data: string; preview: string };
-type GroupDraft = { id: number; grade: number; topic: string; count: string; notes: string; pages: string; photos: Photo[] };
+type GroupDraft = {
+  id: number; grade: number; language: Locale; topic: string; count: string; notes: string; pages: string; photos: Photo[];
+  /** Блоки «Учебник» и «Заметка о классе» раскрыты. */
+  showTextbook: boolean; showNotes: boolean;
+};
 
 const MAX_PHOTOS = 2;
 
@@ -33,27 +38,31 @@ async function compressPhoto(file: File): Promise<Photo> {
 }
 
 const GRADES = Array.from({ length: 11 }, (_, i) => i + 1);
+const COUNTS = [1, 2, 3, 4] as const;
+
+function newGroup(id: number, grade: number, language: Locale): GroupDraft {
+  return { id, grade, language, topic: "", count: "", notes: "", pages: "", photos: [], showTextbook: false, showNotes: false };
+}
 
 /**
- * Форма совмещённого урока: Zod на клиенте → POST /api/lessons → parseLessonPlan.
+ * Форма урока: Zod на клиенте → POST /api/lessons → parseLessonPlan.
  * Сервер сохраняет урок в базу и отдаёт id и ключ учителя: открываем страницу урока по ссылке.
  * Если база недоступна, урок показывается из sessionStorage этой вкладки, как раньше.
- * Справа живой предпросмотр: дорожки выбранных классов, пока урок не собран.
+ * Классов от одного до четырёх, класс можно выбрать дважды (две группы одного класса),
+ * у каждого класса свой язык обучения. Учебник и заметка о классе свёрнуты: они нужны не всегда.
  */
 export function LessonForm({ lang }: { lang: Locale }) {
   const d = getCreationDict(lang);
   const dict = getDict(lang);
   const router = useRouter();
   const [subject, setSubject] = useState("");
-  const [groups, setGroups] = useState<GroupDraft[]>([
-    { id: 1, grade: 2, topic: "", count: "", notes: "", pages: "", photos: [] },
-    { id: 2, grade: 4, topic: "", count: "", notes: "", pages: "", photos: [] },
-  ]);
-  const [language, setLanguage] = useState<Locale>(lang);
+  const [duration, setDuration] = useState("45");
+  const [groups, setGroups] = useState<GroupDraft[]>([newGroup(1, 2, lang), newGroup(2, 4, lang)]);
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState(0);
   const [error, setError] = useState<keyof typeof d.errors | null>(null);
   const [photoError, setPhotoError] = useState<number | null>(null);
+  const mixed = new Set(groups.map((g) => g.language)).size > 1;
 
   async function addPhotos(groupId: number, files: FileList | null) {
     setPhotoError(null);
@@ -79,14 +88,15 @@ export function LessonForm({ lang }: { lang: Locale }) {
     event.preventDefault();
     if (busy) return;
     setError(null);
-    const data = new FormData(event.currentTarget);
     const input = LessonRequestSchema.safeParse({
-      subject,
-      language,
-      durationMin: Number(data.get("duration")),
+      subject: subject.trim(),
+      // Язык урока — язык первого класса; у каждого класса свой язык в groups[].language.
+      language: groups[0].language,
+      durationMin: Number(duration),
       groups: groups.map((g) => ({
         grade: g.grade,
-        topic: g.topic,
+        topic: g.topic.trim(),
+        language: g.language,
         ...(g.count ? { studentCount: Number(g.count) } : {}),
         ...(g.notes.trim() ? { notes: g.notes.trim() } : {}),
         ...(g.pages.trim() ? { pages: g.pages.trim() } : {}),
@@ -141,117 +151,111 @@ export function LessonForm({ lang }: { lang: Locale }) {
     setGroups((items) => items.map((g) => (g.id === id ? { ...g, ...patch } : g)));
   }
 
-  function addGroup() {
-    setGroups((gs) => [
-      ...gs,
-      { id: Math.max(...gs.map((g) => g.id)) + 1, grade: GRADES.find((n) => !gs.some((g) => g.grade === n)) ?? 1, topic: "", count: "", notes: "", pages: "", photos: [] },
-    ]);
+  /** Сколько классов в кабинете: лишние группы с конца убираем, новые берут язык последней группы. */
+  function setCount(n: number) {
+    setGroups((gs) => {
+      if (n <= gs.length) return gs.slice(0, n);
+      const added: GroupDraft[] = [];
+      let id = Math.max(...gs.map((g) => g.id));
+      const last = gs[gs.length - 1];
+      for (let i = gs.length; i < n; i++) {
+        const used = [...gs, ...added].map((g) => g.grade);
+        added.push(newGroup(++id, GRADES.find((k) => k > last.grade && !used.includes(k)) ?? last.grade, last.language));
+      }
+      return [...gs, ...added];
+    });
   }
+
+  const chip = "min-h-10 rounded-full border border-line px-3.5 text-[0.88rem] font-medium transition-colors hover:border-ink aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-white";
+  const segment = "grid min-h-10 cursor-pointer place-items-center rounded-[6px] px-3 text-[0.92rem] font-semibold text-muted transition-colors peer-checked:bg-ink peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink hover:text-ink peer-checked:hover:text-white";
 
   return (
     <div className="grid gap-10 lg:grid-cols-12 lg:gap-8">
-      <form onSubmit={submit} className="lg:col-span-7" noValidate>
-        <fieldset disabled={busy} className="grid gap-8 disabled:opacity-60">
-          {/* Предмет: поле и быстрые варианты */}
-          <div>
-            <label htmlFor="subject" className="field-label">
-              {d.subject}
-            </label>
-            <input
-              id="subject"
-              className="field"
-              name="subject"
-              placeholder={d.subjectPlaceholder}
-              required
-              maxLength={100}
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              aria-invalid={error === "bad_request" && !subject.trim() ? true : undefined}
-            />
-            <div className="mt-3 flex flex-wrap gap-2">
-              {d.subjectChips.map((chip) => (
-                <button
-                  key={chip}
-                  type="button"
-                  aria-pressed={subject === chip}
-                  onClick={() => setSubject(chip)}
-                  className="min-h-10 rounded-full border border-line px-3.5 text-[0.88rem] font-medium transition-colors hover:border-ink aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-white"
-                >
-                  {chip}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid gap-6 sm:grid-cols-2">
-            {/* Язык урока: две кнопки-переключателя */}
-            <fieldset>
-              <legend className="field-label">{d.language}</legend>
-              <div className="grid grid-cols-2 rounded-btn border border-line-strong p-1">
-                {(["kk", "ru"] as const).map((code) => (
-                  <label key={code} className="relative">
-                    <input
-                      type="radio"
-                      name="language"
-                      value={code}
-                      checked={language === code}
-                      onChange={() => setLanguage(code)}
-                      className="peer sr-only"
-                    />
-                    <span className="grid min-h-10 cursor-pointer place-items-center rounded-[6px] text-[0.92rem] font-semibold text-muted transition-colors peer-checked:bg-ink peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink hover:text-ink peer-checked:hover:text-white">
-                      {d.languageNames[code]}
-                    </span>
-                  </label>
+      <form onSubmit={submit} className="min-w-0 lg:col-span-7" noValidate>
+        <fieldset disabled={busy} className="grid min-w-0 gap-8 disabled:opacity-60">
+          {/* Предмет и длительность */}
+          <div className="grid gap-6 sm:grid-cols-[minmax(0,1fr)_11rem] sm:items-start">
+            <div className="min-w-0">
+              <label htmlFor="subject" className="field-label">{d.subject}</label>
+              <AutoTextarea
+                id="subject"
+                singleLine
+                className="field leading-snug"
+                placeholder={d.subjectPlaceholder}
+                maxLength={100}
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                aria-invalid={error === "bad_request" && !subject.trim() ? true : undefined}
+              />
+              <div className="mt-3 flex flex-wrap gap-2">
+                {d.subjectChips.map((name) => (
+                  <button key={name} type="button" aria-pressed={subject === name} onClick={() => setSubject(name)} className={chip}>
+                    {name}
+                  </button>
                 ))}
               </div>
-            </fieldset>
+            </div>
             <div>
-              <label htmlFor="duration" className="field-label">
-                {d.duration}
-              </label>
-              <input id="duration" className="field tabular" name="duration" type="number" min={30} max={90} step={1} defaultValue={45} required />
+              <label htmlFor="duration" className="field-label">{d.duration}</label>
+              <input
+                id="duration"
+                className="field tabular"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={2}
+                value={duration}
+                onChange={(e) => setDuration(e.target.value.replace(/\D/g, ""))}
+                aria-invalid={error === "bad_request" && !(Number(duration) >= 30 && Number(duration) <= 90) ? true : undefined}
+              />
             </div>
           </div>
 
           {/* Классы в кабинете */}
-          <div>
-            <div className="mb-4 flex items-baseline justify-between gap-3">
-              <h2 className="text-[1.25rem] font-semibold tracking-[-0.02em]">{d.groups}</h2>
-              <span className="font-mono text-[0.85rem] text-faint">{groups.length} / 3</span>
-            </div>
-            <div className="grid gap-4">
-              {groups.map((group, index) => {
-                const taken = new Set(groups.filter((g) => g.id !== group.id).map((g) => g.grade));
-                return (
-                  <section key={group.id} aria-label={t(d.group, { n: index + 1 })} className="rounded-card border border-line bg-surface p-5">
-                    <div className="mb-4 flex items-center justify-between gap-2">
-                      <h3 className="font-semibold">{t(d.group, { n: index + 1 })}</h3>
-                      {groups.length > 2 && (
-                        <button
-                          type="button"
-                          className="link min-h-10 px-1 text-[0.88rem] text-muted hover:text-ink"
-                          onClick={() => setGroups((gs) => gs.filter((g) => g.id !== group.id))}
-                        >
-                          {d.remove}
-                        </button>
-                      )}
-                    </div>
+          <div className="min-w-0">
+            <h2 className="text-[1.25rem] font-semibold tracking-[-0.02em]">{d.groups}</h2>
+            <fieldset className="mt-4">
+              <legend className="field-label">{d.classCount}</legend>
+              <div className="inline-grid grid-cols-4 rounded-btn border border-line-strong p-1">
+                {COUNTS.map((n) => (
+                  <label key={n} className="relative">
+                    <input type="radio" name="class-count" value={n} checked={groups.length === n} onChange={() => setCount(n)} className="peer sr-only" />
+                    <span className={`${segment} tabular min-w-12`}>{n}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="mt-2 text-[0.85rem] leading-snug text-muted">{d.classCountHint}</p>
+            </fieldset>
 
-                    <fieldset>
+            <div className="mt-6 grid gap-4">
+              {groups.map((group, index) => (
+                <section key={group.id} aria-label={t(d.group, { n: index + 1 })} className="min-w-0 rounded-card border border-line bg-surface p-4 sm:p-5">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                    <h3 className="font-semibold">{t(d.group, { n: index + 1 })}</h3>
+                    {groups.length > 1 && (
+                      <button
+                        type="button"
+                        className="link min-h-10 px-1 text-[0.88rem] text-muted hover:text-ink"
+                        onClick={() => setGroups((gs) => gs.filter((g) => g.id !== group.id))}
+                      >
+                        {d.remove}
+                      </button>
+                    )}
+                  </div>
+
+                  <fieldset className="min-w-0">
                       <legend className="field-label">{d.grade}</legend>
                       <div className="grid grid-cols-6 gap-1.5 sm:grid-cols-11">
                         {GRADES.map((n) => (
-                          <label key={n} title={taken.has(n) ? t(d.gradeTaken, { n }) : undefined}>
+                          <label key={n}>
                             <input
                               type="radio"
                               name={`grade-${group.id}`}
                               value={n}
                               checked={group.grade === n}
-                              disabled={taken.has(n)}
                               onChange={() => update(group.id, { grade: n })}
                               className="peer sr-only"
                             />
-                            <span className="tabular grid min-h-11 cursor-pointer place-items-center rounded-btn border border-line bg-white font-semibold transition-colors hover:border-ink peer-checked:border-ink peer-checked:bg-ink peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink peer-disabled:cursor-not-allowed peer-disabled:border-transparent peer-disabled:bg-transparent peer-disabled:text-faint/60">
+                            <span className="tabular grid min-h-11 cursor-pointer place-items-center rounded-btn border border-line bg-white font-semibold transition-colors hover:border-ink peer-checked:border-ink peer-checked:bg-ink peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink">
                               {n}
                             </span>
                           </label>
@@ -259,41 +263,76 @@ export function LessonForm({ lang }: { lang: Locale }) {
                       </div>
                     </fieldset>
 
-                    <div className="mt-4 grid gap-4 sm:grid-cols-[1fr_11rem]">
-                      <div>
-                        <label htmlFor={`topic-${group.id}`} className="field-label">
-                          {d.topic}
+                  <fieldset className="mt-4">
+                    <legend className="field-label">{d.language}</legend>
+                    <div className="inline-grid grid-cols-2 rounded-btn border border-line-strong bg-white p-1">
+                      {(["kk", "ru"] as const).map((code) => (
+                        <label key={code} className="relative">
+                          <input
+                            type="radio"
+                            name={`language-${group.id}`}
+                            value={code}
+                            checked={group.language === code}
+                            onChange={() => update(group.id, { language: code })}
+                            className="peer sr-only"
+                          />
+                          <span lang={code} className={segment}>{d.languageNames[code]}</span>
                         </label>
-                        <input
-                          id={`topic-${group.id}`}
-                          className="field"
-                          placeholder={d.topicPlaceholder}
-                          required
-                          maxLength={300}
-                          value={group.topic}
-                          onChange={(e) => update(group.id, { topic: e.target.value })}
-                          aria-invalid={error === "bad_request" && !group.topic.trim() ? true : undefined}
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor={`count-${group.id}`} className="field-label">
-                          {d.count}
-                        </label>
-                        <input
-                          id={`count-${group.id}`}
-                          className="field tabular"
-                          placeholder={d.countPlaceholder}
-                          type="number"
-                          min={1}
-                          max={100}
-                          step={1}
-                          value={group.count}
-                          onChange={(e) => update(group.id, { count: e.target.value })}
-                        />
-                      </div>
+                      ))}
                     </div>
-                    <fieldset className="mt-4 rounded-btn border border-line bg-white p-3 sm:p-4">
-                      <legend className="px-1 text-[0.875rem] font-semibold">{d.textbook}</legend>
+                  </fieldset>
+
+                  <div className="mt-4 grid gap-4 sm:grid-cols-[minmax(0,1fr)_8rem] sm:items-start">
+                    <div className="min-w-0">
+                      <label htmlFor={`topic-${group.id}`} className="field-label">{d.topic}</label>
+                      <AutoTextarea
+                        id={`topic-${group.id}`}
+                        singleLine
+                        className="field leading-snug"
+                        placeholder={d.topicPlaceholder}
+                        maxLength={300}
+                        value={group.topic}
+                        onChange={(e) => update(group.id, { topic: e.target.value })}
+                        aria-invalid={error === "bad_request" && !group.topic.trim() ? true : undefined}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor={`count-${group.id}`} className="field-label">{d.count}</label>
+                      <input
+                        id={`count-${group.id}`}
+                        className="field tabular"
+                        placeholder={d.countPlaceholder}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={3}
+                        value={group.count}
+                        onChange={(e) => update(group.id, { count: e.target.value.replace(/\D/g, "") })}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Необязательное: раскрывается по нажатию, чтобы форма не была длинной */}
+                  <p className="mt-4 text-[0.85rem] text-muted">{d.optional}</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {([["showTextbook", d.textbook, `textbook-${group.id}`], ["showNotes", d.notes, `notes-box-${group.id}`]] as const).map(([key, label, controls]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        aria-expanded={group[key]}
+                        aria-controls={controls}
+                        onClick={() => update(group.id, { [key]: !group[key] })}
+                        className="inline-flex min-h-10 items-center gap-2 rounded-full border border-line-strong bg-white px-3.5 text-left text-[0.88rem] font-medium transition-colors hover:border-ink aria-expanded:border-ink"
+                      >
+                        <svg aria-hidden viewBox="0 0 16 16" className={`size-3.5 transition-transform ${group[key] ? "rotate-45" : ""}`} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                          <path d="M8 3v10M3 8h10" />
+                        </svg>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {group.showTextbook && (
+                    <div id={`textbook-${group.id}`} className="mt-3 rounded-btn border border-line bg-white p-3 sm:p-4">
                       <p className="text-[0.85rem] leading-snug text-muted">{d.textbookHint}</p>
                       <div className="mt-3 flex flex-wrap items-end gap-3">
                         <div className="w-36">
@@ -344,37 +383,26 @@ export function LessonForm({ lang }: { lang: Locale }) {
                         )}
                       </div>
                       {photoError === group.id && <p role="alert" className="mt-2 text-[0.88rem] text-danger">{d.photoError}</p>}
-                    </fieldset>
-                    <div className="mt-4">
-                      <label htmlFor={`notes-${group.id}`} className="field-label">
-                        {d.notes}
-                      </label>
-                      <textarea
+                    </div>
+                  )}
+
+                  {group.showNotes && (
+                    <div id={`notes-box-${group.id}`} className="mt-3">
+                      <label htmlFor={`notes-${group.id}`} className="sr-only">{d.notes}</label>
+                      <AutoTextarea
                         id={`notes-${group.id}`}
-                        className="field min-h-0 py-2.5 leading-snug"
-                        rows={2}
+                        className="field min-h-0 leading-snug"
+                        minRows={2}
                         maxLength={300}
                         placeholder={d.notesPlaceholder}
                         value={group.notes}
                         onChange={(e) => update(group.id, { notes: e.target.value })}
                       />
                     </div>
-                  </section>
-                );
-              })}
+                  )}
+                </section>
+              ))}
             </div>
-            {groups.length < 3 && (
-              <button
-                type="button"
-                onClick={addGroup}
-                className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-card border border-dashed border-line-strong font-semibold text-muted transition-colors hover:border-ink hover:text-ink"
-              >
-                <svg aria-hidden viewBox="0 0 16 16" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                  <path d="M8 3v10M3 8h10" />
-                </svg>
-                {d.add}
-              </button>
-            )}
           </div>
         </fieldset>
 
@@ -412,11 +440,12 @@ export function LessonForm({ lang }: { lang: Locale }) {
               <span className="font-mono text-[0.8rem] text-faint">{subject.trim() || "…"}</span>
             </div>
             <div className="mt-5 grid gap-2.5">
-              {[...groups]
-                .sort((a, b) => a.grade - b.grade)
-                .map((g) => (
-                  <div key={g.id} className="grid grid-cols-[4.5rem_1fr] items-center gap-3">
-                    <span className="text-[0.85rem] font-semibold whitespace-nowrap">{t(dict.common.grade, { n: g.grade })}</span>
+              {groups.map((g) => (
+                  <div key={g.id} className="grid grid-cols-[minmax(4.5rem,auto)_1fr] items-center gap-3">
+                    <span className="text-[0.85rem] font-semibold whitespace-nowrap">
+                      {t(dict.common.grade, { n: g.grade })}
+                      {mixed && <span className="ml-1.5 font-normal text-muted uppercase">{g.language}</span>}
+                    </span>
                     <span className={`h-9 rounded-md border border-dashed border-line-strong ${busy ? "animate-pulse bg-mint-soft" : ""}`} />
                   </div>
                 ))}

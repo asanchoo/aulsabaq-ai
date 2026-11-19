@@ -95,7 +95,6 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
       <section id="students" aria-labelledby="students-h" className="scroll-mt-16 bg-ink py-20 text-white lg:min-h-svh lg:pt-[120px] lg:pb-24">
         <div className="wrap grid grid-cols-[minmax(0,1fr)] gap-12 lg:grid-cols-12 lg:gap-x-6">
           <div className="lg:col-span-5">
-            <p className="mb-5 inline-flex rounded-full bg-white/10 px-3 py-1 text-[0.8rem] font-semibold text-mint">{dict.students.soon}</p>
             <h2 id="students-h" className="display text-[1.75rem] min-[360px]:text-[2.2rem] sm:text-[2.8rem] lg:text-[3.2rem]">
               {dict.students.title}
             </h2>

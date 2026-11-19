@@ -125,6 +125,8 @@ export const GroupSchema = z.object({
   homework: z.string().min(1),
   /** По какому учебнику строился урок: страницы, которые указал учитель, и сколько фото страниц он прислал. */
   source: z.object({ pages: z.string().nullable(), photos: z.number().int().min(0) }).nullable().optional(),
+  /** Язык обучения этого класса, если он не такой, как у урока (класс с казахским и класс с русским). */
+  language: LangSchema.optional(),
 });
 
 export const LessonPlanSchema = z.object({
@@ -145,6 +147,11 @@ export const GroupCoreSchema = GroupSchema.omit({ explanation: true });
 export const LessonCoreSchema = LessonPlanSchema.extend({ groups: z.array(GroupCoreSchema) });
 
 export type Lang = z.infer<typeof LangSchema>;
+
+/** На каком языке материалы класса и экран его учеников: свой язык класса или язык урока. */
+export function groupLanguage(plan: { language: Lang }, group: { language?: Lang }): Lang {
+  return group.language ?? plan.language;
+}
 export type TaskCard = z.infer<typeof TaskCardSchema>;
 export type CardPurpose = TaskCard["purpose"];
 export type SegmentMode = z.infer<typeof SegmentModeSchema>;

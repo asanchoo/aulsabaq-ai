@@ -1,5 +1,6 @@
 import type { Group } from "@/lib/schema";
 import { t, type Dict } from "@/lib/i18n";
+import { groupTitle } from "@/lib/lesson";
 
 /**
  * Карточки для самостоятельной работы.
@@ -16,7 +17,7 @@ export function TaskCards({ groups, dict }: { groups: Group[]; dict: Dict }) {
       {groups.map((g) => (
         <section key={g.id} className="print:mb-6 print:break-after-page last:print:break-after-auto">
           <header className="border-b border-ink pb-4">
-            <h3 className="text-[1.5rem] font-semibold tracking-[-0.02em]">{t(dict.common.grade, { n: g.grade })}</h3>
+            <h3 className="text-[1.5rem] font-semibold tracking-[-0.02em]">{groupTitle(groups, g, dict.common)}</h3>
             <p className="mt-1 font-medium">{g.topic}</p>
             <p className="mt-2 text-[0.9rem] leading-snug text-muted">
               <span className="font-semibold text-ink">{dict.lesson.goal}:</span> {g.learningGoal}

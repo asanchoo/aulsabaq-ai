@@ -2,7 +2,7 @@ import { z } from "zod";
 import { EXAMPLE_LEVELS, GroupCoreSchema, LangSchema, QuickTaskSchema, TaskCardSchema, TermSchema, type LessonCore } from "./schema";
 import { VisualDraftSchema } from "./visuals";
 import { acceptMismatch, inputHintReveals } from "./check-answer";
-import { buildTimeline, MAX_CARDS, MIN_PRACTICE_CARDS, type Schedule, type StageKind } from "./schedule";
+import { buildTimeline, MAX_CARDS, MAX_GROUPS, MIN_PRACTICE_CARDS, type Schedule, type StageKind } from "./schedule";
 
 /** Фото страницы учебника: сжатый в браузере JPEG/PNG/WebP в base64 (до ~700 КБ). В базе не хранится. */
 export const PhotoSchema = z.object({
@@ -25,8 +25,19 @@ export const LessonRequestSchema = z.object({
     pages: z.string().trim().max(40).optional(),
     /** Фото этих страниц: модель строит объяснение, примеры и домашнее задание по ним. Необязательно. */
     photos: z.array(PhotoSchema).max(MAX_PHOTOS_PER_GROUP).optional(),
-  })).min(2).max(3),
-}).refine((r) => new Set(r.groups.map((g) => g.grade)).size === r.groups.length);
+    /**
+     * Язык этого класса, если он не такой, как у урока: в одном кабинете бывают класс с казахским
+     * и класс с русским языком обучения. Нет поля — язык урока.
+     */
+    language: LangSchema.optional(),
+  })).min(1).max(MAX_GROUPS),
+  // Два одинаковых класса (две группы 5 класса) разрешены: группы различает номер, а не класс.
+});
+
+/** Язык класса: свой или язык урока. */
+export const requestLanguage = (input: LessonRequest, index: number) => input.groups[index]?.language ?? input.language;
+/** Языки урока без повторов, в порядке классов: ["kk"] или ["kk", "ru"]. */
+export const requestLanguages = (input: LessonRequest) => [...new Set(input.groups.map((_, i) => requestLanguage(input, i)))];
 
 export type LessonRequest = z.infer<typeof LessonRequestSchema>;
 
@@ -58,7 +69,7 @@ export const GeneratedContentSchema = z.object({
   durationMin: z.number().int(),
   opening: z.string().min(1),
   closing: z.string().min(1),
-  groups: z.array(GroupCoreSchema.omit({ id: true, source: true }).extend({
+  groups: z.array(GroupCoreSchema.omit({ id: true, source: true, language: true }).extend({
     /** Карточки практики по новой теме. Карточки повторения уже написал запрос объяснения. */
     cards: z.array(GeneratedCardSchema),
     stages: StagesSchema,
@@ -139,10 +150,10 @@ export function cardFromModel<T extends GeneratedCard>(c: T) {
 export function requestForModel(input: LessonRequest) {
   return {
     ...input,
-    groups: input.groups.map((g) => {
+    groups: input.groups.map((g, i) => {
       const rest = { ...g };
       delete rest.photos;
-      return { ...rest, textbookPhotos: g.photos?.length ?? 0 };
+      return { ...rest, language: requestLanguage(input, i), textbookPhotos: g.photos?.length ?? 0 };
     }),
   };
 }

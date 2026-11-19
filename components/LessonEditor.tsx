@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { toEdit, type EditIssue, type LessonEdit } from "@/lib/edit";
 import { t, type Dict } from "@/lib/i18n";
 import type { LessonPlan } from "@/lib/schema";
+import { groupTitle } from "@/lib/lesson";
+import { AutoTextarea } from "./AutoTextarea";
 
 type ListField = "steps" | "mistakes" | "checkQuestions" | "summary";
 const LIST_LIMITS: Record<ListField | "exampleSteps", [number, number]> = { steps: [2, 8], mistakes: [1, 4], checkQuestions: [2, 4], summary: [0, 6], exampleSteps: [2, 8] };
@@ -33,7 +35,7 @@ export function LessonEditor({ lessonId, token, plan, dict, onClose }: {
   const cardLabel = (cardId?: string) => {
     for (const g of plan.groups) {
       const i = g.cards.findIndex((c) => c.id === cardId);
-      if (i >= 0) return { n: i + 1, grade: t(dict.common.grade, { n: g.grade }) };
+      if (i >= 0) return { n: i + 1, grade: groupTitle(plan.groups, g, dict.common) };
     }
     return { n: "?", grade: "" };
   };
@@ -132,7 +134,7 @@ export function LessonEditor({ lessonId, token, plan, dict, onClose }: {
           const e = g.explanation;
           return (
             <fieldset key={g.id} disabled={busy} className="grid gap-6">
-              <legend className="mb-4 text-[1.25rem] font-semibold">{t(dict.common.grade, { n: group.grade })}: {group.topic}</legend>
+              <legend className="mb-4 text-[1.25rem] font-semibold">{groupTitle(plan.groups, group, dict.common)}: {group.topic}</legend>
               <Field id={`${g.id}-goal`} label={d.goal} value={g.learningGoal} onChange={(v) => setGroup(gi, { learningGoal: v })} />
 
               <div className="grid gap-4 rounded-card bg-surface p-4 sm:p-5">
@@ -167,7 +169,7 @@ export function LessonEditor({ lessonId, token, plan, dict, onClose }: {
                       <div className="grid gap-3 rounded-btn bg-surface p-3 sm:grid-cols-[1fr_auto] sm:items-end">
                         <div>
                           <label htmlFor={`${c.id}-wish`} className="field-label">{d.wish}</label>
-                          <input id={`${c.id}-wish`} className="field" maxLength={200} placeholder={d.wishPlaceholder} value={regen.wish} onChange={(ev) => setRegen({ cardId: c.id, wish: ev.target.value })} />
+                          <AutoTextarea id={`${c.id}-wish`} singleLine className="field leading-snug" maxLength={200} placeholder={d.wishPlaceholder} value={regen.wish} onChange={(ev) => setRegen({ cardId: c.id, wish: ev.target.value })} />
                         </div>
                         <button type="button" className="btn btn-primary" disabled={regenBusy !== null} aria-busy={regenBusy === c.id} onClick={() => regenerate(gi, ci)}>
                           {regenBusy === c.id ? d.regenerating : d.regenerate}
@@ -211,11 +213,7 @@ function Field({ id, label, value, onChange, rows = 1 }: { id: string; label: st
   return (
     <div>
       <label htmlFor={id} className="field-label">{label}</label>
-      {rows > 1 ? (
-        <textarea id={id} className="field min-h-0 py-2.5 leading-snug" rows={rows} value={value} onChange={(e) => onChange(e.target.value)} />
-      ) : (
-        <input id={id} className="field" value={value} onChange={(e) => onChange(e.target.value)} />
-      )}
+      <AutoTextarea id={id} className="field leading-snug" minRows={rows} singleLine={rows === 1} value={value} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
 }

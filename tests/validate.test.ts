@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import demoFixture from "@/fixtures/demo-lesson.ru.json";
 import { LessonPlanSchema, type LessonPlan, type Segment } from "@/lib/schema";
 import { parseLessonPlan, validateLessonPlan } from "@/lib/validate";
+import { groupTitle } from "@/lib/lesson";
+import { getDict } from "@/lib/i18n";
 
 /** Свежая копия демо-урока: каждый тест ломает свою копию и не мешает другим. */
 function full(): LessonPlan {
@@ -112,13 +114,12 @@ describe("validateLessonPlan", () => {
     expect(errorsOf(plan)).toEqual(["INV-5: у закрытой карточки g1-c1 нет ответа для самопроверки"]);
   });
 
-  it("проверяет границы: групп 2–3, карточек 3–5 (инвариант 6)", () => {
+  it("проверяет границы: групп 1–4 (инвариант 6)", () => {
     const plan = demo();
-    plan.groups[1].cards = plan.groups[1].cards.slice(0, 2);
-    plan.groups = plan.groups.slice(0, 1);
-    plan.timeline = plan.timeline.filter((s) => s.groupId === "g1");
+    plan.groups = [];
+    plan.timeline = [];
 
-    expect(errorsOf(plan)).toContain("INV-6: групп 1, нужно от 2 до 3");
+    expect(errorsOf(plan)).toContain("INV-6: групп 0, нужно от 1 до 4");
   });
 
   it("возвращает все ошибки сразу, чтобы повторный запрос к модели исправил всё за раз", () => {
@@ -278,5 +279,13 @@ describe("инвариант 7: новая тема не раньше объяс
     plan.groups[0].homework = "Реши примеры дома и провеrьte их.";
 
     expect(errorsOf(plan)).toEqual(["TXT: опечатка «провеrьte»: в слове смешаны алфавиты"]);
+  });
+});
+
+describe("названия классов в уроке", () => {
+  it("две группы одного класса различаются номером группы", () => {
+    const groups = [{ id: "g1", grade: 5 }, { id: "g2", grade: 3 }, { id: "g3", grade: 5 }];
+    expect(groups.map((g) => groupTitle(groups, g, getDict("ru").common))).toEqual(["5 класс, группа 1", "3 класс", "5 класс, группа 2"]);
+    expect(groupTitle(groups, groups[2], getDict("kk").common)).toBe("5-сынып, 2-топ");
   });
 });

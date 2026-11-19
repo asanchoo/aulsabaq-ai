@@ -1,5 +1,6 @@
 import type { StoredSession } from "./store";
 import { readProgress, studentCards, type StudentCard } from "./student";
+import { groupLanguage } from "./schema";
 
 /** Что видит ученик на телефоне. Эталонов ответов и подсказок карточек здесь нет. */
 export type StudentView = {
@@ -22,7 +23,7 @@ export function studentView(session: StoredSession): StudentView | null {
     lessonId: session.lessonId,
     name: session.name,
     subject: session.plan.subject,
-    language: session.plan.language,
+    language: groupLanguage(session.plan, group),
     grade: group.grade,
     topic: group.topic,
     cards: studentCards(group, readProgress(session.progress)),

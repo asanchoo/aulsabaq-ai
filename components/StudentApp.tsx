@@ -7,6 +7,7 @@ import { getDict, t, type Locale } from "@/lib/i18n";
 import { forgetStudent } from "@/lib/local";
 import { isFinished, MAX_HINTS, REVEAL_AFTER, type StudentCard } from "@/lib/student";
 import type { StudentView } from "@/lib/student-view";
+import { AutoTextarea } from "./AutoTextarea";
 
 const REFRESH_MS = 10_000;
 
@@ -216,9 +217,10 @@ export function StudentApp({ lang, sessionId }: { lang: Locale; sessionId: strin
             <div>
               <label htmlFor="answer" className="field-label">{d.answer}</label>
               {card.inputHint && <p id="input-hint" className="mb-2 text-[0.92rem] leading-snug text-muted">{card.inputHint}</p>}
-              <input
+              <AutoTextarea
                 id="answer"
-                className="field text-[1.1rem]"
+                singleLine
+                className="field text-[1.1rem] leading-snug"
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="off"

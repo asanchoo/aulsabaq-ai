@@ -6,7 +6,7 @@ import { LessonTimeline } from "./LessonTimeline";
 import { TaskCards } from "./TaskCards";
 import { TopicExplanation } from "./TopicExplanation";
 import { t, type Dict, type Locale } from "@/lib/i18n";
-import { lessonToText } from "@/lib/lesson";
+import { lessonToText, groupTitle } from "@/lib/lesson";
 import type { LessonPlan } from "@/lib/schema";
 
 /**
@@ -14,7 +14,7 @@ import type { LessonPlan } from "@/lib/schema";
  * workspace — то, что зависит от сохранённого урока (код для учеников, панель, ведение урока); у демо там своя кнопка.
  */
 export function LessonView({ plan, lang, dict, badge, notice, workspace }: { plan: LessonPlan; lang: Locale; dict: Dict; badge: string; notice?: string; workspace?: ReactNode }) {
-  const grades = plan.groups.map((g) => t(dict.common.grade, { n: g.grade })).join(" · ");
+  const grades = plan.groups.map((g) => groupTitle(plan.groups, g, dict.common)).join(" · ");
 
   return (
     <>

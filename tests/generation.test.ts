@@ -111,8 +111,11 @@ retryTiming.delaysMs = [0, 0];
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
 
 describe("generation request", () => {
-  it("rejects duplicate grades and oversized topics", () => {
-    expect(LessonRequestSchema.safeParse({ ...input, groups: [input.groups[0], input.groups[0]] }).success).toBe(false);
+  it("allows one to four classes and two groups of one grade, rejects oversized topics", () => {
+    expect(LessonRequestSchema.safeParse({ ...input, groups: [input.groups[0], input.groups[0]] }).success).toBe(true);
+    expect(LessonRequestSchema.safeParse({ ...input, groups: [input.groups[0]] }).success).toBe(true);
+    expect(LessonRequestSchema.safeParse({ ...input, groups: Array(5).fill(input.groups[0]) }).success).toBe(false);
+    expect(LessonRequestSchema.safeParse({ ...input, groups: [{ ...input.groups[0], language: "kk" }, input.groups[1]] }).success).toBe(true);
     expect(LessonRequestSchema.safeParse({ ...input, groups: input.groups.map((g) => ({ ...g, topic: "x".repeat(301) })) }).success).toBe(false);
   });
   it("has required fields throughout the provider schema", () => {

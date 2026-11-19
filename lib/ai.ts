@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { cardFromModel, contentToLesson, GeneratedCardSchema, GeneratedContentSchema, GeneratedExplanationSchema, requestForModel, type GeneratedCard, type LessonRequest } from "./generation-schema";
+import {
+  cardFromModel, contentToLesson, GeneratedCardSchema, GeneratedContentSchema, GeneratedExplanationSchema, requestForModel,
+  requestLanguage, requestLanguages, type GeneratedCard, type LessonRequest,
+} from "./generation-schema";
 import { cardInstructions, explanationInstructions, hintInstructions, lessonInstructions, proofreadInstructions, rulesInstructions } from "./prompts";
 import { applyRulesReview, introducesSuspects, isLanguageSubject, rulesRequest, RulesReviewSchema, type RulesReview } from "./rules";
 import { applyCorrections, collectTexts, safeCorrections } from "./proofread";
@@ -7,7 +10,7 @@ import { ProviderError, resolveProvider, type Provider, type ProviderImage } fro
 import { planSchedule } from "./schedule";
 import { checkExplanation, checkReviewCards, checkSingleCard, hintRevealsAnswer, maxCardMinutes, minCards, parseExplained, validateLessonPlan } from "./validate";
 import { findMixedScriptWord, prettyMathDeep } from "./arithmetic";
-import { TaskCardSchema, type Explanation, type LessonCore, type LessonPlan, type TaskCard } from "./schema";
+import { groupLanguage, TaskCardSchema, type Explanation, type LessonCore, type LessonPlan, type TaskCard } from "./schema";
 
 /**
  * Генерация урока: не зависит от того, какая модель отвечает.
@@ -154,7 +157,7 @@ function planJob(input: LessonRequest, explained: Explained[]): Job<LessonCore> 
   const reviewCards = explained.map((x, i) => (schedule.cards[i].reviewMinutes > 0 ? x.reviewCards : []));
   return {
     name: "plan",
-    instructions: lessonInstructions(input.language),
+    instructions: lessonInstructions(input.language, requestLanguages(input)),
     request: {
       request: requestForModel(input),
       // Сколько минут каждый класс работает сам: карточек должно хватить на это время, с запасом.
@@ -192,9 +195,9 @@ function explanationJob(input: LessonRequest, index: number): Job<Explained> {
   const minReviewCards = minCards(group.grade, reviewMinutes, 0).review;
   return {
     name: `explain-g${index + 1}`,
-    instructions: explanationInstructions(input.language),
+    instructions: explanationInstructions(requestLanguage(input, index)),
     request: {
-      subject: input.subject, language: input.language, grade: group.grade, topic: group.topic,
+      subject: input.subject, language: requestLanguage(input, index), grade: group.grade, topic: group.topic,
       notes: group.notes ?? null, pages: group.pages ?? null, textbookPhotos: group.photos?.length ?? 0,
       explainMinutes,
       // Сколько минут класс сам повторяет до объяснения и сколько карточек повторения нужно (0 — не нужно).
@@ -224,6 +227,8 @@ export async function generateLesson(input: LessonRequest): Promise<LessonPlan> 
   const explained = await Promise.all(input.groups.map((_, i) => generateChecked(provider, explanationJob(input, i), startedAt)));
   const explanations = explained.map((x) => x.explanation);
   const core = await generateChecked(provider, planJob(input, explained), startedAt);
+  // Язык у класса храним, только когда языки в уроке разные: у обычного урока он совпадает с языком урока.
+  const mixed = requestLanguages(input).length > 1;
   const lesson: LessonPlan = {
     ...core,
     groups: core.groups.map((g, i) => {
@@ -232,6 +237,7 @@ export async function generateLesson(input: LessonRequest): Promise<LessonPlan> 
       return {
         id: g.id, grade: g.grade, topic: g.topic, learningGoal: g.learningGoal,
         explanation: explanations[i], cards: g.cards, homework: g.homework, source,
+        ...(mixed ? { language: requestLanguage(input, i) } : {}),
       };
     }),
   };
@@ -275,7 +281,7 @@ export async function reviewRules(provider: Provider, plan: LessonPlan, startedA
   const reviews = await Promise.all(plan.groups.map(async (_, i) => {
     try {
       const text = await withTimeout(provider.call({
-        instructions: rulesInstructions(plan.language),
+        instructions: rulesInstructions(groupLanguage(plan, plan.groups[i])),
         input: JSON.stringify(rulesRequest(plan, i)),
         schemaName: "rules_review",
         schema,
@@ -323,7 +329,7 @@ async function proofreadLesson(provider: Provider, plan: LessonPlan, startedAt: 
   const texts = collectTexts(plan);
   try {
     const text = await withTimeout(provider.call({
-      instructions: proofreadInstructions(plan.language),
+      instructions: proofreadInstructions([...new Set(plan.groups.map((g) => groupLanguage(plan, g)))]),
       input: JSON.stringify({ texts }),
       schemaName: "proofreading",
       schema: z.toJSONSchema(ProofSchema, { target: "draft-7" }) as Record<string, unknown>,
@@ -421,9 +427,9 @@ export async function regenerateCard(plan: LessonPlan, groupId: string, cardId: 
   if (!group || !old) throw new GenerationError("invalid_plan");
   const job: Job<TaskCard> = {
     name: `card-${cardId}`,
-    instructions: cardInstructions(plan.language),
+    instructions: cardInstructions(groupLanguage(plan, group)),
     request: {
-      subject: plan.subject, language: plan.language, grade: group.grade, topic: group.topic,
+      subject: plan.subject, language: groupLanguage(plan, group), grade: group.grade, topic: group.topic,
       purpose: old.purpose, type: old.type, difficulty: old.difficulty, minutes: old.minutes ?? null,
       currentCard: { prompt: old.prompt, answer: old.answer ?? null },
       otherCards: group.cards.filter((c) => c.id !== cardId).map((c) => c.prompt),

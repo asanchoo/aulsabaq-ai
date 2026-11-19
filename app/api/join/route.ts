@@ -3,6 +3,7 @@ import { fail, readJson, storageFailure } from "@/lib/api";
 import { checkLimit, clientIp, limited } from "@/lib/rate-limit";
 import { createSession, findLessonByCode } from "@/lib/store";
 import { cleanName } from "@/lib/student";
+import { groupLanguage } from "@/lib/schema";
 
 /** GET ?code=123456: какой это урок и какие в нём классы (ученик выбирает свой). */
 export async function GET(request: Request) {
@@ -15,7 +16,8 @@ export async function GET(request: Request) {
     return Response.json({
       subject: lesson.plan.subject,
       language: lesson.plan.language,
-      groups: lesson.plan.groups.map((g) => ({ id: g.id, grade: g.grade, topic: g.topic })),
+      // У каждого класса свой язык: ученик казахского класса попадёт на казахский экран.
+      groups: lesson.plan.groups.map((g) => ({ id: g.id, grade: g.grade, topic: g.topic, language: groupLanguage(lesson.plan, g) })),
     });
   } catch (error) {
     return storageFailure(error);

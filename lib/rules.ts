@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Explanation, LessonPlan, TaskCard } from "./schema";
+import { groupLanguage, type Explanation, type LessonPlan, type TaskCard } from "./schema";
 
 /**
  * Проверка правил в уроках по языкам.
@@ -141,7 +141,7 @@ export function rulesRequest(plan: LessonPlan, groupIndex: number) {
     ...cards.flatMap((c) => ruleSuspects([c.prompt, c.answer ?? "", c.hint].join("\n")).map((s) => `карточка ${c.id}: ${s}`)),
   ];
   return {
-    subject: plan.subject, language: plan.language, grade: g.grade, topic: g.topic,
+    subject: plan.subject, language: groupLanguage(plan, g), grade: g.grade, topic: g.topic,
     keyIdea: e.keyIdea, steps: e.steps, examples, practice, cards, suspects,
   };
 }

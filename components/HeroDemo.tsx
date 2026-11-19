@@ -82,10 +82,6 @@ export function HeroDemo({ dict, className = "" }: { dict: Dict; className?: str
 
   return (
     <div ref={root} role="img" aria-label={p.label} className={className}>
-      {/* Режима ученика ещё нет (этап 2): говорим об этом прямо на картинке, а не только в тексте */}
-      <span aria-hidden className="mb-4 rounded-full border border-line bg-white px-3 py-1 text-[0.78rem] font-semibold text-ink">
-        {dict.hero.phoneSoon}
-      </span>
       {/* Телефон */}
       <div aria-hidden className="aspect-[300/610] w-[240px] rounded-[44px] bg-[#111] p-2.5 shadow-[0_30px_60px_-30px_rgb(0_0_0/0.45)] sm:w-[270px] lg:w-[290px]">
         <div className="relative h-full overflow-hidden rounded-[35px] bg-white text-[#16181a]">

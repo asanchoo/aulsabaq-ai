@@ -25,13 +25,21 @@ function lessonFor(groupCount: number, durationMin: number): LessonCore {
 }
 
 describe("planSchedule", () => {
-  it("строит урок, который проходит все правила, для 2 и 3 классов и любой длительности", () => {
-    for (const groups of [2, 3]) {
+  it("строит урок, который проходит все правила, для 1–4 классов и любой длительности", () => {
+    for (const groups of [1, 2, 3, 4]) {
       for (let duration = 30; duration <= 90; duration += 5) {
         const result = validateLessonPlan(lessonFor(groups, duration));
         expect([groups, duration, result]).toEqual([groups, duration, { ok: true }]);
       }
     }
+  });
+
+  it("один класс: объяснение, сам решает карточки, проверка", () => {
+    const { segments, cards } = planSchedule(1, 45);
+    expect(segments.map((s) => [s.stage, s.startMin, s.endMin])).toEqual([
+      ["opening", 0, 5], ["explain", 5, 19], ["practice", 19, 31], ["check", 31, 40], ["closing", 40, 45],
+    ]);
+    expect(cards).toEqual([{ reviewMinutes: 0, practiceMinutes: 12, explainMinutes: 14 }]);
   });
 
   it("считает минуты самостоятельной работы и объяснения каждого класса", () => {

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { t, type Dict } from "@/lib/i18n";
 import type { LessonPlan } from "@/lib/schema";
 import { isFinished, isStruggling, type CardState, type CardStatus } from "@/lib/student";
+import { groupTitle } from "@/lib/lesson";
 
 type StudentRow = {
   id: string;
@@ -68,7 +69,10 @@ export function StudentsPanel({ lessonId, token, plan, joinCode, dict }: { lesso
   }
 
   const groupOf = (id: string) => plan.groups.find((g) => g.id === id);
-  const gradeOf = (id: string) => t(dict.common.grade, { n: groupOf(id)?.grade ?? 0 });
+  const gradeOf = (id: string) => {
+    const g = groupOf(id);
+    return g ? groupTitle(plan.groups, g, dict.common) : "";
+  };
   const cardNo = (groupId: string, cardId: string | null) => (groupOf(groupId)?.cards.findIndex((c) => c.id === cardId) ?? -1) + 1;
 
   const help = (students ?? []).filter((s) => s.needsHelp);
@@ -120,7 +124,7 @@ export function StudentsPanel({ lessonId, token, plan, joinCode, dict }: { lesso
             const done = own.reduce((sum, s) => sum + g.cards.filter((c) => isFinished(asState(s.cards[c.id]))).length, 0);
             return (
               <div key={g.id} className="rounded-card bg-surface p-4">
-                <h3 className="font-semibold">{t(dict.common.grade, { n: g.grade })}</h3>
+                <h3 className="font-semibold">{groupTitle(plan.groups, g, dict.common)}</h3>
                 <p className="tabular text-[0.85rem] text-muted">{t(d.classSummary, { n: own.length, a: done, b: own.length * g.cards.length })}</p>
                 <ul className="mt-3 grid gap-2">
                   {own.map((s) => {
@@ -186,7 +190,7 @@ export function StudentsPanel({ lessonId, token, plan, joinCode, dict }: { lesso
           <h3 className="font-semibold">{d.hardTitle}</h3>
           <ul className="mt-2 grid gap-1 text-[0.95rem]">
             {hard.map((x) => (
-              <li key={`${x.g.id}-${x.n}`} className="tabular">{t(d.hardRow, { grade: t(dict.common.grade, { n: x.g.grade }), n: x.n, k: x.k, m: x.m })}</li>
+              <li key={`${x.g.id}-${x.n}`} className="tabular">{t(d.hardRow, { grade: groupTitle(plan.groups, x.g, dict.common), n: x.n, k: x.k, m: x.m })}</li>
             ))}
           </ul>
           <p className="mt-2 text-[0.85rem] text-muted">{d.hardHint}</p>

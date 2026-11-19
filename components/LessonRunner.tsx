@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { t, type Dict } from "@/lib/i18n";
-import { cardNumbers, segmentAt, timeSlots } from "@/lib/lesson";
+import { cardNumbers, segmentAt, timeSlots, groupTitle } from "@/lib/lesson";
 import { useLocal } from "@/lib/local";
 import type { LessonPlan } from "@/lib/schema";
 import { modeBlock } from "./modes";
@@ -91,7 +91,7 @@ export function LessonRunner({ lessonId, plan, dict }: { lessonId: string; plan:
       ? d.nextJoint
       : next.rows
           .filter((r) => r.segment?.mode === "with_teacher")
-          .map((r) => `${t(dict.common.grade, { n: r.group.grade })}: ${dict.modes.with_teacher.toLowerCase()}`)
+          .map((r) => `${groupTitle(plan.groups, r.group, dict.common)}: ${dict.modes.with_teacher.toLowerCase()}`)
           .join(", ") || dict.modes.independent
     : null;
 
@@ -124,7 +124,7 @@ export function LessonRunner({ lessonId, plan, dict }: { lessonId: string; plan:
                     return (
                       <li key={g.id} className={`rounded-card p-3 ${modeBlock[seg.mode]}`}>
                         <p className="flex items-baseline justify-between gap-2 text-[0.85rem] font-semibold">
-                          <span>{t(dict.common.grade, { n: g.grade })} · {dict.modes[seg.mode]}</span>
+                          <span>{groupTitle(plan.groups, g, dict.common)} · {dict.modes[seg.mode]}</span>
                           <span className="tabular font-mono font-normal opacity-80">{clock(left)}</span>
                         </p>
                         <p className="mt-1 line-clamp-3 text-[0.9rem] leading-snug">{seg.activity}</p>

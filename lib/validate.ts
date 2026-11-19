@@ -1,7 +1,7 @@
 import { findMixedScriptWord, findWrongEquation, prettyMathDeep } from "./arithmetic";
 import { acceptMismatch, inputHintReveals } from "./check-answer";
 import { cardFromModel, GeneratedExplanationSchema, type GeneratedCard, type GeneratedExplanation } from "./generation-schema";
-import { MAX_CARDS, MIN_PRACTICE_CARDS } from "./schedule";
+import { MAX_CARDS, MAX_GROUPS, MIN_PRACTICE_CARDS } from "./schedule";
 import { columnResult, toVisual, visualMismatch, visualTexts, type Visual, type VisualDraft } from "./visuals";
 import { ExplanationSchema, LessonPlanSchema, type Explanation, type LessonCore, type LessonPlan, type Segment, type TaskCard } from "./schema";
 
@@ -20,7 +20,7 @@ import { ExplanationSchema, LessonPlanSchema, type Explanation, type LessonCore,
 export type ValidationResult = { ok: true } | { ok: false; errors: string[] };
 
 export const LIMITS = {
-  groups: { min: 2, max: 3 },
+  groups: { min: 1, max: MAX_GROUPS },
   cards: { min: 3, max: 30 },
   durationMin: { min: 30, max: 90 },
 } as const;

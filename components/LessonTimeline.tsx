@@ -1,4 +1,4 @@
-import { cardNumbers, timeSlots } from "@/lib/lesson";
+import { cardNumbers, timeSlots, groupTitle } from "@/lib/lesson";
 import type { Group, LessonPlan, Segment, SegmentMode } from "@/lib/schema";
 import { t, type Dict } from "@/lib/i18n";
 import { modeBlock, modeFill, modeLabel } from "./modes";
@@ -41,7 +41,7 @@ function DesktopTimeline({ plan, dict }: { plan: LessonPlan; dict: Dict }) {
     >
       {plan.groups.map((g, i) => (
         <div key={g.id} className="px-1 pb-4" style={{ gridColumn: i + 2, gridRow: 1 }}>
-          <p className="text-[1.05rem] font-semibold tracking-[-0.01em]">{t(dict.common.grade, { n: g.grade })}</p>
+          <p className="text-[1.05rem] font-semibold tracking-[-0.01em]">{groupTitle(plan.groups, g, dict.common)}</p>
           <p className="mt-0.5 line-clamp-2 text-[0.85rem] leading-snug text-muted">{g.topic}</p>
         </div>
       ))}
@@ -139,7 +139,7 @@ function MobileTimeline({ plan, dict }: { plan: LessonPlan; dict: Dict }) {
                   <Row
                     key={group.id}
                     mode={segment.mode}
-                    title={`${t(dict.common.grade, { n: group.grade })} · ${dict.modes[segment.mode]}`}
+                    title={`${groupTitle(plan.groups, group, dict.common)} · ${dict.modes[segment.mode]}`}
                     text={segment.activity}
                     cards={cardNumbers(group, segment.cardIds).map((n) => t(dict.common.card, { n }))}
                   />

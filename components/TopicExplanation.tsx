@@ -1,8 +1,8 @@
 import { ExplanationSlides } from "./ExplanationSlides";
-import { t, type Dict, type Locale } from "@/lib/i18n";
+import { getDict, t, type Dict, type Locale } from "@/lib/i18n";
 import type { Group, WorkedExample } from "@/lib/schema";
 import { Visual } from "./Visual";
-import { isMathOnly } from "@/lib/lesson";
+import { isMathOnly, groupTitle } from "@/lib/lesson";
 
 /**
  * Объяснение новой темы для каждого класса: то, что учитель говорит и показывает
@@ -14,7 +14,7 @@ export function TopicExplanation({ groups, dict, lang }: { groups: Group[]; dict
   return (
     <div className="grid gap-8">
       {groups.map((g) => {
-        const grade = t(dict.common.grade, { n: g.grade });
+        const grade = groupTitle(groups, g, dict.common);
         const e = g.explanation;
         return (
           <article key={g.id} aria-labelledby={`explain-${g.id}`} className="rounded-frame border border-line bg-white p-5 sm:p-8">
@@ -32,7 +32,13 @@ export function TopicExplanation({ groups, dict, lang }: { groups: Group[]; dict
                   </p>
                 )}
               </div>
-              <ExplanationSlides explanation={e} grade={grade} topic={g.topic} lang={lang} />
+              {/* Слайды видит класс: у класса со своим языком (урок на двух языках) подписи на его языке. */}
+              <ExplanationSlides
+                explanation={e}
+                grade={g.language ? groupTitle(groups, g, getDict(g.language).common) : grade}
+                topic={g.topic}
+                lang={g.language ?? lang}
+              />
             </header>
 
             <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-12">

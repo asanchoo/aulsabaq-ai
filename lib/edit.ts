@@ -31,7 +31,7 @@ export const LessonEditSchema = z.object({
     homework: text(1000),
     explanation: ExplanationSchema,
     cards: z.array(CardEditSchema).max(30),
-  })).min(2).max(3),
+  })).min(1).max(4),
 });
 
 export type LessonEdit = z.infer<typeof LessonEditSchema>;

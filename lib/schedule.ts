@@ -12,6 +12,8 @@ import type { Segment, TaskCard } from "./schema";
  *   общее начало → [сам: повторение] → с учителем: объяснение → сам: практика →
  *   с учителем: проверка → [сам: практика] → общий итог.
  * Первый класс начинает сразу с учителем, поэтому повторения у него нет.
+ * Один класс: объяснение, потом класс сам решает карточки, потом учитель проверяет. Без отрезка
+ * самостоятельной работы между объяснением и проверкой карточкам было бы некуда встать.
  */
 
 export type StageKind = "opening" | "review" | "explain" | "practice" | "check" | "closing";
@@ -30,6 +32,11 @@ const OPENING_MIN = 5;
 const CLOSING_MIN = 5;
 /** Доля середины урока на объяснения, остальное на проверки. */
 const EXPLAIN_SHARE = 0.65;
+/** Один класс: доли середины урока на объяснение и на самостоятельную работу, остальное на проверку. */
+const SOLO_EXPLAIN_SHARE = 0.4;
+const SOLO_PRACTICE_SHARE = 0.35;
+/** Классов в кабинете: от одного до четырёх (комплект 1–4 классов бывает в начальной школе). */
+export const MAX_GROUPS = 4;
 /** Больше карточек одному классу не даём: на сдвоенный урок в 90 минут хватает с запасом. */
 export const MAX_CARDS = 30;
 /** По новой теме не меньше стольких карточек, даже если практики мало. */
@@ -49,10 +56,20 @@ export function planSchedule(groupCount: number, durationMin: number): Schedule 
   const explainTotal = Math.round(middle * EXPLAIN_SHARE);
 
   // Очередь учителя: объяснения всем классам по порядку, потом проверки по тому же порядку.
-  const teacherBlocks: { groupIndex: number; stage: "explain" | "check"; length: number }[] = [
-    ...split(explainTotal, groupCount).map((length, groupIndex) => ({ groupIndex, stage: "explain" as const, length })),
-    ...split(middle - explainTotal, groupCount).map((length, groupIndex) => ({ groupIndex, stage: "check" as const, length })),
-  ];
+  // У одного класса между объяснением и проверкой учитель «свободен»: класс решает карточки сам.
+  type Block = { groupIndex: number; stage: "explain" | "check" | "practice"; length: number };
+  const soloExplain = Math.round(middle * SOLO_EXPLAIN_SHARE);
+  const soloPractice = Math.round(middle * SOLO_PRACTICE_SHARE);
+  const teacherBlocks: Block[] = groupCount === 1
+    ? [
+        { groupIndex: 0, stage: "explain", length: soloExplain },
+        { groupIndex: 0, stage: "practice", length: soloPractice },
+        { groupIndex: 0, stage: "check", length: middle - soloExplain - soloPractice },
+      ]
+    : [
+        ...split(explainTotal, groupCount).map((length, groupIndex) => ({ groupIndex, stage: "explain" as const, length })),
+        ...split(middle - explainTotal, groupCount).map((length, groupIndex) => ({ groupIndex, stage: "check" as const, length })),
+      ];
 
   const segments: PlannedSegment[] = [];
   for (let g = 0; g < groupCount; g++) segments.push({ groupIndex: g, startMin: 0, endMin: OPENING_MIN, stage: "opening" });

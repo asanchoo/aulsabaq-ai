@@ -7,6 +7,16 @@ import type { Group, LessonPlan, Segment } from "./schema";
  */
 
 /** Отрезок группы, который идёт в указанную минуту. */
+/**
+ * Название класса в уроке: «5 класс», а если в уроке две группы 5 класса, то «5 класс, группа 2».
+ * Номер группы считается среди групп того же класса, по порядку в уроке.
+ */
+export function groupTitle(groups: { id: string; grade: number }[], group: { id: string; grade: number }, common: Dict["common"]): string {
+  const same = groups.filter((g) => g.grade === group.grade);
+  if (same.length < 2) return t(common.grade, { n: group.grade });
+  return t(common.gradeGroup, { n: group.grade, k: same.findIndex((g) => g.id === group.id) + 1 });
+}
+
 export function segmentAt(plan: LessonPlan, groupId: string, minute: number): Segment | undefined {
   return plan.timeline.find((s) => s.groupId === groupId && s.startMin <= minute && minute < s.endMin);
 }
@@ -61,11 +71,11 @@ export function timeSlots(plan: LessonPlan): TimeSlot[] {
  */
 export function lessonToText(plan: LessonPlan, dict: Dict): string {
   const lines: string[] = [];
-  const grades = plan.groups.map((g) => t(dict.common.grade, { n: g.grade })).join(", ");
+  const grades = plan.groups.map((g) => groupTitle(plan.groups, g, dict.common)).join(", ");
   lines.push(`${plan.subject} · ${grades} · ${t(dict.lesson.duration, { n: plan.durationMin })}`, "");
 
   for (const g of plan.groups) {
-    lines.push(`${t(dict.common.grade, { n: g.grade })}: ${g.topic}`, `${dict.lesson.goal}: ${g.learningGoal}`);
+    lines.push(`${groupTitle(plan.groups, g, dict.common)}: ${g.topic}`, `${dict.lesson.goal}: ${g.learningGoal}`);
   }
 
   lines.push("", `${dict.lesson.timelineTitle}:`);
@@ -80,7 +90,7 @@ export function lessonToText(plan: LessonPlan, dict: Dict): string {
       if (!segment) continue;
       const nums = cardNumbers(group, segment.cardIds);
       const cards = nums.length ? ` [${t(dict.common.cards, { list: nums.join(", ") })}]` : "";
-      lines.push(`  ${t(dict.common.grade, { n: group.grade })} — ${dict.modes[segment.mode]}: ${segment.activity}${cards}`);
+      lines.push(`  ${groupTitle(plan.groups, group, dict.common)} — ${dict.modes[segment.mode]}: ${segment.activity}${cards}`);
     }
   }
 
@@ -91,7 +101,7 @@ export function lessonToText(plan: LessonPlan, dict: Dict): string {
     const e = g.explanation;
     lines.push(
       "",
-      `${dict.lesson.explainTitle} — ${t(dict.common.grade, { n: g.grade })}: ${g.topic}`,
+      `${dict.lesson.explainTitle} — ${groupTitle(plan.groups, g, dict.common)}: ${g.topic}`,
       `${ex.hook}: ${e.hook}`,
       ...(e.prerequisites.length ? [`${ex.prerequisites}:`, ...bullets(e.prerequisites)] : []),
       ...(e.intuition ? [`${ex.intuition}: ${e.intuition}`] : []),
@@ -109,7 +119,7 @@ export function lessonToText(plan: LessonPlan, dict: Dict): string {
   }
 
   for (const g of plan.groups) {
-    lines.push("", `${dict.lesson.cardsTitle} — ${t(dict.common.grade, { n: g.grade })}`);
+    lines.push("", `${dict.lesson.cardsTitle} — ${groupTitle(plan.groups, g, dict.common)}`);
     g.cards.forEach((c, i) => {
       const time = c.minutes ? `, ${t(dict.lesson.cardMinutes, { n: c.minutes })}` : "";
       lines.push(`${t(dict.common.card, { n: i + 1 })} (${dict.lesson.purpose[c.purpose]}${time}). ${c.prompt}`);

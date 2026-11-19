@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getDict, t, type Locale } from "@/lib/i18n";
+import { groupTitle } from "@/lib/lesson";
 import { rememberStudent, useLastStudent } from "@/lib/local";
 
-type LessonInfo = { subject: string; language: Locale; groups: { id: string; grade: number; topic: string }[] };
+type LessonInfo = { subject: string; language: Locale; groups: { id: string; grade: number; topic: string; language?: Locale }[] };
 
 /**
  * Вход ученика: код урока → свой класс → имя или номер в списке.
@@ -62,16 +63,16 @@ export function JoinFlow({ lang }: { lang: Locale }) {
         setBusy(false);
         return setError(errorOf(data.error));
       }
-      const grade = lesson.groups.find((g) => g.id === groupId)?.grade ?? 0;
-      rememberStudent({ sessionId: data.sessionId, name: name.trim(), subject: lesson.subject, grade, language: lesson.language });
-      router.push(`/${lesson.language}/student/${data.sessionId}`);
+      const chosen = lesson.groups.find((g) => g.id === groupId);
+      const language = chosen?.language ?? lesson.language;
+      rememberStudent({ sessionId: data.sessionId, name: name.trim(), subject: lesson.subject, grade: chosen?.grade ?? 0, language });
+      router.push(`/${language}/student/${data.sessionId}`);
     } catch {
       setBusy(false);
       setError("storage");
     }
   }
 
-  const lessonDict = lesson ? getDict(lesson.language) : dict;
 
   return (
     <div className="mx-auto grid w-full max-w-[30rem] grid-cols-[minmax(0,1fr)] gap-8">
@@ -123,7 +124,7 @@ export function JoinFlow({ lang }: { lang: Locale }) {
                 <label key={g.id} className="relative block">
                   <input type="radio" name="group" value={g.id} checked={groupId === g.id} onChange={() => setGroupId(g.id)} className="peer sr-only" />
                   <span className="block cursor-pointer rounded-card border border-line-strong bg-white px-4 py-3 transition-colors peer-checked:border-ink peer-checked:bg-ink peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink hover:border-ink">
-                    <span className="block font-semibold">{t(lessonDict.common.grade, { n: g.grade })}</span>
+                    <span className="block font-semibold">{groupTitle(lesson.groups, g, getDict(g.language ?? lesson.language).common)}</span>
                     <span className="block text-[0.9rem] opacity-80">{g.topic}</span>
                   </span>
                 </label>

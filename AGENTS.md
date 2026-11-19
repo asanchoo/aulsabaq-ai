@@ -81,6 +81,7 @@ components/
   LessonScore.tsx          # «партитура» урока с ползунком (лендинг)
   modes.ts                 # цвета режимов урока: графит / мята / серый
   StudentPhone.tsx, Logo.tsx, LessonForm.tsx, LessonView.tsx, LessonPreview.tsx
+  AutoTextarea.tsx         # поле, которое растёт вниз с текстом (тема, ответ ученика, правка урока)
   TeacherWorkspace.tsx     # код для учеников, «Начать урок», «Редактировать», «Ссылка для себя»
   StudentsPanel.tsx        # ученики по классам, флаг помощи, «Где было трудно» (опрос раз в 5 с)
   LessonRunner.tsx         # таймер урока: что сейчас делает каждый класс и кто следующий
