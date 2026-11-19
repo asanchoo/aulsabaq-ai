@@ -134,7 +134,8 @@ export function rulesRequest(plan: LessonPlan, groupIndex: number) {
   const e = g.explanation;
   const examples = [e.example, ...e.examples].map((x, index) => ({ index, task: x.problem, steps: x.steps, answer: x.answer }));
   const practice = e.practice.map((p, index) => ({ index, task: p.task, answer: p.answer }));
-  const cards = g.cards.map((c) => ({ id: c.id, type: c.type, prompt: c.prompt, answer: c.answer ?? null, accept: c.accept ?? [], inputHint: c.inputHint ?? null, hint: c.hint }));
+  // Запас проверяем вместе с основными карточками: ученик решает его так же сам, без учителя.
+  const cards = [...g.cards, ...(g.extraCards ?? [])].map((c) => ({ id: c.id, type: c.type, prompt: c.prompt, answer: c.answer ?? null, accept: c.accept ?? [], inputHint: c.inputHint ?? null, hint: c.hint }));
   const suspects = [
     ...examples.flatMap((x) => ruleSuspects([x.task, ...x.steps, x.answer].join("\n")).map((s) => `пример ${x.index}: ${s}`)),
     ...practice.flatMap((p) => ruleSuspects(`${p.task}\n${p.answer}`).map((s) => `практика ${p.index}: ${s}`)),
@@ -159,12 +160,14 @@ export function applyRulesReview(
   toCard: (fix: RulesReview["cards"][number], old: TaskCard) => TaskCard | null,
 ): { group: LessonPlan["groups"][number]; fixed: RulesFixCount } {
   const fixed: RulesFixCount = { cards: 0, examples: 0, practice: 0, keyIdea: false };
-  const cards = group.cards.map((c) => {
+  const fixCard = (c: TaskCard) => {
     const fix = review.cards.find((f) => f.id === c.id);
     const next = fix ? toCard(fix, c) : null;
     if (next) fixed.cards++;
     return next ?? c;
-  });
+  };
+  const cards = group.cards.map(fixCard);
+  const extraCards = group.extraCards?.map(fixCard);
   const e = group.explanation;
   const all = [e.example, ...e.examples].map((x, i) => {
     const fix = review.examples.find((f) => f.index === i);
@@ -182,5 +185,5 @@ export function applyRulesReview(
   const keyIdea = review.keyIdea?.trim();
   if (keyIdea && keyIdea !== e.keyIdea) fixed.keyIdea = true;
   const explanation: Explanation = { ...e, keyIdea: fixed.keyIdea && keyIdea ? keyIdea : e.keyIdea, example: all[0], examples: all.slice(1), practice };
-  return { group: { ...group, cards, explanation }, fixed };
+  return { group: { ...group, cards, explanation, ...(extraCards ? { extraCards } : {}) }, fixed };
 }

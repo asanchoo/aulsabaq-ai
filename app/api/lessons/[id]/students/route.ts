@@ -3,6 +3,7 @@ import { fail, readJson, storageFailure, teacherToken } from "@/lib/api";
 import { checkLimit, clientIp, limited } from "@/lib/rate-limit";
 import { clearHelp, isUuid, listSessions } from "@/lib/store";
 import { readProgress } from "@/lib/student";
+import { readTrainer } from "@/lib/trainer";
 
 /**
  * GET: ученики урока для панели учителя (страница опрашивает раз в 5 секунд).
@@ -26,6 +27,7 @@ export async function GET(request: Request, ctx: RouteContext<"/api/lessons/[id]
         needsHelp: r.needs_help,
         helpCard: r.help_card,
         hintsUsed: r.hints_used,
+        trainerSolved: readTrainer(r.progress).solved,
         updatedAt: r.updated_at,
         cards: Object.fromEntries(Object.entries(progress).map(([cardId, s]) => [
           cardId, { status: s.status, attempts: s.attempts, hints: s.hints, lastAnswer: s.lastAnswer ?? null },

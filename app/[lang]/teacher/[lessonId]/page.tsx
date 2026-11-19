@@ -74,6 +74,7 @@ async function LessonContent({ params }: { params: PageProps<"/[lang]/teacher/[l
       dict={dict}
       badge={lesson.isDemo ? dict.lesson.demoBadge : getCreationDict(lang).preview}
       notice={lesson.isDemo ? undefined : getCreationDict(lang).review}
+      joinCode={lesson.joinCode}
       workspace={<TeacherWorkspace lessonId={lesson.id} joinCode={lesson.joinCode} plan={lesson.plan} lang={lang} isDemo={lesson.isDemo} />}
     />
   );

@@ -1,15 +1,57 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { Fragment } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { getDict, t, type Locale } from "@/lib/i18n";
 import { forgetStudent } from "@/lib/local";
 import { isFinished, MAX_HINTS, REVEAL_AFTER, type StudentCard } from "@/lib/student";
 import type { StudentView } from "@/lib/student-view";
 import { AutoTextarea } from "./AutoTextarea";
+import { RuleCard, similarExample, WorkedExample } from "./StudentGuide";
+import { TrainerScreen, type TrainerResult } from "./TrainerScreen";
 
 const REFRESH_MS = 10_000;
+/** Экран «Памятка» в маршруте ученика: перед первым заданием по новой теме. */
+const GUIDE = "guide";
+/** Экран тренажёра: после основных карточек и запаса. */
+const TRAINER = "trainer";
+
+/** Видел ли ученик памятку: помним в браузере, чтобы не показывать её снова после каждого обновления. */
+function guideSeen(sessionId: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(`aulsabaq-guide:${sessionId}`) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/** Окно поверх карточки: правило или похожий пример, карточка и ответ при этом не теряются. */
+function Sheet({ open, title, closeLabel, onClose, children }: { open: boolean; title: string; closeLabel: string; onClose: () => void; children: ReactNode }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = ref.current;
+    if (!dialog) return;
+    if (open && !dialog.open) dialog.showModal();
+    if (!open && dialog.open) dialog.close();
+  }, [open]);
+  return (
+    <dialog
+      ref={ref}
+      aria-label={title}
+      onClose={onClose}
+      className="m-auto max-h-[88dvh] w-[min(calc(100%-2rem),34rem)] max-w-none overflow-y-auto rounded-frame bg-bg p-0 text-ink backdrop:bg-ink/60"
+    >
+      <div className="sticky top-0 flex items-center justify-between gap-3 border-b border-line bg-bg px-5 py-3">
+        <p className="font-semibold">{title}</p>
+        <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>{closeLabel}</button>
+      </div>
+      <div className="p-5">{open && children}</div>
+    </dialog>
+  );
+}
 
 /**
  * Экран ученика на телефоне. Ответ проверяет сервер (эталон в браузер не приходит),
@@ -27,6 +69,8 @@ export function StudentApp({ lang, sessionId }: { lang: Locale; sessionId: strin
   const [feedback, setFeedback] = useState<{ cardId: string; correct: boolean } | null>(null);
   const [busy, setBusy] = useState<"answer" | "hint" | "help" | "action" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [seenGuide, setSeenGuide] = useState(() => guideSeen(sessionId));
+  const [sheet, setSheet] = useState<"rule" | "similar" | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
 
   const load = useCallback(async () => {
@@ -69,7 +113,7 @@ export function StudentApp({ lang, sessionId }: { lang: Locale; sessionId: strin
         return null;
       }
       setView(data);
-      return data as StudentView & { correct?: boolean };
+      return data as StudentView & { correct?: boolean; trainerResult?: TrainerResult };
     } catch {
       setError(d.errors.network);
       return null;
@@ -90,12 +134,59 @@ export function StudentApp({ lang, sessionId }: { lang: Locale; sessionId: strin
     return <p role="status" className="mx-auto max-w-[30rem] py-10 text-muted">{d.loading}</p>;
   }
 
+  // Маршрут ученика: основные карточки (с памяткой перед новой темой) → запас → тренажёр.
+  // Запас открывается, когда основные решены: сначала главное, потом дополнительное.
   const cards = view.cards;
+  // ?? []: во время выкладки новая страница может получить ответ старого сервера без этих полей.
+  const extras = view.extraCards ?? [];
+  const guide = view.guide ?? null;
+  const trainer = view.trainer ?? null;
   const finishedCount = cards.filter((c) => isFinished(c.state)).length;
-  const allDone = finishedCount === cards.length;
-  const firstOpen = cards.find((c) => !isFinished(c.state));
-  const card = cards.find((c) => c.id === selected) ?? firstOpen ?? cards[cards.length - 1];
-  const nextOpen = cards.find((c) => c.number > card.number && !isFinished(c.state)) ?? cards.find((c) => !isFinished(c.state) && c.id !== card.id);
+  const mainDone = finishedCount === cards.length;
+  const extraOpen = extras.find((c) => !isFinished(c.state));
+  const allDone = mainDone && !extraOpen;
+  const pool = mainDone ? [...cards, ...extras] : cards;
+  const firstOpen = cards.find((c) => !isFinished(c.state)) ?? (mainDone ? extraOpen : undefined);
+  const card = pool.find((c) => c.id === selected) ?? firstOpen ?? cards[cards.length - 1];
+  const at = pool.findIndex((c) => c.id === card.id);
+  const nextOpen = pool.find((c, i) => i > at && !isFinished(c.state)) ?? pool.find((c) => !isFinished(c.state) && c.id !== card.id);
+  const isExtra = extras.some((c) => c.id === card.id);
+  const showTrainer = !!trainer && (selected === TRAINER || (selected === null && allDone));
+  // Маршрут: повторение → памятка → задания по новой теме. Памятку показываем сами один раз,
+  // когда ученик дошёл до первого задания по новой теме; дальше она по кнопке «Правило».
+  // Памятки нет (ответ старого сервера): шаг «Памятка» не показываем.
+  const firstPractice = guide ? cards.find((c) => c.purpose === "practice") : undefined;
+  const showGuide = !!guide && (selected === GUIDE || (selected === null && !seenGuide && firstOpen?.purpose === "practice"));
+  const g = d.guide;
+  const x = d.extra;
+
+  function openGuide() {
+    setSelected(GUIDE);
+    setError(null);
+    requestAnimationFrame(() => heading.current?.focus());
+  }
+
+  function openTrainer() {
+    setSelected(TRAINER);
+    setError(null);
+  }
+
+  async function trainerAction(body: Record<string, unknown>): Promise<TrainerResult | null> {
+    const data = await send(body, "answer");
+    return data?.trainerResult ?? null;
+  }
+
+  function finishGuide() {
+    try {
+      localStorage.setItem(`aulsabaq-guide:${sessionId}`, "1");
+    } catch {
+      // без хранилища памятка просто покажется ещё раз
+    }
+    setSeenGuide(true);
+    const target = firstOpen ?? firstPractice;
+    if (target) open(target);
+    else setSelected(null);
+  }
 
   function open(target: StudentCard) {
     setSelected(target.id);
@@ -153,6 +244,7 @@ export function StudentApp({ lang, sessionId }: { lang: Locale; sessionId: strin
   const todo = state.status === "todo";
   const hintsLeft = MAX_HINTS - state.hints;
   const showFeedback = feedback?.cardId === card.id;
+  const similar = (guide ? similarExample(guide, card.difficulty) : null);
 
   return (
     <div className="mx-auto grid w-full max-w-[34rem] grid-cols-[minmax(0,1fr)] gap-5">
@@ -169,9 +261,27 @@ export function StudentApp({ lang, sessionId }: { lang: Locale; sessionId: strin
         <ol className="flex flex-wrap gap-2">
           {cards.map((c) => {
             const done = isFinished(c.state);
-            const current = c.id === card.id;
+            const current = !showGuide && c.id === card.id;
             return (
-              <li key={c.id}>
+              <Fragment key={c.id}>
+              {c.id === firstPractice?.id && (
+                <li>
+                  <button
+                    type="button"
+                    onClick={openGuide}
+                    aria-current={showGuide ? "step" : undefined}
+                    className={`inline-flex h-11 items-center gap-2 rounded-full px-4 text-[0.9rem] font-semibold transition-colors ${
+                      seenGuide ? "bg-mint-soft text-ink" : "border border-ink bg-white text-ink"
+                    } ${showGuide ? "ring-2 ring-ink ring-offset-2" : ""}`}
+                  >
+                    <svg aria-hidden viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2zM22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z" />
+                    </svg>
+                    {g.nav}
+                  </button>
+                </li>
+              )}
+              <li>
                 <button
                   type="button"
                   onClick={() => open(c)}
@@ -190,24 +300,116 @@ export function StudentApp({ lang, sessionId }: { lang: Locale; sessionId: strin
                   )}
                 </button>
               </li>
+              </Fragment>
             );
           })}
         </ol>
+        {(extras.length > 0 || trainer) && (
+          <div className="mt-4">
+            <p className="tabular mb-2 text-[0.88rem] font-semibold">
+              {x.title}
+              {extras.length > 0 && <span className="font-normal text-muted"> · {extras.filter((c) => isFinished(c.state)).length} / {extras.length}</span>}
+            </p>
+            {!mainDone ? (
+              <p className="text-[0.85rem] text-muted">{x.locked}</p>
+            ) : (
+              <ol className="flex flex-wrap gap-2">
+                {extras.map((c) => {
+                  const done = isFinished(c.state);
+                  const current = !showGuide && !showTrainer && c.id === card.id;
+                  return (
+                    <li key={c.id}>
+                      <button
+                        type="button"
+                        onClick={() => open(c)}
+                        aria-current={current ? "step" : undefined}
+                        aria-label={`${t(x.of, { n: c.number, m: extras.length })}: ${d.status[c.state.status]}`}
+                        className={`tabular grid size-11 place-items-center rounded-full text-[0.95rem] font-semibold transition-colors ${
+                          done ? "bg-mint-soft text-ink" : "border border-dashed border-line-strong bg-white text-ink"
+                        } ${current ? "ring-2 ring-ink ring-offset-2" : ""}`}
+                      >
+                        {c.number}
+                      </button>
+                    </li>
+                  );
+                })}
+                {trainer && (
+                  <li>
+                    <button
+                      type="button"
+                      onClick={openTrainer}
+                      aria-current={showTrainer ? "step" : undefined}
+                      className={`tabular inline-flex h-11 items-center gap-2 rounded-full border border-ink bg-white px-4 text-[0.9rem] font-semibold ${showTrainer ? "ring-2 ring-ink ring-offset-2" : ""}`}
+                    >
+                      {d.trainer.nav} · {trainer.solved}
+                    </button>
+                  </li>
+                )}
+              </ol>
+            )}
+          </div>
+        )}
       </nav>
 
-      {allDone && !selected && (
+      {showGuide && (
+        <article aria-labelledby="guide-title" className="grid gap-5 rounded-frame border border-line bg-white p-5 sm:p-6">
+          <div>
+            <h1 id="guide-title" ref={heading} tabIndex={-1} className="text-[1.35rem] font-semibold tracking-[-0.01em] outline-none">{g.title}</h1>
+            <p className="mt-1 text-[0.92rem] leading-snug text-muted">{g.lead}</p>
+          </div>
+          {guide && <RuleCard guide={guide} dict={dict} />}
+          {guide?.examples[0] && (
+            <section aria-labelledby="solve-title" className="grid gap-3 border-t border-line pt-5">
+              <div>
+                <h2 id="solve-title" className="text-[1.1rem] font-semibold">{g.solveTitle}</h2>
+                <p className="mt-1 text-[0.9rem] text-muted">{g.solveLead}</p>
+              </div>
+              <WorkedExample key={guide.examples[0].problem} example={guide.examples[0]} dict={dict} />
+            </section>
+          )}
+          <button type="button" className="btn btn-primary w-full" onClick={finishGuide}>
+            {g.toCards}
+            <svg aria-hidden viewBox="0 0 16 16" className="arrow size-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2.5 8h10M8.5 4l4 4-4 4" />
+            </svg>
+          </button>
+        </article>
+      )}
+
+      {!showGuide && mainDone && !selected && (
         <div role="status" className="rounded-frame bg-mint p-6">
-          <p className="text-[1.5rem] font-semibold tracking-[-0.02em]">{d.allDone}</p>
-          <p className="mt-2 leading-relaxed">{d.allDoneText}</p>
+          <p className="text-[1.5rem] font-semibold tracking-[-0.02em]">{extras.length || trainer ? x.mainDone : d.allDone}</p>
+          <p className="mt-2 leading-relaxed">{extras.length || trainer ? x.mainDoneText : d.allDoneText}</p>
         </div>
       )}
 
+      {showTrainer && trainer && !showGuide && (
+        <TrainerScreen
+          trainer={trainer}
+          dict={dict}
+          busy={busy !== null}
+          onAnswer={(answer) => trainerAction({ action: "trainer", answer })}
+          onSkip={() => trainerAction({ action: "trainer_skip" })}
+        />
+      )}
+
+      {!showGuide && !showTrainer && (
       <article aria-labelledby="card-title" className="rounded-frame border border-line bg-white p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 id="card-title" ref={heading} tabIndex={-1} className="text-[0.92rem] font-semibold text-muted outline-none">
-            {t(d.cardOf, { n: card.number, m: cards.length })}
+            {isExtra ? t(x.of, { n: card.number, m: extras.length }) : t(d.cardOf, { n: card.number, m: cards.length })}
           </h1>
-          <span className="rounded-full bg-surface px-3 py-1 text-[0.8rem] font-semibold">{dict.lesson.purpose[card.purpose]}</span>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-surface px-3 py-1 text-[0.8rem] font-semibold">{dict.lesson.purpose[card.purpose]}</span>
+            {guide && card.purpose === "practice" && (
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => setSheet("rule")}>
+                <svg aria-hidden viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2zM22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z" />
+                </svg>
+                {g.ruleButton}
+              </button>
+            )}
+          </div>
         </div>
         <p className="mt-3 text-[1.35rem] leading-snug font-medium tracking-[-0.01em] whitespace-pre-line">{card.prompt}</p>
 
@@ -242,9 +444,16 @@ export function StudentApp({ lang, sessionId }: { lang: Locale; sessionId: strin
               </p>
             )}
             {state.attempts >= REVEAL_AFTER && (
-              <button type="button" className="link min-h-10 justify-self-start text-[0.92rem] font-semibold" disabled={busy !== null} onClick={() => send({ action: "reveal", cardId: card.id })}>
-                {d.reveal}
-              </button>
+              <div className="flex flex-wrap gap-x-5 gap-y-1">
+                {card.purpose === "practice" && similar && (
+                  <button type="button" className="link min-h-10 text-[0.92rem] font-semibold" onClick={() => setSheet("similar")}>
+                    {g.similar}
+                  </button>
+                )}
+                <button type="button" className="link min-h-10 text-[0.92rem] font-semibold" disabled={busy !== null} onClick={() => send({ action: "reveal", cardId: card.id })}>
+                  {d.reveal}
+                </button>
+              </div>
             )}
           </form>
         )}
@@ -293,6 +502,14 @@ export function StudentApp({ lang, sessionId }: { lang: Locale; sessionId: strin
             </svg>
           </button>
         )}
+        {!todo && !nextOpen && trainer && (
+          <button type="button" className="btn btn-primary mt-3 w-full" onClick={openTrainer}>
+            {d.trainer.nav}
+            <svg aria-hidden viewBox="0 0 16 16" className="arrow size-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2.5 8h10M8.5 4l4 4-4 4" />
+            </svg>
+          </button>
+        )}
 
         {/* Подсказки: по одной, не больше трёх */}
         {state.hintTexts.length > 0 && (
@@ -317,6 +534,14 @@ export function StudentApp({ lang, sessionId }: { lang: Locale; sessionId: strin
         )}
         {error && <p role="alert" className="mt-3 rounded-card border border-danger/30 bg-danger-soft p-3 leading-snug">{error}</p>}
       </article>
+      )}
+
+      <Sheet open={sheet === "rule"} title={g.rule} closeLabel={g.close} onClose={() => setSheet(null)}>
+        {guide && <RuleCard guide={guide} dict={dict} />}
+      </Sheet>
+      <Sheet open={sheet === "similar"} title={g.similarTitle} closeLabel={g.close} onClose={() => setSheet(null)}>
+        {similar && <WorkedExample key={`${card.id}-${similar.problem}`} example={similar} dict={dict} tryIt={false} />}
+      </Sheet>
 
       {/* Помощь учителя */}
       {view.needsHelp ? (

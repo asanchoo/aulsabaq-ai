@@ -14,6 +14,7 @@ type StudentRow = {
   needsHelp: boolean;
   helpCard: string | null;
   hintsUsed: number;
+  trainerSolved?: number;
   updatedAt: string;
   cards: Record<string, { status: CardStatus; attempts: number; hints: number; lastAnswer: string | null }>;
 };
@@ -129,11 +130,17 @@ export function StudentsPanel({ lessonId, token, plan, joinCode, dict }: { lesso
                 <ul className="mt-3 grid gap-2">
                   {own.map((s) => {
                     const finished = g.cards.filter((c) => isFinished(asState(s.cards[c.id]))).length;
+                    // Запас и тренажёр: сколько быстрый ученик решил сверх основных карточек.
+                    const extra = (g.extraCards ?? []).filter((c) => isFinished(asState(s.cards[c.id]))).length;
+                    const more = [extra ? t(d.extraDone, { n: extra }) : "", s.trainerSolved ? t(d.trainerDone, { n: s.trainerSolved }) : ""].filter(Boolean).join(" · ");
                     return (
                       <li key={s.id} className="rounded-btn bg-white px-3 py-2.5">
                         <div className="flex items-center justify-between gap-3">
                           <span className="min-w-0 truncate font-medium">{s.name}</span>
-                          <span className="tabular shrink-0 text-[0.85rem] text-muted">{t(d.finished, { a: finished, b: g.cards.length })}</span>
+                          <span className="tabular shrink-0 text-[0.85rem] text-muted">
+                            {t(d.finished, { a: finished, b: g.cards.length })}
+                            {more && <span className="ml-1.5 text-ink">+ {more}</span>}
+                          </span>
                         </div>
                         <div className="mt-2 flex flex-wrap items-center gap-1.5">
                           {g.cards.map((c, i) => {

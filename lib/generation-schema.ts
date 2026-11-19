@@ -69,7 +69,7 @@ export const GeneratedContentSchema = z.object({
   durationMin: z.number().int(),
   opening: z.string().min(1),
   closing: z.string().min(1),
-  groups: z.array(GroupCoreSchema.omit({ id: true, source: true, language: true }).extend({
+  groups: z.array(GroupCoreSchema.omit({ id: true, source: true, language: true, extraCards: true, trainer: true }).extend({
     /** Карточки практики по новой теме. Карточки повторения уже написал запрос объяснения. */
     cards: z.array(GeneratedCardSchema),
     stages: StagesSchema,

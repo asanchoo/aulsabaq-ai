@@ -3,7 +3,8 @@ import {
   cardFromModel, contentToLesson, GeneratedCardSchema, GeneratedContentSchema, GeneratedExplanationSchema, requestForModel,
   requestLanguage, requestLanguages, type GeneratedCard, type LessonRequest,
 } from "./generation-schema";
-import { cardInstructions, explanationInstructions, hintInstructions, lessonInstructions, proofreadInstructions, rulesInstructions } from "./prompts";
+import { cardInstructions, explanationInstructions, extraInstructions, hintInstructions, lessonInstructions, proofreadInstructions, rulesInstructions } from "./prompts";
+import { TrainerSkillSchema, type TrainerSkill } from "./trainer";
 import { applyRulesReview, introducesSuspects, isLanguageSubject, rulesRequest, RulesReviewSchema, type RulesReview } from "./rules";
 import { applyCorrections, collectTexts, safeCorrections } from "./proofread";
 import { ProviderError, resolveProvider, type Provider, type ProviderImage } from "./providers";
@@ -219,6 +220,46 @@ function explanationJob(input: LessonRequest, index: number): Job<Explained> {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Запас заданий для быстрых (отдельный запрос на класс, параллельно с содержанием урока)
+
+const ExtraSchema = z.object({ cards: z.array(GeneratedCardSchema).max(25), trainer: TrainerSkillSchema.nullable() });
+export const EXTRA_COUNT = 15;
+const EXTRA_TIMEOUT_MS = 75_000;
+type Bank = { cards: TaskCard[]; trainer?: TrainerSkill };
+
+/** Нормализованный текст задания: так ловим запас, который повторяет основную карточку. */
+const sameTask = (a: string) => a.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+
+/**
+ * Запас не обязателен: если модель не ответила или ответила плохо, урок выдаётся без запаса, а не с ошибкой.
+ * Каждое задание проходит те же проверки, что и карточка (ответ, подсказка без ответа, счёт); неверное выбрасываем.
+ */
+async function extraBank(provider: Provider, input: LessonRequest, index: number, explanation: Explanation): Promise<Bank> {
+  const group = input.groups[index];
+  try {
+    const text = await withTimeout(provider.call({
+      instructions: extraInstructions(requestLanguage(input, index)),
+      input: JSON.stringify({
+        subject: input.subject, language: requestLanguage(input, index), grade: group.grade, topic: group.topic, count: EXTRA_COUNT,
+        keyIdea: explanation.keyIdea,
+        examples: [explanation.example, ...explanation.examples].map((x) => x.problem),
+        practiceOnSlides: explanation.practice.map((p) => p.task),
+      }),
+      schemaName: "extra_cards",
+      schema: z.toJSONSchema(ExtraSchema, { target: "draft-7" }) as Record<string, unknown>,
+    }), EXTRA_TIMEOUT_MS);
+    const parsed = text ? ExtraSchema.safeParse(prettyMathDeep(JSON.parse(text))) : null;
+    if (!parsed?.success) return { cards: [] };
+    const cards = parsed.data.cards
+      .map((c, k): TaskCard => ({ ...cardFromModel(c), id: `g${index + 1}-x${k + 1}`, purpose: "practice" }))
+      .filter((c) => checkSingleCard(c).length === 0);
+    return { cards, ...(parsed.data.trainer ? { trainer: parsed.data.trainer } : {}) };
+  } catch {
+    return { cards: [] };
+  }
+}
+
 export async function generateLesson(input: LessonRequest): Promise<LessonPlan> {
   const provider = resolveProvider();
   if (!provider) throw new GenerationError("not_configured");
@@ -226,7 +267,11 @@ export async function generateLesson(input: LessonRequest): Promise<LessonPlan> 
   // Сначала объяснения всех классов (параллельно), потом содержание урока, которое на них опирается.
   const explained = await Promise.all(input.groups.map((_, i) => generateChecked(provider, explanationJob(input, i), startedAt)));
   const explanations = explained.map((x) => x.explanation);
-  const core = await generateChecked(provider, planJob(input, explained), startedAt);
+  // Содержание урока и запас для каждого класса идут одновременно: запас не удлиняет ожидание.
+  const [core, banks] = await Promise.all([
+    generateChecked(provider, planJob(input, explained), startedAt),
+    Promise.all(input.groups.map((_, i) => extraBank(provider, input, i, explanations[i]))),
+  ]);
   // Язык у класса храним, только когда языки в уроке разные: у обычного урока он совпадает с языком урока.
   const mixed = requestLanguages(input).length > 1;
   const lesson: LessonPlan = {
@@ -238,11 +283,19 @@ export async function generateLesson(input: LessonRequest): Promise<LessonPlan> 
         id: g.id, grade: g.grade, topic: g.topic, learningGoal: g.learningGoal,
         explanation: explanations[i], cards: g.cards, homework: g.homework, source,
         ...(mixed ? { language: requestLanguage(input, i) } : {}),
+        ...bankFor(banks[i], g.cards),
       };
     }),
   };
   const reviewed = isLanguageSubject(input.subject) ? await reviewRules(provider, lesson, startedAt) : lesson;
   return proofreadLesson(provider, reviewed, startedAt);
+}
+
+/** Запас без повторов основных карточек; пустой запас и тренажёр не храним. */
+function bankFor(bank: Bank, main: TaskCard[]): Pick<LessonPlan["groups"][number], "extraCards" | "trainer"> {
+  const taken = new Set(main.map((c) => sameTask(c.prompt)));
+  const extraCards = bank.cards.filter((c) => !taken.has(sameTask(c.prompt)));
+  return { ...(extraCards.length ? { extraCards } : {}), ...(bank.trainer ? { trainer: bank.trainer } : {}) };
 }
 
 // ---------------------------------------------------------------------------

@@ -82,6 +82,8 @@ interface Group {
   learningGoal: string;           // цель урока для этого класса, 1 предложение
   explanation: Explanation;       // материал учителя для этапа with_teacher
   cards: TaskCard[];              // 3–30: сколько нужно по минутам (инвариант 10)
+  extraCards?: TaskCard[];        // запас для быстрых (id g1-x1…), не в таймлайне; открывается после основных
+  trainer?: TrainerSkill;         // навык тренажёра (lib/trainer.ts): задания и ответы составляет код
   source?: { pages: string | null; photos: number } | null; // по каким страницам учебника строился урок
   homework: string;               // короткое домашнее задание
 }

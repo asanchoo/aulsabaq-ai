@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { checkCardAnswer, expectsNumber } from "./check-answer";
+import { checkAnswer, checkCardAnswer, expectsNumber } from "./check-answer";
+import { TRAINER_KEY, TRAINER_TRIES, type TrainerState, type TrainerTask } from "./trainer";
 import type { Group, LessonPlan, TaskCard } from "./schema";
 
 /**
@@ -35,6 +36,7 @@ export function readProgress(raw: unknown): Record<string, CardState> {
   const out: Record<string, CardState> = {};
   if (!raw || typeof raw !== "object") return out;
   for (const [id, value] of Object.entries(raw)) {
+    if (id === TRAINER_KEY) continue; // тренажёр хранит свой счёт, это не карточка
     const parsed = CardStateSchema.safeParse(value ?? {});
     out[id] = parsed.success ? parsed.data : emptyState();
   }
@@ -61,8 +63,8 @@ export type StudentCard = {
   answer?: string;
 };
 
-export function studentCards(group: Group, progress: Record<string, CardState>): StudentCard[] {
-  return group.cards.map((card, i) => {
+export function studentCards(group: Group, progress: Record<string, CardState>, list: TaskCard[] = group.cards): StudentCard[] {
+  return list.map((card, i) => {
     const state = progress[card.id] ?? emptyState();
     return {
       id: card.id,
@@ -82,8 +84,28 @@ export function studentCards(group: Group, progress: Record<string, CardState>):
 
 export function findCard(plan: LessonPlan, groupId: string, cardId: string): { group: Group; card: TaskCard } | null {
   const group = plan.groups.find((g) => g.id === groupId);
-  const card = group?.cards.find((c) => c.id === cardId);
+  // Карточка из основных или из запаса: правила ответа, подсказок и сверки у них одни.
+  const card = group?.cards.find((c) => c.id === cardId) ?? group?.extraCards?.find((c) => c.id === cardId);
   return group && card ? { group, card } : null;
+}
+
+/** Действия с тренажёром: у них нет карточки, задание составляет код (lib/trainer.ts). */
+export const TrainerActionSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("trainer"), answer: z.string().trim().min(1).max(100) }),
+  z.object({ action: z.literal("trainer_skip") }),
+]);
+export type TrainerAction = z.infer<typeof TrainerActionSchema>;
+
+/**
+ * Ответ на задание тренажёра. Верно — следующее задание. Неверно — ещё одна попытка, после второй
+ * показываем ответ и даём следующее: застревать на одном примере в тренажёре незачем.
+ */
+export function applyTrainer(state: TrainerState, task: TrainerTask, action: TrainerAction): { state: TrainerState; correct: boolean; shown?: string } {
+  const next = { ...state, index: state.index + 1, attempts: 0 };
+  if (action.action === "trainer_skip") return { state: next, correct: false, shown: task.answer };
+  if (checkAnswer(action.answer, task.answer)) return { state: { ...next, solved: state.solved + 1 }, correct: true };
+  if (state.attempts + 1 >= TRAINER_TRIES) return { state: { ...next, wrong: state.wrong + 1 }, correct: false, shown: task.answer };
+  return { state: { ...state, attempts: state.attempts + 1 }, correct: false };
 }
 
 export const StudentActionSchema = z.discriminatedUnion("action", [

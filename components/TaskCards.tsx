@@ -84,6 +84,26 @@ export function TaskCards({ groups, dict }: { groups: Group[]; dict: Dict }) {
               </li>
             ))}
           </ol>
+
+          {/* Запас для быстрых: ученик видит его на телефоне после основных карточек; без телефонов печатается списком. */}
+          {g.extraCards && g.extraCards.length > 0 && (
+            <div className="mt-6 rounded-card border border-dashed border-line-strong p-4 print:rounded-none">
+              <p className="font-semibold">{t(dict.lesson.extraTitle, { n: g.extraCards.length })}</p>
+              <p className="mt-1 text-[0.85rem] leading-snug text-muted">{dict.lesson.extraHint}</p>
+              <ol className="mt-3 grid list-decimal gap-2 pl-5 leading-snug">
+                {g.extraCards.map((c) => (
+                  <li key={c.id}>
+                    {c.prompt}
+                    {c.answer && (
+                      <span className="ml-2 text-[0.85rem] text-muted">
+                        ({dict.lesson.answer}: {c.answer})
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
         </section>
       ))}
     </div>

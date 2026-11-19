@@ -82,11 +82,23 @@ function gemini(plan: unknown, finishReason = "STOP") {
 }
 
 /** Что спросили у модели: содержание (в запросе есть request), корректуру (texts) или объяснение одного класса. */
-function requestOf(init: RequestInit): { kind: "plan" | "explain" | "proof"; data: Record<string, unknown> } {
+function requestOf(init: RequestInit): { kind: "plan" | "explain" | "proof" | "extra"; data: Record<string, unknown> } {
   const body = JSON.parse(String(init.body));
   const input = typeof body.input === "string" ? body.input : Array.isArray(body.input) ? body.input[0].content[0].text : body.contents[0].parts[0].text;
   const data = JSON.parse(input);
-  return { kind: "request" in data ? "plan" : "texts" in data ? "proof" : "explain", data };
+  return { kind: "request" in data ? "plan" : "texts" in data ? "proof" : "count" in data ? "extra" : "explain", data };
+}
+
+/** Запас от модели: две карточки практики демо-урока и тренажёр для 4 класса. */
+function extraOf(grade: number) {
+  const group = demoLesson.groups.find((g) => g.grade === grade)!;
+  const cards = group.cards.filter((c) => c.purpose === "practice").slice(0, 2).map((c) => {
+    const rest: Partial<typeof c> = { ...c };
+    delete rest.id;
+    delete rest.purpose;
+    return { ...rest, prompt: `${c.prompt} (запас)`, answer: c.answer ?? null, accept: c.accept ?? [], inputHint: c.inputHint ?? null, minutes: 1 };
+  });
+  return { cards, trainer: grade === 4 ? "div_3d_1d" : null };
 }
 
 /**
@@ -100,6 +112,7 @@ function fakeModel(format: (value: unknown) => Response, plans: unknown[] = [gen
     const { kind, data } = requestOf(init);
     if (kind === "explain") return format(draftOf(data.grade));
     if (kind === "proof") return format({ corrections: [] });
+    if (kind === "extra") return format(extraOf(Number(data.grade)));
     const next = plans[Math.min(planCalls++, plans.length - 1)];
     return next instanceof Response ? next.clone() : format(next);
   });
@@ -142,7 +155,7 @@ describe("generation", () => {
     const fetch = fakeModel(provider); vi.stubGlobal("fetch", fetch);
     expectLesson(await generateLesson(input));
     // Одно расписание и по объяснению на каждый класс.
-    expect(fetch).toHaveBeenCalledTimes(1 + input.groups.length + 1); // объяснения, содержание, корректура
+    expect(fetch).toHaveBeenCalledTimes(1 + 2 * input.groups.length + 1); // объяснения, содержание, запас каждому классу, корректура
     const body = JSON.parse(planCalls(fetch)[0][1].body);
     expect(body.model).toBe("test-model"); expect(body.store).toBe(false);
     expect(body.text.format.strict).toBe(true);
@@ -152,7 +165,7 @@ describe("generation", () => {
     const fetch = fakeModel(provider); vi.stubGlobal("fetch", fetch);
     await generateLesson(input);
     const kinds = fetch.mock.calls.map(([, init]) => requestOf(init as RequestInit).kind);
-    expect(kinds).toEqual(["explain", "explain", "plan", "proof"]);
+    expect(kinds).toEqual(["explain", "explain", "plan", "extra", "extra", "proof"]);
     const request = requestOf(planCalls(fetch)[0][1] as RequestInit).data as { explanations: Record<string, unknown>[] };
     // Содержание строится на объяснении: ситуация, лестница примеров, ошибки, итог, готовые карточки повторения.
     expect(request.explanations[1]).toMatchObject({
@@ -195,6 +208,7 @@ describe("generation", () => {
     const fetch = vi.fn(async (_url: string, init: RequestInit) => {
       const { kind, data } = requestOf(init);
       if (kind === "plan") return provider(generated());
+      if (kind === "extra") return provider(extraOf(Number(data.grade)));
       if (data.grade === 2 && explainCalls++ === 0) return provider(wrong);
       return provider(draftOf(data.grade));
     });
@@ -303,12 +317,12 @@ describe("gemini", () => {
     const fetch = vi.fn(async (url: string, init: RequestInit) => {
       if (url.includes("gemini-main")) return new Response("high demand", { status: 503 });
       const { kind, data } = requestOf(init);
-      return gemini(kind === "plan" ? generated() : draftOf(data.grade));
+      return gemini(kind === "plan" ? generated() : kind === "extra" ? extraOf(Number(data.grade)) : draftOf(data.grade));
     });
     vi.stubGlobal("fetch", fetch);
     expectLesson(await generateLesson(input));
     const spare = fetch.mock.calls.filter(([url]) => url.includes("gemini-2.5-spare"));
-    expect(spare).toHaveLength(1 + input.groups.length + 1);
+    expect(spare).toHaveLength(1 + 2 * input.groups.length + 1);
     // У моделей 2.5 нет thinkingLevel: параметр не отправляем.
     expect(JSON.parse(String(spare[0][1].body)).generationConfig.thinkingConfig).toBeUndefined();
   });
@@ -352,5 +366,23 @@ describe("billing", () => {
     vi.stubGlobal("fetch", fetch);
     await expect(generateLesson(input)).rejects.toMatchObject({ code: "provider" });
     expect(fetch).toHaveBeenCalledTimes(input.groups.length); // по одному запросу на объяснение, без повторов
+  });
+});
+
+describe("запас заданий и тренажёр", () => {
+  it("запас идёт отдельно от основных карточек, тренажёр сохраняется, без запаса урок всё равно собирается", async () => {
+    setup();
+    const fetch = fakeModel(provider); vi.stubGlobal("fetch", fetch);
+    const plan = await generateLesson(input);
+    const g4 = plan.groups.find((g) => g.grade === 4)!;
+    expect(g4.extraCards?.map((c) => c.id)).toEqual(["g2-x1", "g2-x2"]);
+    expect(g4.trainer).toBe("div_3d_1d");
+    expect(plan.groups.find((g) => g.grade === 2)!.trainer).toBeUndefined();
+    expect(g4.cards.some((c) => c.id.includes("-x"))).toBe(false);
+
+    const broken = vi.fn(async (url: string, init: RequestInit) => (requestOf(init).kind === "extra" ? new Response("oops", { status: 500 }) : fakeModel(provider)(url, init)));
+    vi.stubGlobal("fetch", broken);
+    const without = await generateLesson(input);
+    expect(without.groups.every((g) => !g.extraCards && !g.trainer)).toBe(true);
   });
 });

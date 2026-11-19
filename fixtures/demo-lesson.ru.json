@@ -347,7 +347,130 @@
           "minutes": 3
         }
       ],
-      "homework": "Реши 4 примера: 28 + 35, 57 + 26, 72 − 38, 91 − 45. Проверь каждый обратным действием."
+      "homework": "Реши 4 примера: 28 + 35, 57 + 26, 72 − 38, 91 − 45. Проверь каждый обратным действием.",
+      "extraCards": [
+        {
+          "id": "g1-x1",
+          "type": "closed",
+          "prompt": "Вычисли: 38 + 5",
+          "answer": "43",
+          "accept": [
+            "43"
+          ],
+          "inputHint": "Только число",
+          "successCriteria": "Ответ совпал с проверкой",
+          "hint": "Сколько не хватает до 40? Сколько останется прибавить?",
+          "difficulty": 1,
+          "minutes": 1,
+          "purpose": "practice"
+        },
+        {
+          "id": "g1-x2",
+          "type": "closed",
+          "prompt": "Вычисли: 27 + 6",
+          "answer": "33",
+          "accept": [
+            "33"
+          ],
+          "inputHint": "Только число",
+          "successCriteria": "Ответ совпал с проверкой",
+          "hint": "Дополни 27 до круглого десятка. Сколько ещё осталось прибавить?",
+          "difficulty": 1,
+          "minutes": 1,
+          "purpose": "practice"
+        },
+        {
+          "id": "g1-x3",
+          "type": "closed",
+          "prompt": "Вычисли: 45 + 18",
+          "answer": "63",
+          "accept": [
+            "63"
+          ],
+          "inputHint": "Только число",
+          "successCriteria": "Ответ совпал с проверкой",
+          "hint": "Сначала сложи единицы: 5 и 8. Получился ли новый десяток?",
+          "difficulty": 1,
+          "minutes": 1,
+          "purpose": "practice"
+        },
+        {
+          "id": "g1-x4",
+          "type": "closed",
+          "prompt": "Вычисли: 56 + 27",
+          "answer": "83",
+          "accept": [
+            "83"
+          ],
+          "inputHint": "Только число",
+          "successCriteria": "Ответ совпал с проверкой",
+          "hint": "Сложи единицы, потом десятки. Не забудь перенести десяток.",
+          "difficulty": 1,
+          "minutes": 1,
+          "purpose": "practice"
+        },
+        {
+          "id": "g1-x5",
+          "type": "closed",
+          "prompt": "Вычисли: 19 + 34",
+          "answer": "53",
+          "accept": [
+            "53"
+          ],
+          "inputHint": "Только число",
+          "successCriteria": "Ответ совпал с проверкой",
+          "hint": "Сколько единиц получится, если сложить 9 и 4?",
+          "difficulty": 1,
+          "minutes": 1,
+          "purpose": "practice"
+        },
+        {
+          "id": "g1-x6",
+          "type": "closed",
+          "prompt": "Найди ошибку: Арман сложил 47 и 25 и получил 62. Какой ответ верный?",
+          "answer": "72",
+          "accept": [
+            "72"
+          ],
+          "inputHint": "Только число",
+          "successCriteria": "Ответ совпал с проверкой",
+          "hint": "Сложи единицы 7 и 5. Что Арман сделал с новым десятком?",
+          "difficulty": 2,
+          "minutes": 1.5,
+          "purpose": "practice"
+        },
+        {
+          "id": "g1-x7",
+          "type": "closed",
+          "prompt": "В автобусе ехали 36 человек, на остановке вошли ещё 17. Сколько человек стало в автобусе?",
+          "answer": "53",
+          "accept": [
+            "53"
+          ],
+          "inputHint": "Только число",
+          "successCriteria": "Ответ совпал с проверкой",
+          "hint": "Каким действием находим, сколько стало?",
+          "difficulty": 2,
+          "minutes": 1.5,
+          "purpose": "practice"
+        },
+        {
+          "id": "g1-x8",
+          "type": "closed",
+          "prompt": "Какое число нужно прибавить к 48, чтобы получилось 60?",
+          "answer": "12",
+          "accept": [
+            "12"
+          ],
+          "inputHint": "Только число",
+          "successCriteria": "Ответ совпал с проверкой",
+          "hint": "Сколько не хватает до 50? А от 50 до 60?",
+          "difficulty": 3,
+          "minutes": 1.5,
+          "purpose": "practice"
+        }
+      ],
+      "trainer": "add_2d_1d_carry"
     },
     {
       "id": "g2",
@@ -664,7 +787,130 @@
           "minutes": 2.5
         }
       ],
-      "homework": "Раздели столбиком и проверь умножением: 645 : 5, 872 : 4, 918 : 9."
+      "homework": "Раздели столбиком и проверь умножением: 645 : 5, 872 : 4, 918 : 9.",
+      "extraCards": [
+        {
+          "id": "g2-x1",
+          "type": "closed",
+          "prompt": "Раздели: 846 : 2",
+          "answer": "423",
+          "accept": [
+            "423"
+          ],
+          "inputHint": "Только число",
+          "successCriteria": "Ответ совпал с проверкой",
+          "hint": "Делим по разрядам: сколько сотен получится, если 8 сотен разделить на 2?",
+          "difficulty": 1,
+          "minutes": 1,
+          "purpose": "practice"
+        },
+        {
+          "id": "g2-x2",
+          "type": "closed",
+          "prompt": "Раздели: 945 : 5",
+          "answer": "189",
+          "accept": [
+            "189"
+          ],
+          "inputHint": "Только число",
+          "successCriteria": "Ответ совпал с проверкой",
+          "hint": "Первое неполное делимое 9. Сколько раз 5 помещается в 9?",
+          "difficulty": 1,
+          "minutes": 1,
+          "purpose": "practice"
+        },
+        {
+          "id": "g2-x3",
+          "type": "closed",
+          "prompt": "Раздели: 672 : 4",
+          "answer": "168",
+          "accept": [
+            "168"
+          ],
+          "inputHint": "Только число",
+          "successCriteria": "Ответ совпал с проверкой",
+          "hint": "Сколько раз 4 помещается в 6? Какой остаток переходит к десяткам?",
+          "difficulty": 1,
+          "minutes": 1,
+          "purpose": "practice"
+        },
+        {
+          "id": "g2-x4",
+          "type": "closed",
+          "prompt": "Раздели: 738 : 6",
+          "answer": "123",
+          "accept": [
+            "123"
+          ],
+          "inputHint": "Только число",
+          "successCriteria": "Ответ совпал с проверкой",
+          "hint": "Начни с 7 сотен. Сколько раз 6 помещается в 7?",
+          "difficulty": 1,
+          "minutes": 1,
+          "purpose": "practice"
+        },
+        {
+          "id": "g2-x5",
+          "type": "closed",
+          "prompt": "Раздели: 816 : 8",
+          "answer": "102",
+          "accept": [
+            "102"
+          ],
+          "inputHint": "Только число",
+          "successCriteria": "Ответ совпал с проверкой",
+          "hint": "Сколько десятков получится, если 1 десяток разделить на 8? Не забудь записать это в частное.",
+          "difficulty": 2,
+          "minutes": 1.5,
+          "purpose": "practice"
+        },
+        {
+          "id": "g2-x6",
+          "type": "closed",
+          "prompt": "Раздели: 927 : 9",
+          "answer": "103",
+          "accept": [
+            "103"
+          ],
+          "inputHint": "Только число",
+          "successCriteria": "Ответ совпал с проверкой",
+          "hint": "После деления сотен посмотри на десятки: хватит ли их, чтобы разделить на 9?",
+          "difficulty": 2,
+          "minutes": 1.5,
+          "purpose": "practice"
+        },
+        {
+          "id": "g2-x7",
+          "type": "closed",
+          "prompt": "Найди ошибку: Айгерим разделила 525 на 5 и получила 15. Какой ответ верный?",
+          "answer": "105",
+          "accept": [
+            "105"
+          ],
+          "inputHint": "Только число",
+          "successCriteria": "Ответ совпал с проверкой",
+          "hint": "Проверь умножением: сколько будет 15 · 5? Какой разряд потерялся?",
+          "difficulty": 3,
+          "minutes": 1.5,
+          "purpose": "practice"
+        },
+        {
+          "id": "g2-x8",
+          "type": "closed",
+          "prompt": "На ферме собрали 784 яйца и разложили поровну в 7 лотков. Сколько яиц в каждом лотке?",
+          "answer": "112",
+          "accept": [
+            "112"
+          ],
+          "inputHint": "Только число",
+          "successCriteria": "Ответ совпал с проверкой",
+          "hint": "Каким действием делим поровну? Начни с сотен.",
+          "difficulty": 2,
+          "minutes": 2,
+          "purpose": "practice"
+        }
+      ],
+      "trainer": "div_3d_1d"
     }
   ],
   "timeline": [

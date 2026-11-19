@@ -13,7 +13,11 @@ import type { LessonPlan } from "@/lib/schema";
  * Страница урока для учителя: шапка с действиями, ход урока, советы, объяснение темы, карточки.
  * workspace — то, что зависит от сохранённого урока (код для учеников, панель, ведение урока); у демо там своя кнопка.
  */
-export function LessonView({ plan, lang, dict, badge, notice, workspace }: { plan: LessonPlan; lang: Locale; dict: Dict; badge: string; notice?: string; workspace?: ReactNode }) {
+export function LessonView({ plan, lang, dict, badge, notice, workspace, joinCode }: {
+  plan: LessonPlan; lang: Locale; dict: Dict; badge: string; notice?: string; workspace?: ReactNode;
+  /** Код для учеников: последний слайд «Теперь сами» показывает его и QR-код. */
+  joinCode?: string;
+}) {
   const grades = plan.groups.map((g) => groupTitle(plan.groups, g, dict.common)).join(" · ");
 
   return (
@@ -70,7 +74,7 @@ export function LessonView({ plan, lang, dict, badge, notice, workspace }: { pla
         </h2>
         <p className="mt-1 max-w-2xl text-[0.9rem] text-muted">{dict.lesson.explainLead}</p>
         <div className="mt-6">
-          <TopicExplanation groups={plan.groups} dict={dict} lang={lang} />
+          <TopicExplanation groups={plan.groups} dict={dict} lang={lang} joinCode={joinCode} />
         </div>
       </section>
 

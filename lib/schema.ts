@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { VisualSchema } from "./visuals";
+import { TrainerSkillSchema } from "./trainer";
 
 /**
  * Zod-схемы урока (SPEC §5).
@@ -127,6 +128,13 @@ export const GroupSchema = z.object({
   source: z.object({ pages: z.string().nullable(), photos: z.number().int().min(0) }).nullable().optional(),
   /** Язык обучения этого класса, если он не такой, как у урока (класс с казахским и класс с русским). */
   language: LangSchema.optional(),
+  /**
+   * Запас: короткие задания для тех, кто решил основные карточки. В расписание не входят (ученик открывает их,
+   * когда основные кончились), поэтому их нет в таймлайне и в инварианте 4. У уроков до 19 ноября нет.
+   */
+  extraCards: z.array(TaskCardSchema).max(30).optional(),
+  /** Навык для тренажёра без конца (lib/trainer.ts): задания составляет код. Нет — тренажёра у класса нет. */
+  trainer: TrainerSkillSchema.optional(),
 });
 
 export const LessonPlanSchema = z.object({

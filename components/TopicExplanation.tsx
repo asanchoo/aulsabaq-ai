@@ -9,7 +9,7 @@ import { isMathOnly, groupTitle } from "@/lib/lesson";
  * на этапе «с учителем». Слева сама тема (с чего начать, правило, шаги),
  * справа разбор примера, ошибки и вопросы классу. Кнопка открывает то же самое слайдами.
  */
-export function TopicExplanation({ groups, dict, lang }: { groups: Group[]; dict: Dict; lang: Locale }) {
+export function TopicExplanation({ groups, dict, lang, joinCode }: { groups: Group[]; dict: Dict; lang: Locale; joinCode?: string }) {
   const l = dict.lesson;
   return (
     <div className="grid gap-8">
@@ -38,6 +38,7 @@ export function TopicExplanation({ groups, dict, lang }: { groups: Group[]; dict
                 grade={g.language ? groupTitle(groups, g, getDict(g.language).common) : grade}
                 topic={g.topic}
                 lang={g.language ?? lang}
+                joinCode={joinCode}
               />
             </header>
 
