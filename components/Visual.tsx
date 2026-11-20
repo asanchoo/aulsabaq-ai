@@ -384,7 +384,8 @@ function Table({ headers, rows, size }: { headers: string[]; rows: string[][]; s
       <tbody>
         {rows.map((row, r) => (
           <tr key={r} className="border-b border-line">
-            {row.map((c, i) => <td key={i} className={`px-3 py-2 ${i === 0 ? "font-semibold" : ""}`}>{c}</td>)}
+            {/* Первый столбец обычно выражение («756 : 3»): его не рвём на две строки. Широкую таблицу слайд уменьшит целиком. */}
+            {row.map((c, i) => <td key={i} className={`px-3 py-2 ${i === 0 ? "font-semibold whitespace-nowrap" : ""}`}>{c}</td>)}
           </tr>
         ))}
       </tbody>

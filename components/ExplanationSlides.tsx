@@ -431,9 +431,12 @@ function FitBox({ children }: { children: ReactNode }) {
       const width = box.clientWidth;
       let zoom = 1;
       content.style.zoom = "1";
+      // Широкая таблица или схема не вылезает за слайд, а прокручивается внутри своей колонки (overflow-x-auto),
+      // и на проекторе её правый край просто обрезан. Такой слайд тоже считаем непоместившимся.
+      const scrollers = [...content.querySelectorAll<HTMLElement>(".overflow-x-auto")];
       const fits = () => {
         const r = content.getBoundingClientRect();
-        return r.height <= height + 1 && r.width <= width + 1;
+        return r.height <= height + 1 && r.width <= width + 1 && scrollers.every((el) => el.scrollWidth <= el.clientWidth + 1);
       };
       while (zoom > MIN_ZOOM && !fits()) {
         zoom = Math.round((zoom - 0.05) * 100) / 100;
