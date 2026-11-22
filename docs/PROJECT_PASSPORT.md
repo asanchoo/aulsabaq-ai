@@ -151,4 +151,7 @@ https://aulsabaq-ai.vercel.app. Интерфейс и уроки на казах
   [Автор дополнит: замер времени подготовки урока у 1–2 учителей, было __ мин, стало __ мин; отзыв учителя.]
 - Как использовать в другой организации: любая малокомплектная школа и любой предмет, без регистрации
   и установки; формат классов-комплектов есть и в других странах Центральной Азии.
-- Презентация до двух слайдов или видео до одной минуты: [ссылка].
+- Презентация до двух слайдов: [AulSabaq-AI.pdf](https://github.com/asanchoo/aulsabaq-ai/blob/main/docs/presentation/AulSabaq-AI.pdf) (исходник `docs/presentation/slides.html`,
+  скриншоты сняты с рабочего сайта 22 ноября 2026).
+- Видео до одной минуты: [AulSabaq-AI-sound.mp4](https://github.com/asanchoo/aulsabaq-ai/raw/main/docs/presentation/video/AulSabaq-AI-sound.mp4) (60 секунд, голос за кадром, эффекты и музыка из ElevenLabs, кадры настоящего сайта;
+  исходник `docs/presentation/video/video.html`, рендер `render.mjs`).

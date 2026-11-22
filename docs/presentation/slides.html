@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>AulSabaq AI: итоговый продукт</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  /* Те же цвета, что на сайте (app/globals.css): белый, графит, мята. Два слайда 1920×1080 для PDF и PNG. */
+  :root {
+    --bg: #ffffff; --surface: #f4f4f2; --ink: #232323; --muted: #616161; --line: #e5e5e2;
+    --mint: #a1ffcb; --mint-soft: #e6fbef; --stage: #c9f7dc;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  @page { size: 1920px 1080px; margin: 0; }
+  body { background: #d8d8d4; font-family: Manrope, system-ui, sans-serif; color: var(--ink); }
+  .slide {
+    width: 1920px; height: 1080px; background: var(--bg); position: relative; overflow: hidden;
+    padding: 88px 104px 72px; display: grid; break-after: page; margin: 0 auto 40px;
+  }
+  @media print { body { background: var(--bg); } .slide { margin: 0; } }
+  .kicker { font-size: 22px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .logo { display: inline-flex; align-items: center; gap: 14px; font-weight: 700; font-size: 26px; text-transform: none; letter-spacing: 0; color: var(--ink); }
+  .logo i { width: 44px; height: 44px; border-radius: 12px; background: var(--mint); display: grid; place-items: center; font-style: normal; }
+  h1 { font-size: 70px; line-height: 1.04; font-weight: 700; letter-spacing: -0.025em; }
+  h2 { font-size: 64px; line-height: 1.06; font-weight: 700; letter-spacing: -0.02em; }
+  p, li { font-size: 25px; line-height: 1.45; }
+  .muted { color: var(--muted); }
+  .mono { font-family: "JetBrains Mono", monospace; }
+  .shot { border-radius: 18px; border: 1px solid var(--line); overflow: hidden; background: var(--bg); box-shadow: 0 30px 60px -38px rgb(0 0 0 / 0.35); }
+  .shot img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top left; }
+  .foot { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 22px; font-size: 22px; color: var(--muted); }
+  .foot b { color: var(--ink); font-weight: 700; }
+
+  /* Слайд 1: проблема слева, что получает учитель, справа настоящий «Ход урока» */
+  .s1 { grid-template-columns: 860px 1fr; grid-template-rows: auto 1fr auto; column-gap: 72px; }
+  .s1 .top { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+  .s1 .left { display: grid; align-content: start; gap: 32px; padding-bottom: 28px; }
+  .problem { display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: center; padding: 28px 32px; border-radius: 20px; background: var(--surface); }
+  .problem .num { font-size: 92px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+  .problem p { font-size: 24px; }
+  .gets { list-style: none; display: grid; gap: 14px; counter-reset: g; }
+  .gets li { display: grid; grid-template-columns: 44px 1fr; gap: 18px; align-items: start; font-size: 24px; line-height: 1.4; }
+  .gets li::before { counter-increment: g; content: counter(g); width: 44px; height: 44px; border-radius: 50%; background: var(--mint); display: grid; place-items: center; font-weight: 700; font-size: 21px; }
+  .gets b { font-weight: 700; }
+  .s1 .right { grid-row: 2 / 4; grid-column: 2; position: relative; }
+  .s1 .right .shot { height: 100%; }
+  .s1 .right .shot img { object-fit: contain; object-position: top center; }
+  .s1 .right .label { position: absolute; left: 24px; top: -16px; background: var(--ink); color: #fff; font-size: 18px; font-weight: 600; padding: 6px 14px; border-radius: 999px; }
+  .s1 .foot { grid-column: 1; align-self: end; }
+
+  /* Слайд 2: путь рецензента сверху, три настоящих экрана, внизу измеренные факты */
+  .s2 { grid-template-rows: auto auto 1fr auto auto; row-gap: 0; }
+  .s2 .top { display: flex; justify-content: space-between; align-items: end; margin-bottom: 30px; }
+  .steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 34px; list-style: none; counter-reset: s; }
+  .steps li { position: relative; padding: 18px 20px 18px 66px; border-radius: 16px; background: var(--surface); font-size: 21px; line-height: 1.32; min-height: 96px; display: flex; align-items: center; }
+  .steps li::before { counter-increment: s; content: counter(s); position: absolute; left: 18px; top: 50%; translate: 0 -50%; width: 36px; height: 36px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 18px; }
+  .steps b { font-weight: 700; }
+  .screens { display: grid; grid-template-columns: 2.08fr 0.77fr 1.26fr; gap: 28px; min-height: 0; align-items: start; }
+  .screen { display: grid; grid-template-rows: auto auto; gap: 12px; min-height: 0; }
+  .screen h3 { font-size: 21px; font-weight: 700; }
+  .screen h3 span { font-weight: 500; color: var(--muted); }
+  .screen .shot { min-height: 0; }
+  .screen .shot img { height: auto; object-fit: contain; }
+  .facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 40px 0 24px; }
+  .fact { border-radius: 16px; background: var(--mint-soft); padding: 18px 22px; }
+  .fact b { display: block; font-size: 34px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 6px; }
+  .fact span { font-size: 19px; line-height: 1.35; display: block; }
+</style>
+</head>
+<body>
+
+<section class="slide s1" aria-label="Слайд 1: проблема и решение">
+  <div class="top">
+    <span class="logo"><i><svg viewBox="0 0 24 24" width="26" height="26" fill="#232323" aria-hidden="true"><path d="M2.5 21.5V12a9.5 9.5 0 0 1 19 0v9.5h-6V12a3.5 3.5 0 0 0-7 0v9.5z"/></svg></i>AulSabaq AI</span>
+    <span class="kicker">Codex Challenge · направление «Школа»</span>
+  </div>
+  <div class="left">
+    <h1>Совмещённый урок для 2–4 классов за 5 минут</h1>
+    <div class="problem">
+      <span class="num">2 654</span>
+      <p>малокомплектные школы в Казахстане, каждая вторая сельская. Один учитель ведёт урок сразу для нескольких классов: пока объясняет одному, остальные ждут без заданий своего уровня и без помощи.</p>
+    </div>
+    <ol class="gets">
+      <li><span><b>Поминутный план.</b> В каждую минуту учитель только с одним классом: расписание считает код, а не ИИ.</span></li>
+      <li><span><b>Объяснение темы со слайдами</b> для каждого класса: правило, схема, примеры по шагам, «Найди ошибку».</span></li>
+      <li><span><b>Карточки на всё время без учителя</b>, запас для быстрых и тренажёр без конца.</span></li>
+      <li><span><b>Ученики входят по коду с телефона:</b> подсказки без готового ответа, кнопка «Мне нужна помощь», учитель видит, кто застрял.</span></li>
+    </ol>
+  </div>
+  <div class="right">
+    <span class="label">Настоящий урок: 2 и 4 класс, 45 минут</span>
+    <div class="shot"><img src="img/timeline-crop.png" alt="Ход урока: колонки 2 и 4 класса по минутам: графит значит с учителем, мята значит самостоятельно"></div>
+  </div>
+  <div class="foot">
+    <span><b>aulsabaq-ai.vercel.app</b> · казахский и русский · без регистрации</span>
+    <span>1 / 2</span>
+  </div>
+</section>
+
+<section class="slide s2" aria-label="Слайд 2: как проверить и что измерено">
+  <div class="top">
+    <h2>Проверка за 5 минут, без автора</h2>
+    <span class="kicker">Инструкция: docs/REVIEWER_GUIDE.md</span>
+  </div>
+  <ol class="steps">
+    <li><span><b>«Открыть демо-урок»</b> на главной</span></li>
+    <li><span><b>«Показать на экране»</b>: слайды для класса</span></li>
+    <li><span><b>«Получить код для учеников»</b>: своя копия</span></li>
+    <li><span>На телефоне <b>/join</b>: код, класс, имя</span></li>
+    <li><span>Карточки и подсказки, <b>панель учителя</b></span></li>
+  </ol>
+  <div class="screens">
+    <div class="screen">
+      <h3>Экран класса <span>· пример по шагам, деление уголком считает код</span></h3>
+      <div class="shot"><img src="img/slide-crop.png" alt="Слайд для класса: 756 : 3 по шагам и деление уголком"></div>
+    </div>
+    <div class="screen">
+      <h3>Телефон ученика</h3>
+      <div class="shot"><img src="img/student-crop.png" alt="Карточка ученика: неверный ответ, подсказка без ответа"></div>
+    </div>
+    <div class="screen panel">
+      <h3>Панель учителя <span>· кто застрял, на какой карточке</span></h3>
+      <div class="shot"><img src="img/panel-crop.png" alt="Панель учителя: Даша просит помощи на карточке 7"></div>
+    </div>
+  </div>
+  <div class="facts">
+    <div class="fact"><b>1,5–3 мин</b><span>собирается урок на 2 класса (замеры, docs/TEST_LOG.md)</span></div>
+    <div class="fact"><b>Код проверяет ИИ</b><span>расписание, арифметику, ответы карточек решением; подсказка без ответа</span></div>
+    <div class="fact"><b>212 автотестов</b><span>и прогон пути рецензента на рабочем сайте</span></div>
+    <div class="fact"><b>Демо всегда</b><span>работает без вызова ИИ, на казахском и русском</span></div>
+  </div>
+  <div class="foot">
+    <span>ИИ в продукте: OpenAI <b>gpt-6.1-terra</b> пишет урок, <b>gpt-6-luna</b> проверяет и подсказывает ученику · код писал Claude Code по заданиям автора</span>
+    <span>2 / 2</span>
+  </div>
+</section>
+
+</body>
+</html>

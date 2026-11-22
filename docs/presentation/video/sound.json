@@ -1,0 +1,204 @@
+{
+  "_": "Звук видео: голос за кадром, эффекты и музыка. Время в секундах совпадает со сценами video.html. audio.mjs генерирует всё в ElevenLabs и сводит с AulSabaq-AI.mp4.",
+  "voice": {
+    "voice_id": "WhiwazFG1hDqwRd9eFUd",
+    "model_id": "eleven_multilingual_v2",
+    "settings": {
+      "stability": 0.55,
+      "similarity_boost": 0.8,
+      "style": 0.25,
+      "use_speaker_boost": true,
+      "speed": 0.95
+    }
+  },
+  "lines": [
+    {
+      "at": 0.4,
+      "text": "Один учитель. Три класса. Одна комната."
+    },
+    {
+      "at": 7.0,
+      "text": "Так работает каждая вторая сельская школа."
+    },
+    {
+      "at": 9.9,
+      "text": "Пока учитель с одним классом, остальные ждут."
+    },
+    {
+      "at": 13.1,
+      "text": "AulSabaq AI. Совмещённый урок за пять минут."
+    },
+    {
+      "at": 16.7,
+      "text": "Учитель вводит классы и темы."
+    },
+    {
+      "at": 19.9,
+      "text": "ИИ пишет урок, а код проверяет каждую цифру."
+    },
+    {
+      "at": 25.7,
+      "text": "Расписание считает код: в каждую минуту учитель только с одним классом."
+    },
+    {
+      "at": 33.7,
+      "text": "Для каждого класса готово объяснение со слайдами, шаг за шагом."
+    },
+    {
+      "at": 41.6,
+      "text": "Ученики входят по коду с телефона."
+    },
+    {
+      "at": 44.9,
+      "text": "Подсказка наводит, но не даёт ответ."
+    },
+    {
+      "at": 47.7,
+      "text": "Застрял? Одна кнопка, и учитель знает."
+    },
+    {
+      "at": 50.8,
+      "text": "Учитель видит, кто застрял, и подходит вовремя."
+    },
+    {
+      "at": 56.3,
+      "text": "AulSabaq AI. Попробуйте сами."
+    }
+  ],
+  "sfx": {
+    "whoosh": {
+      "prompt": "soft airy cinematic whoosh transition, clean, modern product video",
+      "seconds": 1.2
+    },
+    "hit": {
+      "prompt": "deep soft sub bass impact, cinematic, clean, short tail",
+      "seconds": 2
+    },
+    "riser": {
+      "prompt": "short airy synth riser building tension, clean, modern",
+      "seconds": 1.6
+    },
+    "ticks": {
+      "prompt": "fast digital number counter ticking, subtle soft clicks, accelerating then stopping",
+      "seconds": 2.2
+    },
+    "chime": {
+      "prompt": "elegant bright logo chime, glassy bell, Apple style, warm",
+      "seconds": 2
+    },
+    "pop": {
+      "prompt": "soft UI pop, card appearing on screen, subtle, clean",
+      "seconds": 0.6
+    },
+    "tap": {
+      "prompt": "subtle smartphone screen tap click, soft",
+      "seconds": 0.5
+    },
+    "notify": {
+      "prompt": "gentle friendly notification ping, soft, modern app",
+      "seconds": 1
+    }
+  },
+  "cues": [
+    {
+      "at": 0.2,
+      "sfx": "hit",
+      "gain": 0.6
+    },
+    {
+      "at": 6.2,
+      "sfx": "whoosh",
+      "gain": 0.5
+    },
+    {
+      "at": 6.7,
+      "sfx": "ticks",
+      "gain": 0.35
+    },
+    {
+      "at": 10.8,
+      "sfx": "riser",
+      "gain": 0.45
+    },
+    {
+      "at": 12.2,
+      "sfx": "hit",
+      "gain": 0.55
+    },
+    {
+      "at": 12.8,
+      "sfx": "chime",
+      "gain": 0.5
+    },
+    {
+      "at": 16.2,
+      "sfx": "whoosh",
+      "gain": 0.45
+    },
+    {
+      "at": 20.2,
+      "sfx": "pop",
+      "gain": 0.5
+    },
+    {
+      "at": 22.3,
+      "sfx": "pop",
+      "gain": 0.45
+    },
+    {
+      "at": 25.0,
+      "sfx": "whoosh",
+      "gain": 0.45
+    },
+    {
+      "at": 33.0,
+      "sfx": "whoosh",
+      "gain": 0.45
+    },
+    {
+      "at": 41.0,
+      "sfx": "whoosh",
+      "gain": 0.45
+    },
+    {
+      "at": 43.2,
+      "sfx": "tap",
+      "gain": 0.5
+    },
+    {
+      "at": 45.0,
+      "sfx": "tap",
+      "gain": 0.5
+    },
+    {
+      "at": 47.4,
+      "sfx": "tap",
+      "gain": 0.5
+    },
+    {
+      "at": 50.2,
+      "sfx": "whoosh",
+      "gain": 0.45
+    },
+    {
+      "at": 50.7,
+      "sfx": "notify",
+      "gain": 0.55
+    },
+    {
+      "at": 55.4,
+      "sfx": "hit",
+      "gain": 0.5
+    },
+    {
+      "at": 55.8,
+      "sfx": "chime",
+      "gain": 0.5
+    }
+  ],
+  "music": {
+    "prompt": "Minimal modern tech product film music: soft felt piano, airy synth pads, gentle pulsing electronic beat, optimistic and calm, subtle build in the middle, clean ending, no vocals",
+    "ms": 60000,
+    "gain": 0.32
+  }
+}

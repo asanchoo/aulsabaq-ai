@@ -45,3 +45,6 @@ next-env.d.ts
 
 # design kit working files
 .taste-skill/
+
+# Звук видео из ElevenLabs: кэш фраз и эффектов, готовое видео со звуком лежит рядом
+/docs/presentation/video/audio/
