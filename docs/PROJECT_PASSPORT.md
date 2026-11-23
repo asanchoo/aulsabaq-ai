@@ -107,7 +107,7 @@ https://aulsabaq-ai.vercel.app. Интерфейс и уроки на казах
 Инструкция для итогового продукта на 5 минут (демо-урок → код → ученик → панель учителя): `docs/REVIEWER_GUIDE.md`.
 Ниже — проверка MVP, сданного 16 ноября.
 
-- **Workspace ChatGPT Edu организации:** ChatGPT Edu — Schools (вход через Bilimland, MoE Kazakhstan)
+- **Workspace ChatGPT Edu организации:** ChatGPT Edu — Startup Ecosystem (вход через Bilimland, MoE Kazakhstan)
 - **Название опубликованного объекта:** AulSabaq AI, Асанали Аскаров
 - **Сдаваемая версия и дата публикации:** ветка `main` репозитория, последний коммит на 16 ноября 2026
   (работающая версия на https://aulsabaq-ai.vercel.app, проверена 16 ноября 2026)
