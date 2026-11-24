@@ -1,24 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { t, type Dict } from "@/lib/i18n";
+import { getHelpDict, t, type Dict, type Locale } from "@/lib/i18n";
 import type { LessonPlan } from "@/lib/schema";
-import { isFinished, isStruggling, type CardState, type CardStatus } from "@/lib/student";
+import { isFinished, isStruggling, type CardState } from "@/lib/student";
 import { lessonSignal } from "@/lib/lesson-signal";
 import { groupTitle } from "@/lib/lesson";
 
-type StudentRow = {
-  id: string;
-  name: string;
-  groupId: string;
-  currentCard: string | null;
-  needsHelp: boolean;
-  helpCard: string | null;
-  hintsUsed: number;
-  trainerSolved?: number;
-  updatedAt: string;
-  cards: Record<string, { status: CardStatus; attempts: number; hints: number; lastAnswer: string | null }>;
-};
+import { buildHelpQueue, type StudentRow } from "@/lib/help-queue";
+import { useRunMinute } from "./LessonRunner";
 
 const POLL_MS = 5000;
 
@@ -29,9 +19,13 @@ const asState = (c: StudentRow["cards"][string] | undefined): CardState | undefi
  * Панель учителя: кто вошёл, кто на какой карточке, кто просит помощи и где классу было трудно.
  * Опрашивает сервер раз в 5 секунд, пока вкладка открыта (SPEC §4: polling проще Realtime и хватает для урока).
  */
-export function StudentsPanel({ lessonId, token, plan, joinCode, dict }: { lessonId: string; token: string; plan: LessonPlan; joinCode: string; dict: Dict }) {
+export function StudentsPanel({ lessonId, token, plan, joinCode, dict, lang }: { lessonId: string; token: string; plan: LessonPlan; joinCode: string; dict: Dict; lang: Locale }) {
   const d = dict.teacher;
+  const hd = getHelpDict(lang);
+  const minute = useRunMinute(lessonId);
+  const observedHelp = useRef(new Map<string, string>());
   const [students, setStudents] = useState<StudentRow[] | null>(null);
+  const [sampleTime, setSampleTime] = useState(() => Date.now());
   const [offline, setOffline] = useState(false);
   const previousHelp = useRef<Set<string> | null>(null);
   useEffect(() => {
@@ -50,7 +44,14 @@ export function StudentsPanel({ lessonId, token, plan, joinCode, dict }: { lesso
       const response = await fetch(`/api/lessons/${lessonId}/students`, { headers: { "x-teacher-token": token }, cache: "no-store" });
       if (!response.ok) throw new Error(String(response.status));
       const data = await response.json();
-      setStudents(data.students);
+      setSampleTime(Date.now());
+      const rows = data.students as StudentRow[];
+      for (const id of observedHelp.current.keys()) if (!rows.some((s) => s.id === id && s.needsHelp)) observedHelp.current.delete(id);
+      setStudents(rows.map((s) => {
+        if (!s.needsHelp) return s;
+        if (!observedHelp.current.has(s.id)) observedHelp.current.set(s.id, s.updatedAt);
+        return { ...s, helpRequestedAt: observedHelp.current.get(s.id) };
+      }));
       setOffline(false);
     } catch {
       setOffline(true);
@@ -93,6 +94,7 @@ export function StudentsPanel({ lessonId, token, plan, joinCode, dict }: { lesso
   };
   const cardNo = (groupId: string, cardId: string | null) => (groupOf(groupId)?.cards.findIndex((c) => c.id === cardId) ?? -1) + 1;
 
+  const queue = buildHelpQueue(students ?? [], plan, sampleTime, minute).slice(0, 3);
   const help = (students ?? []).filter((s) => s.needsHelp);
   const hard = plan.groups.flatMap((g) => {
     const own = (students ?? []).filter((s) => s.groupId === g.id);
@@ -110,6 +112,15 @@ export function StudentsPanel({ lessonId, token, plan, joinCode, dict }: { lesso
         </div>
         {offline && <p role="status" className="text-[0.88rem] text-help">{d.offline}</p>}
       </div>
+
+      {students && <div className="mt-5 rounded-card border border-line p-4">
+        <h3 className="font-semibold">{hd.title}</h3>
+        {queue.length ? <ol className="mt-3 grid gap-3">{queue.map((item) => <li key={item.id} className="text-[0.95rem]">
+          <p>{t(hd[item.reason], { name: item.name ?? "", n: cardNo(item.groupId, item.cardId), m: item.waitMinutes, grade: gradeOf(item.groupId), count: item.count, total: item.total })}</p>
+          {item.availableIn !== null && item.availableIn > 0 && <p className="mt-1 text-sm text-muted">{t(hd.available, { n: item.availableIn })}</p>}
+        </li>)}</ol> : <p className="mt-2 text-sm text-muted">{hd.empty}</p>}
+        <p className="mt-2 text-xs text-muted">{hd.timeNote}</p>
+      </div>}
 
       {students && students.length === 0 && (
         <p className="mt-5 max-w-2xl rounded-card bg-surface p-4 text-[0.95rem] leading-relaxed">{t(d.studentsEmpty, { code: joinCode })}</p>
