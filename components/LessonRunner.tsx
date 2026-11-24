@@ -164,7 +164,7 @@ export function LessonRunner({ lessonId, plan, dict }: { lessonId: string; plan:
             <button type="button" className="btn btn-secondary btn-sm" aria-label={d.earlier} title={d.earlier} onClick={() => shift(60_000)}>−1</button>
             <button type="button" className="btn btn-secondary btn-sm" aria-label={d.later} title={d.later} onClick={() => shift(-60_000)}>+1</button>
             <button type="button" className="btn btn-secondary btn-sm" onClick={() => { if (window.confirm(d.restartConfirm)) save(lessonId, { startedAt: Date.now(), pausedAt: null }); }}>{d.restart}</button>
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => { if (window.confirm(d.stopConfirm)) save(lessonId, null); }}>{d.stop}</button>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => { if (window.confirm(d.stopConfirm)) { window.dispatchEvent(new CustomEvent("aulsabaq-show-report", { detail: { lessonId } })); save(lessonId, null); } }}>{d.stop}</button>
           </div>
         </div>
       </section>
