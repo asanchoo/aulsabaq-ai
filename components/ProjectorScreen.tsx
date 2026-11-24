@@ -6,6 +6,7 @@ import { getDict,getClockDict,t,type Locale } from "@/lib/i18n";
 import { groupTitle,segmentAt } from "@/lib/lesson";
 import { parseRun,runKey,elapsedMs,type RunState } from "@/lib/run-state";
 import { useLocal } from "@/lib/local";
+import {useWakeLock} from "./useWakeLock";
 import { modeBlock } from "./modes";
 const subscribe=(callback:()=>void)=>{document.addEventListener("fullscreenchange",callback);return()=>document.removeEventListener("fullscreenchange",callback);};
 const fullscreen=()=>!!document.fullscreenElement;
@@ -26,6 +27,7 @@ export function ProjectorScreen({plan,lessonId,joinCode,lang}:{plan:LessonPlan;l
   },[lessonId]);
   useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(timer);},[]);
   const elapsed=elapsedMs(run,now),minute=Math.floor(elapsed/60000);
+  useWakeLock(!!run && run.pausedAt === null && elapsed < plan.durationMin * 60000);
   const remaining=Math.max(0,Math.ceil((plan.durationMin*60000-elapsed)/60000));
   return <main ref={screen} className="projector min-h-dvh bg-white p-5 sm:p-10">
     <header className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-5">
