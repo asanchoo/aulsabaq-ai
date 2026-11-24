@@ -261,3 +261,35 @@ revoke execute on function public.create_job(text, jsonb), public.update_job(uui
   public.get_job(uuid, text) from public, anon, authenticated;
 grant execute on function public.create_job(text, jsonb), public.update_job(uuid, text, text, jsonb, uuid, text),
   public.get_job(uuid, text) to anon, service_role;
+
+-- T7: apply this block as a migration before enabling RUN_SYNC=on.
+-- Versioned readers preserve the existing RPC signatures for zero-downtime deployment.
+begin;
+alter table public.lessons add column if not exists started_at timestamptz;
+alter table public.lessons add column if not exists paused_at timestamptz;
+create or replace function public.set_run(p_id uuid,p_token_hash text,p_started_at timestamptz,p_paused_at timestamptz)
+returns boolean language plpgsql security definer set search_path=public as $$
+begin
+  if (p_started_at is null and p_paused_at is not null) or p_paused_at < p_started_at or p_started_at > now()+interval '1 minute' then return false; end if;
+  update lessons set started_at=p_started_at,paused_at=p_paused_at where id=p_id and teacher_token_hash=p_token_hash;
+  return found;
+end $$;
+create or replace function public.get_lesson_run(p_id uuid)
+returns table(started_at timestamptz,paused_at timestamptz)
+language sql stable security definer set search_path=public as $$
+  select l.started_at,l.paused_at from lessons l where l.id=p_id;
+$$;
+create or replace function public.get_session_with_run(p_session uuid)
+returns table(lesson_id uuid,plan jsonb,group_id text,display_name text,progress jsonb,current_card text,needs_help boolean,help_card text,started_at timestamptz,paused_at timestamptz)
+language sql stable security definer set search_path=public as $$
+  select s.lesson_id,l.plan,s.group_id,s.display_name,s.progress,s.current_card,s.needs_help,s.help_card,l.started_at,l.paused_at
+  from student_sessions s join lessons l on l.id=s.lesson_id where s.id=p_session;
+$$;
+create or replace function public.find_lesson_by_code_with_run(p_code text)
+returns table(id uuid,plan jsonb,started_at timestamptz,paused_at timestamptz)
+language sql stable security definer set search_path=public as $$
+ select l.id,l.plan,l.started_at,l.paused_at from lessons l where l.join_code=p_code;
+$$;
+revoke execute on function public.set_run(uuid,text,timestamptz,timestamptz),public.get_lesson_run(uuid),public.get_session_with_run(uuid),public.find_lesson_by_code_with_run(text) from public,anon,authenticated;
+grant execute on function public.set_run(uuid,text,timestamptz,timestamptz),public.get_lesson_run(uuid),public.get_session_with_run(uuid),public.find_lesson_by_code_with_run(text) to anon,service_role;
+commit;

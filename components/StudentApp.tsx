@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Fragment } from "react";
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { getDict, t, type Locale } from "@/lib/i18n";
+import { getClockDict, getDict, t, type Locale } from "@/lib/i18n";
 import { forgetStudent } from "@/lib/local";
 import { isFinished, MAX_HINTS, REVEAL_AFTER, type StudentCard } from "@/lib/student";
 import type { StudentView } from "@/lib/student-view";
@@ -61,6 +61,7 @@ function Sheet({ open, title, closeLabel, onClose, children }: { open: boolean; 
 export function StudentApp({ lang, sessionId }: { lang: Locale; sessionId: string }) {
   const dict = getDict(lang);
   const d = dict.student;
+  const clockLabels = getClockDict(lang);
   const router = useRouter();
   const [view, setView] = useState<StudentView | null>(null);
   const [missing, setMissing] = useState(false);
@@ -248,6 +249,7 @@ export function StudentApp({ lang, sessionId }: { lang: Locale; sessionId: strin
 
   return (
     <div className="mx-auto grid w-full max-w-[34rem] grid-cols-[minmax(0,1fr)] gap-5">
+      {view.clock && <p role="status" className="mb-4 rounded-card bg-stage p-4 text-sm">{view.clock.mode === "independent" ? t(clockLabels.independent, {cards:view.clock.cards.join(", ")}) : clockLabels[view.clock.mode]}</p>}
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate font-semibold">{view.name} · {t(dict.common.grade, { n: view.grade })}</p>
@@ -284,6 +286,7 @@ export function StudentApp({ lang, sessionId }: { lang: Locale; sessionId: strin
               <li>
                 <button
                   type="button"
+                  disabled={c.locked}
                   onClick={() => open(c)}
                   aria-current={current ? "step" : undefined}
                   aria-label={`${t(dict.common.card, { n: c.number })}: ${d.status[c.state.status]}`}
@@ -321,7 +324,8 @@ export function StudentApp({ lang, sessionId }: { lang: Locale; sessionId: strin
                     <li key={c.id}>
                       <button
                         type="button"
-                        onClick={() => open(c)}
+                        disabled={c.locked}
+                  onClick={() => open(c)}
                         aria-current={current ? "step" : undefined}
                         aria-label={`${t(x.of, { n: c.number, m: extras.length })}: ${d.status[c.state.status]}`}
                         className={`tabular grid size-11 place-items-center rounded-full text-[0.95rem] font-semibold transition-colors ${
@@ -393,7 +397,8 @@ export function StudentApp({ lang, sessionId }: { lang: Locale; sessionId: strin
         />
       )}
 
-      {!showGuide && !showTrainer && (
+      {!showGuide && !showTrainer && card.locked && <p role="status" className="rounded-card bg-stage p-5">{clockLabels.locked}</p>}
+      {!showGuide && !showTrainer && !card.locked && (
       <article aria-labelledby="card-title" className="rounded-frame border border-line bg-white p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 id="card-title" ref={heading} tabIndex={-1} className="text-[0.92rem] font-semibold text-muted outline-none">

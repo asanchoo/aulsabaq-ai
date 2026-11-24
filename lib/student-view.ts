@@ -1,3 +1,5 @@
+import { cardUnlocked, clockMinute } from "./lesson-clock";
+import { segmentAt } from "./lesson";
 import type { StoredSession } from "./store";
 import { readProgress, studentCards, type StudentCard } from "./student";
 import { groupLanguage, type ExampleLevel, type Group } from "./schema";
@@ -28,6 +30,7 @@ export function studentGuide(group: Group): StudentGuide {
 
 /** Что видит ученик на телефоне. Эталонов ответов и подсказок карточек здесь нет. */
 export type StudentView = {
+  clock?: { mode: "with_teacher" | "independent" | "joint"; cards: number[] } | null;
   lessonId: string;
   name: string;
   subject: string;
@@ -52,14 +55,18 @@ export function studentView(session: StoredSession, sessionId: string): StudentV
   const trainerState = readTrainer(session.progress);
   const language = groupLanguage(session.plan, group);
   const task = group.trainer ? seededTask(group.trainer, sessionId, trainerState.index, language) : null;
+  const now = Date.now();
+  const minute = clockMinute(session.run ?? null, now);
+  const segment = minute === undefined ? null : segmentAt(session.plan,group.id,minute);
   return {
+    clock: segment ? { mode:segment.mode,cards:(segment.cardIds??[]).map((id)=>group.cards.findIndex((c)=>c.id===id)+1).filter((n)=>n>0) } : null,
     lessonId: session.lessonId,
     name: session.name,
     subject: session.plan.subject,
     language,
     grade: group.grade,
     topic: group.topic,
-    cards: studentCards(group, progress),
+    cards: studentCards(group, progress).map((c,i)=>({...c,locked:!cardUnlocked(session.plan,group.id,group.cards[i],session.run??null,now)})),
     currentCard: session.currentCard,
     needsHelp: session.needsHelp,
     helpCard: session.helpCard,

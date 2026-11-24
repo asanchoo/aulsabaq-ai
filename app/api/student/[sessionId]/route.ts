@@ -1,3 +1,4 @@
+import { cardUnlocked, practiceUnlocked } from "@/lib/lesson-clock";
 import { fail, readJson, storageFailure } from "@/lib/api";
 import { checkLimit, clientIp, limited } from "@/lib/rate-limit";
 import { getSession, updateSession } from "@/lib/store";
@@ -42,6 +43,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/student/[se
     const found = findCard(session.plan, session.groupId, action.cardId);
     if (!found) return fail("not_found", 404);
 
+    if (action.action !== "help" && !cardUnlocked(session.plan,session.groupId,found.card,session.run??null,Date.now())) return fail("locked",409);
     let correct: boolean | undefined;
     if (action.action === "open") {
       await updateSession(sessionId, { currentCard: action.cardId });
@@ -71,6 +73,7 @@ async function trainer(sessionId: string, action: TrainerAction) {
     const session = await getSession(sessionId);
     const group = session?.plan.groups.find((g) => g.id === session.groupId);
     if (!session || !group) return fail("not_found", 404);
+    if (!practiceUnlocked(session.plan,group.id,session.run??null,Date.now())) return fail("locked",409);
     if (!group.trainer) return fail("bad_request", 400);
     const state = readTrainer(session.progress);
     const task = seededTask(group.trainer, sessionId, state.index, groupLanguage(session.plan, group));

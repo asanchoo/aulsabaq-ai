@@ -1,5 +1,7 @@
 "use client";
 
+import { RunSync } from "./RunSync";
+
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { getDict, t, type Locale } from "@/lib/i18n";
 import { rememberLesson, useSavedLessons } from "@/lib/local";
@@ -128,6 +130,7 @@ export function TeacherWorkspace({ lessonId, joinCode, plan, lang, isDemo }: { l
         />
       )}
 
+      {token && <RunSync lessonId={lessonId} token={token} lang={lang} />}
       {token && <StudentsPanel lessonId={lessonId} token={token} plan={plan} joinCode={joinCode} dict={dict} lang={lang} isDemo={isDemo} />}
       <LessonRunner lessonId={lessonId} plan={plan} dict={dict} />
     </>

@@ -171,3 +171,5 @@ export function LessonRunner({ lessonId, plan, dict }: { lessonId: string; plan:
     </>
   );
 }
+
+export { save as saveRun };

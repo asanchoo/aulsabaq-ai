@@ -1,3 +1,4 @@
+import { cardUnlocked } from "@/lib/lesson-clock";
 import { z } from "zod";
 import { generateHint } from "@/lib/ai";
 import { fail, readJson, storageFailure } from "@/lib/api";
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
     const found = findCard(session.plan, session.groupId, parsed.data.cardId);
     if (!found) return fail("not_found", 404);
     const { group, card } = found;
+    if (!cardUnlocked(session.plan,group.id,card,session.run??null,Date.now())) return fail("locked",409);
     const state = readProgress(session.progress)[card.id] ?? emptyState();
     if (state.status !== "todo") return fail("finished", 409);
     if (state.hints >= MAX_HINTS) return fail("no_hints", 409);

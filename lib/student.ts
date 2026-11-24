@@ -47,6 +47,7 @@ export const isFinished = (state: CardState | undefined) => !!state && state.sta
 
 /** Карточка для ученика: без эталона и без подсказки (её выдают по одной, по кнопке). */
 export type StudentCard = {
+  locked?: boolean;
   id: string;
   number: number;
   type: TaskCard["type"];
