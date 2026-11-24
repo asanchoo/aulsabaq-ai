@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { t, type Dict } from "@/lib/i18n";
 import type { LessonPlan } from "@/lib/schema";
 import { isFinished, isStruggling, type CardState, type CardStatus } from "@/lib/student";
+import { lessonSignal } from "@/lib/lesson-signal";
 import { groupTitle } from "@/lib/lesson";
 
 type StudentRow = {
@@ -32,6 +33,17 @@ export function StudentsPanel({ lessonId, token, plan, joinCode, dict }: { lesso
   const d = dict.teacher;
   const [students, setStudents] = useState<StudentRow[] | null>(null);
   const [offline, setOffline] = useState(false);
+  const previousHelp = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    if (!students) return;
+    const help = new Set(students.filter((s) => s.needsHelp).map((s) => s.id));
+    if (previousHelp.current && [...help].some((id) => !previousHelp.current!.has(id))) lessonSignal();
+    previousHelp.current = help;
+    const base = document.title.replace(/^\(\d+\) /, "");
+    document.title = help.size ? `(${help.size}) ${base}` : base;
+    return () => { document.title = base; };
+  }, [students]);
+
 
   const load = useCallback(async () => {
     try {
