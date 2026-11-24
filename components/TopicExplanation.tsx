@@ -1,5 +1,6 @@
+import { ExplanationDisclosure } from "./ExplanationDisclosure";
 import { ExplanationSlides } from "./ExplanationSlides";
-import { getDict, t, type Dict, type Locale } from "@/lib/i18n";
+import { getDict, getLessonToolsDict, t, type Dict, type Locale } from "@/lib/i18n";
 import type { Group, WorkedExample } from "@/lib/schema";
 import { Visual } from "./Visual";
 import { isMathOnly, groupTitle } from "@/lib/lesson";
@@ -42,6 +43,7 @@ export function TopicExplanation({ groups, dict, lang, joinCode }: { groups: Gro
               />
             </header>
 
+            <ExplanationDisclosure label={getLessonToolsDict(lang).expand}>
             <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-12">
               <div className="grid content-start gap-6 lg:col-span-7">
                 <Block title={l.explain.hook}>
@@ -116,6 +118,7 @@ export function TopicExplanation({ groups, dict, lang, joinCode }: { groups: Gro
             <p className="mt-8 border-t border-line pt-5 leading-[1.6]">
               <span className="font-semibold">{l.homework}:</span> {g.homework}
             </p>
+            </ExplanationDisclosure>
           </article>
         );
       })}
