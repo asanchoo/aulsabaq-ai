@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toEdit, type EditIssue, type LessonEdit } from "@/lib/edit";
 import { t, type Dict } from "@/lib/i18n";
@@ -28,6 +28,10 @@ export function LessonEditor({ lessonId, token, plan, dict, onClose }: {
   const [edit, setEdit] = useState<LessonEdit>(() => toEdit(plan));
   const [busy, setBusy] = useState(false);
   const [problems, setProblems] = useState<string[]>([]);
+  const problemBox = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (problems.length) problemBox.current?.focus();
+  }, [problems]);
   const [regen, setRegen] = useState<{ cardId: string; wish: string } | null>(null);
   const [regenBusy, setRegenBusy] = useState<string | null>(null);
   const [regenNote, setRegenNote] = useState<{ cardId: string; text: string } | null>(null);
@@ -196,7 +200,7 @@ export function LessonEditor({ lessonId, token, plan, dict, onClose }: {
       </div>
 
       {problems.length > 0 && (
-        <div role="alert" className="mt-8 rounded-card border border-danger/30 bg-danger-soft p-4">
+        <div ref={problemBox} tabIndex={-1} role="alert" className="mt-8 rounded-card border border-danger/30 bg-danger-soft p-4">
           <ul className="grid gap-1.5">{problems.map((p) => <li key={p}>{p}</li>)}</ul>
         </div>
       )}

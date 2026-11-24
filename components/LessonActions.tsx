@@ -7,6 +7,7 @@ type Props = { text: string; labels: { print: string; copy: string; copied: stri
 /** «Распечатать карточки» и «Скопировать урок». Текст урока готовит сервер. */
 export function LessonActions({ text, labels }: Props) {
   const [copied, setCopied] = useState(false);
+  const [manual, setManual] = useState(false);
 
   async function copy() {
     try {
@@ -14,12 +15,13 @@ export function LessonActions({ text, labels }: Props) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Буфер обмена недоступен (старый браузер, нет https): тихо игнорируем.
+      setManual(true);
     }
   }
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row print:hidden">
+    <div className="flex max-w-full flex-col gap-2 print:hidden">
+      <div className="flex flex-col gap-2 sm:flex-row">
       <button type="button" onClick={() => window.print()} className="btn btn-primary">
         <svg aria-hidden viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
@@ -40,6 +42,8 @@ export function LessonActions({ text, labels }: Props) {
         )}
         {copied ? labels.copied : labels.copy}
       </button>
+      </div>
+      {manual && <textarea aria-label={labels.copy} readOnly value={text} onFocus={(e) => e.currentTarget.select()} className="field h-36 w-full min-w-0" />}
     </div>
   );
 }

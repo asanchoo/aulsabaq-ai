@@ -35,6 +35,7 @@ export function TeacherWorkspace({ lessonId, joinCode, plan, lang, isDemo }: { l
   const running = useRunning(lessonId);
   const [editing, setEditing] = useState(false);
   const [notice, setNotice] = useState<string[] | null>(null);
+  const [manualLink, setManualLink] = useState<"join" | "owner" | null>(null);
   const [copied, setCopied] = useState<"join" | "owner" | null>(null);
 
   // «Ссылка для себя» несёт ключ учителя после # (на сервер он не уходит): запоминаем и убираем из адреса.
@@ -52,7 +53,10 @@ export function TeacherWorkspace({ lessonId, joinCode, plan, lang, isDemo }: { l
   async function copyLink(kind: "join" | "owner") {
     if (await copy(kind === "join" ? joinUrl : ownerUrl)) {
       setCopied(kind);
+      setManualLink(null);
       setTimeout(() => setCopied(null), 2000);
+    } else {
+      setManualLink(kind);
     }
   }
 
@@ -69,6 +73,7 @@ export function TeacherWorkspace({ lessonId, joinCode, plan, lang, isDemo }: { l
           <button type="button" onClick={() => copyLink("join")} className="link mt-3 inline-flex min-h-10 items-center text-[0.9rem] font-semibold" aria-live="polite">
             {copied === "join" ? d.copied : d.copyJoin}
           </button>
+          {manualLink === "join" && <input className="field mt-2 w-full" aria-label={d.copyJoin} readOnly value={joinUrl} onFocus={(e) => e.currentTarget.select()} />}
         </div>
 
         <div className="flex flex-col justify-between gap-5 rounded-frame border border-line p-5 sm:p-6 lg:col-span-7">
@@ -94,6 +99,7 @@ export function TeacherWorkspace({ lessonId, joinCode, plan, lang, isDemo }: { l
                   {copied === "owner" ? d.copied : d.ownerLink}
                 </button>
                 <p className="text-[0.85rem] leading-snug text-muted">{d.ownerLinkHint}</p>
+                {manualLink === "owner" && <input className="field mt-2 w-full" aria-label={d.ownerLink} readOnly value={ownerUrl} onFocus={(e) => e.currentTarget.select()} />}
               </div>
             </>
           ) : (
