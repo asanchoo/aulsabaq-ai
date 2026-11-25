@@ -1,0 +1,34 @@
+{
+  "id": 9,
+  "input": {
+    "subject": "Дүниетану",
+    "language": "kk",
+    "durationMin": 45,
+    "groups": [
+      {
+        "grade": 2,
+        "topic": "Жыл мезгілдері"
+      },
+      {
+        "grade": 3,
+        "topic": "Табиғаттағы су айналымы"
+      }
+    ]
+  },
+  "baseline": {
+    "valid": false,
+    "schema": false,
+    "errors": [
+      "SCHEMA"
+    ],
+    "codes": [
+      "SCHEMA"
+    ],
+    "ms": 35221
+  },
+  "product": {
+    "valid": false,
+    "error": "invalid_plan",
+    "ms": 134928
+  }
+}
