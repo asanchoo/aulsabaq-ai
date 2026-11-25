@@ -1,5 +1,6 @@
-import type { Group } from "@/lib/schema";
-import { t, type Dict } from "@/lib/i18n";
+import { RouteSheetButton } from "./RouteSheet";
+import type { Group, LessonPlan } from "@/lib/schema";
+import { t, type Dict, type Locale } from "@/lib/i18n";
 import { groupTitle } from "@/lib/lesson";
 
 /**
@@ -11,7 +12,7 @@ import { groupTitle } from "@/lib/lesson";
  * Метка «Повторение» / «Новая тема» подсказывает учителю, какие карточки можно дать
  * до объяснения (инвариант 7 в lib/validate.ts).
  */
-export function TaskCards({ groups, dict }: { groups: Group[]; dict: Dict }) {
+export function TaskCards({ groups, dict, plan, lang }: { groups: Group[]; dict: Dict; plan: LessonPlan; lang: Locale }) {
   return (
     <div className={`grid gap-12 print:block ${groups.length === 3 ? "lg:grid-cols-3" : "md:grid-cols-2"} md:gap-8`}>
       {groups.map((g) => (
@@ -19,6 +20,7 @@ export function TaskCards({ groups, dict }: { groups: Group[]; dict: Dict }) {
           <header className="border-b border-ink pb-4">
             <h3 className="text-[1.5rem] font-semibold tracking-[-0.02em]">{groupTitle(groups, g, dict.common)}</h3>
             <p className="mt-1 font-medium">{g.topic}</p>
+            <RouteSheetButton plan={plan} group={g} lang={lang} />
             <p className="mt-2 text-[0.9rem] leading-snug text-muted">
               <span className="font-semibold text-ink">{dict.lesson.goal}:</span> {g.learningGoal}
             </p>

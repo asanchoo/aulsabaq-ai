@@ -383,3 +383,17 @@ body:has(.projector) > header {
 .projector:fullscreen {
   overflow-y: auto;
 }
+
+/* A route sheet uses A4's existing 12 mm margins; only this portal is printed. */
+@media print {
+  body:has(.route-sheet-dialog[open]) > :not(.route-sheet-dialog) { display: none !important; }
+  .route-sheet-dialog[open] {
+    display: block; position: static; width: 186mm; max-width: none; max-height: none;
+    margin: 0; padding: 0; overflow: visible; border: 0; box-shadow: none;
+  }
+  .route-sheet-dialog::backdrop { display: none; }
+  .route-sheet-page { width: 186mm; max-width: none; font-size: 10pt; break-inside: avoid; }
+  .route-sheet-checks { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .route-sheet-page section { margin-top: 3mm; }
+  .route-sheet-page p, .route-sheet-page li { font-size: 9pt; }
+}
