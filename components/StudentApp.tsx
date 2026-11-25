@@ -18,6 +18,7 @@ import {
   type StudentCard,
 } from "@/lib/student";
 import type { StudentView } from "@/lib/student-view";
+import { ReadAloud } from "./ReadAloud";
 import { AutoTextarea } from "./AutoTextarea";
 import { RuleCard, similarExample, WorkedExample } from "./StudentGuide";
 import { TrainerScreen, type TrainerResult } from "./TrainerScreen";
@@ -658,6 +659,8 @@ export function StudentApp({
             {card.prompt}
           </p>
 
+          <ReadAloud key={`${card.id}:${card.prompt}`} text={card.prompt} grade={view.grade} language={view.language} lang={lang} />
+
           {/* Закрытое задание: ответ и проверка */}
           {card.type === "closed" && todo && !state.revealed && (
             <form onSubmit={check} className="mt-5 grid gap-3" noValidate>
@@ -875,6 +878,7 @@ export function StudentApp({
                     {t(d.hintLabel, { n: i + 1 })}
                   </p>
                   <p className="mt-0.5 leading-snug">{text}</p>
+                  <ReadAloud key={`${card.id}:hint:${i}`} text={text} grade={view.grade} language={view.language} lang={lang} />
                 </li>
               ))}
             </ol>
