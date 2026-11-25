@@ -1,0 +1,5068 @@
+{
+ "source": {
+  "order": "Приказ Министра просвещения РК от 16.09.2022 № 399 (рег. № 29767) с изменениями",
+  "ru": "https://zakon.uchet.kz/rus/docs/V2200029767",
+  "kk": "https://zakon.uchet.kz/kaz/docs/V2200029767",
+  "adilet": "https://adilet.zan.kz/rus/docs/V2200029767"
+ },
+ "programs": [
+  {
+   "id": "alippe-1-kazahskim",
+   "subject": {
+    "ru": "Әліппе",
+    "kk": null
+   },
+   "grades": [
+    1
+   ],
+   "variant": {
+    "instruction": "казахским"
+   },
+   "goals": 0,
+   "goals_kk": 0,
+   "plan_rows": 0,
+   "plan_quarters": [],
+   "plan_codes_known": null,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {}
+  },
+  {
+   "id": "ana-tili-1-kazahskim",
+   "subject": {
+    "ru": "Ана тілі",
+    "kk": "Ана тілі"
+   },
+   "grades": [
+    1
+   ],
+   "variant": {
+    "instruction": "казахским"
+   },
+   "goals": 28,
+   "goals_kk": 28,
+   "plan_rows": 2,
+   "plan_quarters": [
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {}
+  },
+  {
+   "id": "bukvar-1-russkim",
+   "subject": {
+    "ru": "Букварь",
+    "kk": null
+   },
+   "grades": [
+    1
+   ],
+   "variant": {
+    "instruction": "русским"
+   },
+   "goals": 0,
+   "goals_kk": 0,
+   "plan_rows": 0,
+   "plan_quarters": [],
+   "plan_codes_known": null,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {}
+  },
+  {
+   "id": "obuchenie-gramote-1-russkim",
+   "subject": {
+    "ru": "Обучение грамоте",
+    "kk": "Обучение грамоте"
+   },
+   "grades": [
+    1
+   ],
+   "variant": {
+    "instruction": "русским"
+   },
+   "goals": 36,
+   "goals_kk": 36,
+   "plan_rows": 2,
+   "plan_quarters": [
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {}
+  },
+  {
+   "id": "elipba-1-uigurskim",
+   "subject": {
+    "ru": "Елипбә",
+    "kk": null
+   },
+   "grades": [
+    1
+   ],
+   "variant": {
+    "instruction": "уйгурским"
+   },
+   "goals": 0,
+   "goals_kk": 0,
+   "plan_rows": 0,
+   "plan_quarters": [],
+   "plan_codes_known": null,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {}
+  },
+  {
+   "id": "obuchenie-gramote-1-uigurskim",
+   "subject": {
+    "ru": "Обучение грамоте",
+    "kk": "Обучение грамоте"
+   },
+   "grades": [
+    1
+   ],
+   "variant": {
+    "instruction": "уйгурским"
+   },
+   "goals": 28,
+   "goals_kk": 28,
+   "plan_rows": 2,
+   "plan_quarters": [
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {}
+  },
+  {
+   "id": "alifbe-1-uzbekskim",
+   "subject": {
+    "ru": "Алифбе",
+    "kk": null
+   },
+   "grades": [
+    1
+   ],
+   "variant": {
+    "instruction": "узбекским"
+   },
+   "goals": 0,
+   "goals_kk": 0,
+   "plan_rows": 0,
+   "plan_quarters": [],
+   "plan_codes_known": null,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {}
+  },
+  {
+   "id": "obuchenie-gramote-1-uzbekskim",
+   "subject": {
+    "ru": "Обучение грамоте",
+    "kk": "Обучение грамоте"
+   },
+   "grades": [
+    1
+   ],
+   "variant": {
+    "instruction": "узбекским"
+   },
+   "goals": 27,
+   "goals_kk": 27,
+   "plan_rows": 2,
+   "plan_quarters": [
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {}
+  },
+  {
+   "id": "alifbo-1-tadzhikskim",
+   "subject": {
+    "ru": "Алифбо",
+    "kk": null
+   },
+   "grades": [
+    1
+   ],
+   "variant": {
+    "instruction": "таджикским"
+   },
+   "goals": 0,
+   "goals_kk": 0,
+   "plan_rows": 0,
+   "plan_quarters": [],
+   "plan_codes_known": null,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {}
+  },
+  {
+   "id": "obuchenie-gramote-1-tadzhikskim",
+   "subject": {
+    "ru": "Обучение грамоте",
+    "kk": null
+   },
+   "grades": [
+    1
+   ],
+   "variant": {
+    "instruction": "таджикским"
+   },
+   "goals": 28,
+   "goals_kk": 0,
+   "plan_rows": 2,
+   "plan_quarters": [
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {}
+  },
+  {
+   "id": "kazahskii-yazyk-1-4-nekazahskim",
+   "subject": {
+    "ru": "Казахский язык",
+    "kk": "Қазақ тілі"
+   },
+   "grades": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "variant": {
+    "instruction": "неказахским"
+   },
+   "goals": 108,
+   "goals_kk": 108,
+   "plan_rows": 290,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "warnings": 0,
+   "hours": {
+    "1": {
+     "week": 2.0,
+     "year": 66.0
+    },
+    "2": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "3": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "4": {
+     "week": 4.0,
+     "year": 136.0
+    }
+   }
+  },
+  {
+   "id": "kazahskii-yazyk-2-4-kazahskim",
+   "subject": {
+    "ru": "Казахский язык",
+    "kk": "Тәжік тілі"
+   },
+   "grades": [
+    2,
+    3,
+    4
+   ],
+   "variant": {
+    "instruction": "казахским"
+   },
+   "goals": 97,
+   "goals_kk": 97,
+   "plan_rows": 48,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "2",
+    "3",
+    "4"
+   ],
+   "warnings": 0,
+   "hours": {
+    "2": {
+     "week": 4.0,
+     "year": 136.0
+    },
+    "3": {
+     "week": 4.0,
+     "year": 136.0
+    },
+    "4": {
+     "week": 4.0,
+     "year": 136.0
+    }
+   }
+  },
+  {
+   "id": "literaturnoe-chtenie-2-4-kazahskim",
+   "subject": {
+    "ru": "Литературное чтение",
+    "kk": "Әдебиеттік оқу"
+   },
+   "grades": [
+    2,
+    3,
+    4
+   ],
+   "variant": {
+    "instruction": "казахским"
+   },
+   "goals": 65,
+   "goals_kk": 65,
+   "plan_rows": 187,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "2",
+    "3",
+    "4"
+   ],
+   "warnings": 0,
+   "hours": {
+    "2": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "3": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "4": {
+     "week": 3.0,
+     "year": 102.0
+    }
+   }
+  },
+  {
+   "id": "russkii-yazyk-2-4-russkim",
+   "subject": {
+    "ru": "Русский язык",
+    "kk": "Орыс тілі"
+   },
+   "grades": [
+    2,
+    3,
+    4
+   ],
+   "variant": {
+    "instruction": "русским"
+   },
+   "goals": 109,
+   "goals_kk": 109,
+   "plan_rows": 24,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "2",
+    "3",
+    "4"
+   ],
+   "warnings": 0,
+   "hours": {
+    "2": {
+     "week": 4.0,
+     "year": 136.0
+    },
+    "3": {
+     "week": 4.0,
+     "year": 136.0
+    },
+    "4": {
+     "week": 4.0,
+     "year": 136.0
+    }
+   }
+  },
+  {
+   "id": "literaturnoe-chtenie-2-4-russkim",
+   "subject": {
+    "ru": "Литературное чтение",
+    "kk": "Әдебиеттік оқу"
+   },
+   "grades": [
+    2,
+    3,
+    4
+   ],
+   "variant": {
+    "instruction": "русским"
+   },
+   "goals": 59,
+   "goals_kk": 59,
+   "plan_rows": 24,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "2",
+    "3",
+    "4"
+   ],
+   "warnings": 0,
+   "hours": {
+    "2": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "3": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "4": {
+     "week": 3.0,
+     "year": 102.0
+    }
+   }
+  },
+  {
+   "id": "uigurskii-yazyk-2-4-uigurskim",
+   "subject": {
+    "ru": "Уйгурский язык",
+    "kk": "Ұйғыр тілі"
+   },
+   "grades": [
+    2,
+    3,
+    4
+   ],
+   "variant": {
+    "instruction": "уйгурским"
+   },
+   "goals": 97,
+   "goals_kk": 97,
+   "plan_rows": 250,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "2",
+    "3",
+    "4"
+   ],
+   "warnings": 0,
+   "hours": {
+    "2": {
+     "week": 4.0,
+     "year": 136.0
+    },
+    "3": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "4": {
+     "week": 4.0,
+     "year": 136.0
+    }
+   }
+  },
+  {
+   "id": "literaturnoe-chtenie-2-4-uigurskim",
+   "subject": {
+    "ru": "Литературное чтение",
+    "kk": "Әдебиеттік оқу"
+   },
+   "grades": [
+    2,
+    3,
+    4
+   ],
+   "variant": {
+    "instruction": "уйгурским"
+   },
+   "goals": 62,
+   "goals_kk": 62,
+   "plan_rows": 188,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "2",
+    "3",
+    "4"
+   ],
+   "warnings": 0,
+   "hours": {
+    "2": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "3": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "4": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "uzbekskii-yazyk-2-4-uzbekskim",
+   "subject": {
+    "ru": "Узбекский язык",
+    "kk": "Қазақ тілі"
+   },
+   "grades": [
+    2,
+    3,
+    4
+   ],
+   "variant": {
+    "instruction": "узбекским"
+   },
+   "goals": 97,
+   "goals_kk": 94,
+   "plan_rows": 118,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "2": {
+     "week": 4.0,
+     "year": 136.0
+    },
+    "3": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "4": {
+     "week": 4.0,
+     "year": 136.0
+    }
+   }
+  },
+  {
+   "id": "literaturnoe-chtenie-2-4-uzbekskim",
+   "subject": {
+    "ru": "Литературное чтение",
+    "kk": "Әдебиеттік оқу"
+   },
+   "grades": [
+    2,
+    3,
+    4
+   ],
+   "variant": {
+    "instruction": "узбекским"
+   },
+   "goals": 62,
+   "goals_kk": 62,
+   "plan_rows": 184,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "2",
+    "3",
+    "4"
+   ],
+   "warnings": 0,
+   "hours": {
+    "2": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "3": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "4": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "tadzhikskii-yazyk-2-4-tadzhikskom",
+   "subject": {
+    "ru": "Таджикский язык",
+    "kk": "Өзбек тілі"
+   },
+   "grades": [
+    2,
+    3,
+    4
+   ],
+   "variant": {
+    "instruction": "таджикском"
+   },
+   "goals": 97,
+   "goals_kk": 94,
+   "plan_rows": 204,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "2",
+    "3",
+    "4"
+   ],
+   "warnings": 0,
+   "hours": {
+    "2": {
+     "week": 4.0,
+     "year": 136.0
+    },
+    "3": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "4": {
+     "week": 4.0,
+     "year": 136.0
+    }
+   }
+  },
+  {
+   "id": "literaturnoe-chtenie-2-4-tadzhikskim",
+   "subject": {
+    "ru": "Литературное чтение",
+    "kk": null
+   },
+   "grades": [
+    2,
+    3,
+    4
+   ],
+   "variant": {
+    "instruction": "таджикским"
+   },
+   "goals": 63,
+   "goals_kk": 0,
+   "plan_rows": 175,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "2",
+    "3",
+    "4"
+   ],
+   "warnings": 0,
+   "hours": {
+    "2": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "3": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "4": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "russkii-yazyk-2-4-nerusskim",
+   "subject": {
+    "ru": "Русский язык",
+    "kk": "Орыс тілі"
+   },
+   "grades": [
+    2,
+    3,
+    4
+   ],
+   "variant": {
+    "instruction": "нерусским"
+   },
+   "goals": 133,
+   "goals_kk": 133,
+   "plan_rows": 245,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "2",
+    "3",
+    "4"
+   ],
+   "warnings": 0,
+   "hours": {
+    "2": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "3": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "4": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "nemeckii-yazyk-3-4",
+   "subject": {
+    "ru": "Немецкий язык",
+    "kk": "Неміс тілі"
+   },
+   "grades": [
+    3,
+    4
+   ],
+   "variant": {},
+   "goals": 84,
+   "goals_kk": 84,
+   "plan_rows": 18,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "3",
+    "4"
+   ],
+   "warnings": 0,
+   "hours": {
+    "3": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "4": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "francuzskii-yazyk-3-4",
+   "subject": {
+    "ru": "Французский язык",
+    "kk": "Француз тілі"
+   },
+   "grades": [
+    3,
+    4
+   ],
+   "variant": {},
+   "goals": 76,
+   "goals_kk": 76,
+   "plan_rows": 80,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "3",
+    "4"
+   ],
+   "warnings": 0,
+   "hours": {
+    "3": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "4": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "matematika-1-4",
+   "subject": {
+    "ru": "Математика",
+    "kk": "Математика"
+   },
+   "grades": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "variant": {},
+   "goals": 244,
+   "goals_kk": 244,
+   "plan_rows": 67,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "warnings": 0,
+   "hours": {
+    "1": {
+     "week": 4.0,
+     "year": 132.0
+    },
+    "2": {
+     "week": 4.0,
+     "year": 136.0
+    },
+    "3": {
+     "week": 5.0,
+     "year": 170.0
+    },
+    "4": {
+     "week": 5.0,
+     "year": 170.0
+    }
+   }
+  },
+  {
+   "id": "cifrovaya-gramotnost-1-4",
+   "subject": {
+    "ru": "Цифровая грамотность",
+    "kk": "Цифрлық сауаттылық"
+   },
+   "grades": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "variant": {},
+   "goals": 96,
+   "goals_kk": 95,
+   "plan_rows": 70,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "warnings": 0,
+   "hours": {
+    "1": {
+     "week": 1.0,
+     "year": 17.0
+    },
+    "2": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "3": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "4": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "estestvoznanie-1-4",
+   "subject": {
+    "ru": "Естествознание",
+    "kk": "Жаратылыстану"
+   },
+   "grades": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "variant": {},
+   "goals": 152,
+   "goals_kk": 152,
+   "plan_rows": 63,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "warnings": 0,
+   "hours": {
+    "1": {
+     "week": 1.0,
+     "year": 33.0
+    },
+    "2": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "3": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "4": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "poznanie-mira-1-4",
+   "subject": {
+    "ru": "Познание мира",
+    "kk": "Дүниетану"
+   },
+   "grades": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "variant": {},
+   "goals": 131,
+   "goals_kk": 131,
+   "plan_rows": 119,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "warnings": 0,
+   "hours": {
+    "1": {
+     "week": 1.0,
+     "year": 33.0
+    },
+    "2": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "3": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "4": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "izobrazitelnoe-iskusstvo-1-4",
+   "subject": {
+    "ru": "Изобразительное искусство",
+    "kk": "Бейнелеу өнері"
+   },
+   "grades": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "variant": {},
+   "goals": 136,
+   "goals_kk": 131,
+   "plan_rows": 16,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "1": {
+     "week": 1.0,
+     "year": 33.0
+    },
+    "2": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "3": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "4": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "trudovoe-obuchenie-1-4",
+   "subject": {
+    "ru": "Трудовое обучение",
+    "kk": "Еңбекке баулу"
+   },
+   "grades": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "variant": {},
+   "goals": 71,
+   "goals_kk": 71,
+   "plan_rows": 48,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "warnings": 0,
+   "hours": {
+    "1": {
+     "week": 1.0,
+     "year": 33.0
+    },
+    "2": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "3": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "4": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "muzyka-1-4",
+   "subject": {
+    "ru": "Музыка",
+    "kk": "Музыка"
+   },
+   "grades": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "variant": {},
+   "goals": 56,
+   "goals_kk": 56,
+   "plan_rows": 89,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "warnings": 0,
+   "hours": {
+    "1": {
+     "week": 1.0,
+     "year": 33.0
+    },
+    "2": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "3": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "4": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "fizicheskaya-kultura-1-4",
+   "subject": {
+    "ru": "Физическая культура",
+    "kk": "Дене шынықтыру"
+   },
+   "grades": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "variant": {},
+   "goals": 76,
+   "goals_kk": 76,
+   "plan_rows": 119,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "1": {
+     "week": 3.0,
+     "year": 99.0
+    },
+    "2": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "3": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "4": {
+     "week": 3.0,
+     "year": 102.0
+    }
+   }
+  },
+  {
+   "id": "kazahskii-yazyk-5-9-kazahskim",
+   "subject": {
+    "ru": "Казахский язык",
+    "kk": "Қазақ тілі"
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {
+    "instruction": "казахским"
+   },
+   "goals": 137,
+   "goals_kk": 137,
+   "plan_rows": 126,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "5",
+    "6",
+    "7",
+    "8",
+    "9"
+   ],
+   "warnings": 0,
+   "hours": {
+    "5": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "6": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "7": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "8": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "9": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "kazahskaya-literatura-5-9-kazahskim",
+   "subject": {
+    "ru": "Казахская литература",
+    "kk": "Өзбек әдебиеті"
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {
+    "instruction": "казахским"
+   },
+   "goals": 60,
+   "goals_kk": 60,
+   "plan_rows": 68,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "5",
+    "6",
+    "7",
+    "8",
+    "9"
+   ],
+   "warnings": 0,
+   "hours": {
+    "5": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "6": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "7": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "8": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "9": {
+     "week": 3.0,
+     "year": 102.0
+    }
+   }
+  },
+  {
+   "id": "qazaq-tili-5-9-kazahskim-network-adv",
+   "subject": {
+    "ru": "Қазақ тілі",
+    "kk": "Абай мектептерінің"
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {
+    "instruction": "казахским",
+    "network": "специализированные сетевые школы",
+    "advanced": true
+   },
+   "goals": 119,
+   "goals_kk": 119,
+   "plan_rows": 58,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {}
+  },
+  {
+   "id": "qazaq-adebieti-5-9-kazahskim-network-adv",
+   "subject": {
+    "ru": "Қазақ әдебиеті",
+    "kk": "Абай мектептерінің"
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {
+    "instruction": "казахским",
+    "network": "специализированные сетевые школы",
+    "advanced": true
+   },
+   "goals": 69,
+   "goals_kk": 68,
+   "plan_rows": 28,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {}
+  },
+  {
+   "id": "russkii-yazyk-5-9-russkim",
+   "subject": {
+    "ru": "Русский язык",
+    "kk": "Орыс тілі"
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {
+    "instruction": "русским"
+   },
+   "goals": 141,
+   "goals_kk": 140,
+   "plan_rows": 121,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "5",
+    "6",
+    "7",
+    "8",
+    "9"
+   ],
+   "warnings": 4,
+   "hours": {
+    "5": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "6": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "7": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "8": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "9": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "russkaya-literatura-5-9-russkim",
+   "subject": {
+    "ru": "Русская литература",
+    "kk": "Орыс әдебиеті"
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {
+    "instruction": "русским"
+   },
+   "goals": 104,
+   "goals_kk": 102,
+   "plan_rows": 59,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "5",
+    "6",
+    "7",
+    "8",
+    "9"
+   ],
+   "warnings": 0,
+   "hours": {
+    "5": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "6": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "7": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "8": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "9": {
+     "week": 3.0,
+     "year": 102.0
+    }
+   }
+  },
+  {
+   "id": "uigurskii-yazyk-5-9-uigurskim",
+   "subject": {
+    "ru": "Уйгурский язык",
+    "kk": "Өзбек тілі"
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {
+    "instruction": "уйгурским"
+   },
+   "goals": 134,
+   "goals_kk": 133,
+   "plan_rows": 192,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "5": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "6": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "7": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "8": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "9": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "uigurskaya-literatura-5-9-uigurskim",
+   "subject": {
+    "ru": "Уйгурская литература",
+    "kk": "Қазақ әдебиеті"
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {
+    "instruction": "уйгурским"
+   },
+   "goals": 60,
+   "goals_kk": 60,
+   "plan_rows": 168,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "5": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "6": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "7": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "8": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "9": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "uzbekskii-yazyk-5-9-uzbekskim",
+   "subject": {
+    "ru": "Узбекский язык",
+    "kk": "Ұйғыр тілі"
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {
+    "instruction": "узбекским"
+   },
+   "goals": 149,
+   "goals_kk": 133,
+   "plan_rows": 192,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "5": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "6": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "7": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "8": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "9": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "uzbekskaya-literatura-5-9-uzbekskim",
+   "subject": {
+    "ru": "Узбекская литература",
+    "kk": "Ұйғыр әдебиеті"
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {
+    "instruction": "узбекским"
+   },
+   "goals": 61,
+   "goals_kk": 60,
+   "plan_rows": 20,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "5": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "6": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "7": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "8": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "9": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "tadzhikskii-yazyk-5-9-tadzhikskim",
+   "subject": {
+    "ru": "Таджикский язык",
+    "kk": "Тәжік тілі"
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {
+    "instruction": "таджикским"
+   },
+   "goals": 152,
+   "goals_kk": 139,
+   "plan_rows": 231,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "5": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "6": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "7": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "8": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "9": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "kazahskii-yazyk-i-literatura-5-9-nekazahskim",
+   "subject": {
+    "ru": "Казахский язык и литература",
+    "kk": "Қазақ тілі мен әдебиеті"
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {
+    "instruction": "неказахским"
+   },
+   "goals": 191,
+   "goals_kk": 150,
+   "plan_rows": 167,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "5",
+    "6",
+    "7",
+    "8",
+    "9"
+   ],
+   "warnings": 0,
+   "hours": {
+    "5": {
+     "week": 4.0,
+     "year": 136.0
+    },
+    "6": {
+     "week": 4.0,
+     "year": 136.0
+    },
+    "7": {
+     "week": 4.0,
+     "year": 136.0
+    },
+    "8": {
+     "week": 4.0,
+     "year": 136.0
+    },
+    "9": {
+     "week": 4.0,
+     "year": 136.0
+    }
+   }
+  },
+  {
+   "id": "russkii-yazyk-i-literatura-5-9-nerusskim",
+   "subject": {
+    "ru": "Русский язык и литература",
+    "kk": "Орыс тілі мен әдебиеті"
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {
+    "instruction": "нерусским"
+   },
+   "goals": 158,
+   "goals_kk": 154,
+   "plan_rows": 94,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "5",
+    "6",
+    "7",
+    "8",
+    "9"
+   ],
+   "warnings": 0,
+   "hours": {
+    "5": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "6": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "7": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "8": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "9": {
+     "week": 3.0,
+     "year": 102.0
+    }
+   }
+  },
+  {
+   "id": "angliiskii-yazyk-5-9",
+   "subject": {
+    "ru": "Английский язык",
+    "kk": "Ағылшын тілі"
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {},
+   "goals": 307,
+   "goals_kk": 305,
+   "plan_rows": 267,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 2,
+   "hours": {
+    "5": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "6": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "7": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "8": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "9": {
+     "week": 3.0,
+     "year": 102.0
+    }
+   }
+  },
+  {
+   "id": "nemeckii-yazyk-5-9",
+   "subject": {
+    "ru": "Немецкий язык",
+    "kk": "Француз тілі"
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {},
+   "goals": 255,
+   "goals_kk": 255,
+   "plan_rows": 101,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "5",
+    "6",
+    "7",
+    "8",
+    "9"
+   ],
+   "warnings": 0,
+   "hours": {
+    "5": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "6": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "7": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "8": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "9": {
+     "week": 3.0,
+     "year": 102.0
+    }
+   }
+  },
+  {
+   "id": "francuzskii-yazyk-5-9",
+   "subject": {
+    "ru": "Французский язык",
+    "kk": "Неміс тілі"
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {},
+   "goals": 255,
+   "goals_kk": 255,
+   "plan_rows": 101,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "5",
+    "6",
+    "7",
+    "8",
+    "9"
+   ],
+   "warnings": 0,
+   "hours": {
+    "5": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "6": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "7": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "8": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "9": {
+     "week": 3.0,
+     "year": 102.0
+    }
+   }
+  },
+  {
+   "id": "matematika-5-6",
+   "subject": {
+    "ru": "Математика",
+    "kk": "Математика"
+   },
+   "grades": [
+    5,
+    6
+   ],
+   "variant": {},
+   "goals": 204,
+   "goals_kk": 204,
+   "plan_rows": 93,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "5",
+    "6"
+   ],
+   "warnings": 0,
+   "hours": {}
+  },
+  {
+   "id": "algebra-7-9",
+   "subject": {
+    "ru": "Алгебра",
+    "kk": "Алгебра"
+   },
+   "grades": [
+    7,
+    8,
+    9
+   ],
+   "variant": {},
+   "goals": 135,
+   "goals_kk": 135,
+   "plan_rows": 58,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "7",
+    "8",
+    "9"
+   ],
+   "warnings": 0,
+   "hours": {}
+  },
+  {
+   "id": "geometriya-7-9",
+   "subject": {
+    "ru": "Геометрия",
+    "kk": "Геометрия"
+   },
+   "grades": [
+    7,
+    8,
+    9
+   ],
+   "variant": {},
+   "goals": 127,
+   "goals_kk": 127,
+   "plan_rows": 79,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "7",
+    "8",
+    "9"
+   ],
+   "warnings": 0,
+   "hours": {
+    "7": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "8": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "9": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "informatika-5-9",
+   "subject": {
+    "ru": "Информатика",
+    "kk": null
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {},
+   "goals": 92,
+   "goals_kk": 0,
+   "plan_rows": 100,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "5",
+    "6",
+    "7",
+    "8",
+    "9"
+   ],
+   "warnings": 0,
+   "hours": {
+    "5": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "6": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "7": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "8": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "9": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "estestvoznanie-5-6",
+   "subject": {
+    "ru": "Естествознание",
+    "kk": "Жаратылыстану"
+   },
+   "grades": [
+    5,
+    6
+   ],
+   "variant": {},
+   "goals": 129,
+   "goals_kk": 129,
+   "plan_rows": 50,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {}
+  },
+  {
+   "id": "fizika-7-9",
+   "subject": {
+    "ru": "Физика",
+    "kk": "Физика"
+   },
+   "grades": [
+    7,
+    8,
+    9
+   ],
+   "variant": {},
+   "goals": 235,
+   "goals_kk": 234,
+   "plan_rows": 144,
+   "plan_quarters": [],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "7",
+    "8",
+    "9"
+   ],
+   "warnings": 0,
+   "hours": {
+    "7": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "8": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "9": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "himiya-7-9",
+   "subject": {
+    "ru": "Химия",
+    "kk": "Химия"
+   },
+   "grades": [
+    7,
+    8,
+    9
+   ],
+   "variant": {},
+   "goals": 231,
+   "goals_kk": 230,
+   "plan_rows": 274,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "7",
+    "8",
+    "9"
+   ],
+   "warnings": 0,
+   "hours": {
+    "7": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "8": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "9": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "biologiya-7-9",
+   "subject": {
+    "ru": "Биология",
+    "kk": "Биология"
+   },
+   "grades": [
+    7,
+    8,
+    9
+   ],
+   "variant": {},
+   "goals": 211,
+   "goals_kk": 211,
+   "plan_rows": 158,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "7",
+    "8",
+    "9"
+   ],
+   "warnings": 0,
+   "hours": {
+    "7": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "8": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "9": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "geografiya-7-9",
+   "subject": {
+    "ru": "География",
+    "kk": "География"
+   },
+   "grades": [
+    7,
+    8,
+    9
+   ],
+   "variant": {},
+   "goals": 189,
+   "goals_kk": 189,
+   "plan_rows": 364,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "7",
+    "8"
+   ],
+   "warnings": 0,
+   "hours": {
+    "7": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "8": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "9": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "istoriya-kazahstana-5-9",
+   "subject": {
+    "ru": "История Казахстана",
+    "kk": "Қазақстан тарихы"
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {},
+   "goals": 164,
+   "goals_kk": 164,
+   "plan_rows": 158,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "5",
+    "6",
+    "7",
+    "8",
+    "9"
+   ],
+   "warnings": 0,
+   "hours": {
+    "5": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "6": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "7": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "8": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "9": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "vsemirnaya-istoriya-5-9",
+   "subject": {
+    "ru": "Всемирная история",
+    "kk": "Дүниежүзі тарихы"
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {},
+   "goals": 144,
+   "goals_kk": 144,
+   "plan_rows": 143,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "5",
+    "6",
+    "7",
+    "8",
+    "9"
+   ],
+   "warnings": 0,
+   "hours": {
+    "5": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "6": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "7": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "8": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "9": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "osnovy-prava-9",
+   "subject": {
+    "ru": "Основы права",
+    "kk": "Құқық негіздері"
+   },
+   "grades": [
+    9
+   ],
+   "variant": {},
+   "goals": 32,
+   "goals_kk": 32,
+   "plan_rows": 29,
+   "plan_quarters": [],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {}
+  },
+  {
+   "id": "abaitanu-5-9-kazahskim-network-adv",
+   "subject": {
+    "ru": "Абайтану",
+    "kk": "Абай мектептерінің"
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {
+    "instruction": "казахским",
+    "network": "специализированные сетевые школы",
+    "advanced": true
+   },
+   "goals": 83,
+   "goals_kk": 83,
+   "plan_rows": 20,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "5": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "6": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "7": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "8": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "9": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "muzyka-5-6",
+   "subject": {
+    "ru": "Музыка",
+    "kk": "Музыка"
+   },
+   "grades": [
+    5,
+    6
+   ],
+   "variant": {},
+   "goals": 26,
+   "goals_kk": 26,
+   "plan_rows": 10,
+   "plan_quarters": [],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "5",
+    "6"
+   ],
+   "warnings": 0,
+   "hours": {
+    "5": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "6": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "hudozhestvennyi-trud-5-9",
+   "subject": {
+    "ru": "Художественный труд",
+    "kk": "Көркем еңбек"
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {},
+   "goals": 159,
+   "goals_kk": 159,
+   "plan_rows": 384,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "5",
+    "6",
+    "7",
+    "8",
+    "9"
+   ],
+   "warnings": 0,
+   "hours": {
+    "5": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "6": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "7": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "8": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "9": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "fizicheskaya-kultura-5-9",
+   "subject": {
+    "ru": "Физическая культура",
+    "kk": "Дене шынықтыру"
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {},
+   "goals": 96,
+   "goals_kk": 95,
+   "plan_rows": 141,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "5": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "6": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "7": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "8": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "9": {
+     "week": 3.0,
+     "year": 102.0
+    }
+   }
+  },
+  {
+   "id": "globalnye-kompetencii-5-9",
+   "subject": {
+    "ru": "Глобальные компетенции",
+    "kk": null
+   },
+   "grades": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "variant": {},
+   "goals": 0,
+   "goals_kk": 0,
+   "plan_rows": 0,
+   "plan_quarters": [],
+   "plan_codes_known": null,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "5": {
+     "week": 0.5,
+     "year": 17.0
+    },
+    "6": {
+     "week": 0.5,
+     "year": 17.0
+    },
+    "7": {
+     "week": 0.5,
+     "year": 17.0
+    },
+    "8": {
+     "week": 0.5,
+     "year": 17.0
+    },
+    "9": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "kraevedenie-7",
+   "subject": {
+    "ru": "Краеведение",
+    "kk": null
+   },
+   "grades": [
+    7
+   ],
+   "variant": {},
+   "goals": 0,
+   "goals_kk": 0,
+   "plan_rows": 0,
+   "plan_quarters": [],
+   "plan_codes_known": null,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {}
+  },
+  {
+   "id": "istoriya-stanovleniya-mezhetnicheskih-otnoshenii-8",
+   "subject": {
+    "ru": "История становления межэтнических отношений",
+    "kk": null
+   },
+   "grades": [
+    8
+   ],
+   "variant": {},
+   "goals": 0,
+   "goals_kk": 0,
+   "plan_rows": 0,
+   "plan_quarters": [],
+   "plan_codes_known": null,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "8": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "svetskost-i-osnovy-religiovedeniya-9",
+   "subject": {
+    "ru": "Светскость и основы религиоведения",
+    "kk": null
+   },
+   "grades": [
+    9
+   ],
+   "variant": {},
+   "goals": 0,
+   "goals_kk": 0,
+   "plan_rows": 0,
+   "plan_quarters": [],
+   "plan_codes_known": null,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "9": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "alashtanu-9",
+   "subject": {
+    "ru": "Алаштану",
+    "kk": null
+   },
+   "grades": [
+    9
+   ],
+   "variant": {},
+   "goals": 0,
+   "goals_kk": 0,
+   "plan_rows": 0,
+   "plan_quarters": [],
+   "plan_codes_known": null,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "9": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "kazahskii-yazyk-10-11-kazahskim-em",
+   "subject": {
+    "ru": "Казахский язык",
+    "kk": "Қазақ тілі"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "instruction": "казахским",
+    "direction": "естественно-математическое"
+   },
+   "goals": 44,
+   "goals_kk": 44,
+   "plan_rows": 10,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "11": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "kazahskii-yazyk-10-11-kazahskim-og",
+   "subject": {
+    "ru": "Казахский язык",
+    "kk": "Қазақ тілі"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "instruction": "казахским",
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 52,
+   "goals_kk": 52,
+   "plan_rows": 59,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11",
+    "12"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "12": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "kazaq-tili-10-11-kazahskim-network-adv",
+   "subject": {
+    "ru": "Казақ тілі",
+    "kk": "Абай мектептерінің"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "instruction": "казахским",
+    "network": "специализированные сетевые школы",
+    "advanced": true
+   },
+   "goals": 48,
+   "goals_kk": 48,
+   "plan_rows": 38,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 2,
+   "hours": {
+    "10": {
+     "week": 4.0,
+     "year": 136.0
+    },
+    "11": {
+     "week": 4.0,
+     "year": 136.0
+    }
+   }
+  },
+  {
+   "id": "kazahskaya-literatura-10-11-em",
+   "subject": {
+    "ru": "Казахская литература",
+    "kk": "Қазақ әдебиеті"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "естественно-математическое"
+   },
+   "goals": 28,
+   "goals_kk": 28,
+   "plan_rows": 8,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "kazahskaya-literatura-10-11-og",
+   "subject": {
+    "ru": "Казахская литература",
+    "kk": "Қазақ әдебиеті"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 28,
+   "goals_kk": 28,
+   "plan_rows": 30,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "11": {
+     "week": 3.0,
+     "year": 102.0
+    }
+   }
+  },
+  {
+   "id": "qazaq-adebieti-10-11-kazahskim-network-adv",
+   "subject": {
+    "ru": "Қазақ әдебиеті",
+    "kk": "Абай мектептерінің"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "instruction": "казахским",
+    "network": "специализированные сетевые школы",
+    "advanced": true
+   },
+   "goals": 28,
+   "goals_kk": 28,
+   "plan_rows": 8,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 3,
+   "hours": {}
+  },
+  {
+   "id": "russkii-yazyk-10-11-russkim-em",
+   "subject": {
+    "ru": "Русский язык",
+    "kk": "Орыс тілі"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "instruction": "русским",
+    "direction": "естественно-математическое"
+   },
+   "goals": 50,
+   "goals_kk": 50,
+   "plan_rows": 13,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "11": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "russkii-yazyk-10-11-russkim-og",
+   "subject": {
+    "ru": "Русский язык",
+    "kk": "Тәжік тілі"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "instruction": "русским",
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 53,
+   "goals_kk": 52,
+   "plan_rows": 69,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11",
+    "12"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "12": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "russkaya-literatura-10-11-russkim-em",
+   "subject": {
+    "ru": "Русская литература",
+    "kk": "Тәжік әдебиеті"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "instruction": "русским",
+    "direction": "естественно-математическое"
+   },
+   "goals": 38,
+   "goals_kk": 38,
+   "plan_rows": 8,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "russkaya-literatura-10-11-russkim-og",
+   "subject": {
+    "ru": "Русская литература",
+    "kk": "Тәжік әдебиеті"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "instruction": "русским",
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 38,
+   "goals_kk": 38,
+   "plan_rows": 35,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "11": {
+     "week": 3.0,
+     "year": 102.0
+    }
+   }
+  },
+  {
+   "id": "kazahskii-yazyk-i-literatura-10-11-nekazahskim-em-og",
+   "subject": {
+    "ru": "Казахский язык и литература",
+    "kk": "Қазақ тілі және әдебиеті"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "instruction": "неказахским",
+    "direction": "оба направления"
+   },
+   "goals": 66,
+   "goals_kk": 66,
+   "plan_rows": 135,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11",
+    "12"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 5.0,
+     "year": 170.0
+    },
+    "11": {
+     "week": 5.0,
+     "year": 170.0
+    },
+    "12": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "russkii-yazyk-i-literatura-10-11-em-og",
+   "subject": {
+    "ru": "Русский язык и литература",
+    "kk": "Орыс тілі және әдебиеті"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "оба направления"
+   },
+   "goals": 54,
+   "goals_kk": 54,
+   "plan_rows": 55,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "12": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "uigurskii-yazyk-10-11-uigurskim-em",
+   "subject": {
+    "ru": "Уйгурский язык",
+    "kk": "Тәжік тілі"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "instruction": "уйгурским",
+    "direction": "естественно-математическое"
+   },
+   "goals": 46,
+   "goals_kk": 46,
+   "plan_rows": 40,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "uigurskii-yazyk-10-11-uigurskim-og",
+   "subject": {
+    "ru": "Уйгурский язык",
+    "kk": "Ұйғыр тілі"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "instruction": "уйгурским",
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 52,
+   "goals_kk": 52,
+   "plan_rows": 71,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "uzbekskii-yazyk-10-11-uzbekskim-em",
+   "subject": {
+    "ru": "Узбекский язык",
+    "kk": "Ұйғыр тілі"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "instruction": "узбекским",
+    "direction": "естественно-математическое"
+   },
+   "goals": 46,
+   "goals_kk": 46,
+   "plan_rows": 40,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "uzbekskii-yazyk-10-11-uzbekskim-og",
+   "subject": {
+    "ru": "Узбекский язык",
+    "kk": "Орыс тілі"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "instruction": "узбекским",
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 52,
+   "goals_kk": 52,
+   "plan_rows": 64,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "tadzhikskii-yazyk-10-11-tadzhikskim-em",
+   "subject": {
+    "ru": "Таджикский язык",
+    "kk": "Өзбек тілі"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "instruction": "таджикским",
+    "direction": "естественно-математическое"
+   },
+   "goals": 46,
+   "goals_kk": 45,
+   "plan_rows": 40,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "tadzhikskii-yazyk-10-11-tadzhikskim-og",
+   "subject": {
+    "ru": "Таджикский язык",
+    "kk": "Ұйғыр әдебиеті"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "instruction": "таджикским",
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 52,
+   "goals_kk": 38,
+   "plan_rows": 64,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "uigurskaya-literatura-10-11-em",
+   "subject": {
+    "ru": "Уйгурская литература",
+    "kk": "Ұйғыр әдебиеті"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "естественно-математическое"
+   },
+   "goals": 38,
+   "goals_kk": 38,
+   "plan_rows": 8,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "uigurskaya-literatura-10-11-og",
+   "subject": {
+    "ru": "Уйгурская литература",
+    "kk": "Орыс әдебиеті"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 38,
+   "goals_kk": 38,
+   "plan_rows": 8,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "uzbekskaya-literatura-10-11-uzbekskim-em",
+   "subject": {
+    "ru": "Узбекская литература",
+    "kk": "Орыс әдебиеті"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "instruction": "узбекским",
+    "direction": "естественно-математическое"
+   },
+   "goals": 38,
+   "goals_kk": 38,
+   "plan_rows": 8,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "uzbekskaya-literatura-10-11-uzbekskim-og",
+   "subject": {
+    "ru": "Узбекская литература",
+    "kk": "Өзбек әдебиеті"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "instruction": "узбекским",
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 38,
+   "goals_kk": 37,
+   "plan_rows": 8,
+   "plan_quarters": [],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "tadzhikskaya-literatura-10-11-tadzhikskim-em",
+   "subject": {
+    "ru": "Таджикская литература",
+    "kk": "Өзбек әдебиеті"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "instruction": "таджикским",
+    "direction": "естественно-математическое"
+   },
+   "goals": 38,
+   "goals_kk": 36,
+   "plan_rows": 8,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "tadzhikskaya-literatura-10-11-tadzhikskim-og",
+   "subject": {
+    "ru": "Таджикская литература",
+    "kk": null
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "instruction": "таджикским",
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 38,
+   "goals_kk": 0,
+   "plan_rows": 8,
+   "plan_quarters": [],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "angliiskii-yazyk-10-11-em",
+   "subject": {
+    "ru": "Английский язык",
+    "kk": "Шет тілі (екінші). Ағылшын тілі"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "естественно-математическое"
+   },
+   "goals": 118,
+   "goals_kk": 118,
+   "plan_rows": 41,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "11": {
+     "week": 3.0,
+     "year": 102.0
+    }
+   }
+  },
+  {
+   "id": "angliiskii-yazyk-10-11-og",
+   "subject": {
+    "ru": "Английский язык",
+    "kk": "Ағылшын тілі"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 119,
+   "goals_kk": 118,
+   "plan_rows": 183,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11",
+    "12"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "11": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "12": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "nemeckii-yazyk-10-11-em",
+   "subject": {
+    "ru": "Немецкий язык",
+    "kk": "Шет тілі (екінші). Неміс тілі"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "естественно-математическое"
+   },
+   "goals": 94,
+   "goals_kk": 94,
+   "plan_rows": 41,
+   "plan_quarters": [],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "11": {
+     "week": 3.0,
+     "year": 102.0
+    }
+   }
+  },
+  {
+   "id": "nemeckii-yazyk-10-11-og",
+   "subject": {
+    "ru": "Немецкий язык",
+    "kk": "Неміс тілі"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 94,
+   "goals_kk": 94,
+   "plan_rows": 162,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "11": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "12": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "francuzskii-yazyk-10-11-em",
+   "subject": {
+    "ru": "Французский язык",
+    "kk": "Шет тілі (екінші). Француз тілі"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "естественно-математическое"
+   },
+   "goals": 102,
+   "goals_kk": 102,
+   "plan_rows": 40,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "11": {
+     "week": 3.0,
+     "year": 102.0
+    }
+   }
+  },
+  {
+   "id": "francuzskii-yazyk-10-11-og",
+   "subject": {
+    "ru": "Французский язык",
+    "kk": "Француз тілі"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 102,
+   "goals_kk": 102,
+   "plan_rows": 170,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11",
+    "12"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "11": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "12": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "algebra-i-nachala-analiza-10-11-em",
+   "subject": {
+    "ru": "Алгебра и начала анализа",
+    "kk": "Алгебра және анализ бастамалары"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "естественно-математическое"
+   },
+   "goals": 152,
+   "goals_kk": 151,
+   "plan_rows": 81,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 4.0,
+     "year": 136.0
+    },
+    "11": {
+     "week": 4.0,
+     "year": 136.0
+    }
+   }
+  },
+  {
+   "id": "algebra-i-nachala-analiza-10-11-og",
+   "subject": {
+    "ru": "Алгебра и начала анализа",
+    "kk": "Алгебра және анализ бастамалары"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 75,
+   "goals_kk": 74,
+   "plan_rows": 49,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "11": {
+     "week": 3.0,
+     "year": 102.0
+    }
+   }
+  },
+  {
+   "id": "geometriya-10-11-em",
+   "subject": {
+    "ru": "Геометрия",
+    "kk": "Геометрия"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "естественно-математическое"
+   },
+   "goals": 81,
+   "goals_kk": 81,
+   "plan_rows": 48,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "geometriya-10-11-og",
+   "subject": {
+    "ru": "Геометрия",
+    "kk": "Геометрия"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 47,
+   "goals_kk": 47,
+   "plan_rows": 42,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "11": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "informatika-10-11-em",
+   "subject": {
+    "ru": "Информатика",
+    "kk": "Информатика"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "естественно-математическое"
+   },
+   "goals": 62,
+   "goals_kk": 62,
+   "plan_rows": 49,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "informatika-10-11-og",
+   "subject": {
+    "ru": "Информатика",
+    "kk": "Информатика"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 37,
+   "goals_kk": 37,
+   "plan_rows": 33,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "11": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "himiya-10-11-em",
+   "subject": {
+    "ru": "Химия",
+    "kk": "Химия"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "естественно-математическое"
+   },
+   "goals": 213,
+   "goals_kk": 213,
+   "plan_rows": 217,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "himiya-10-11-og",
+   "subject": {
+    "ru": "Химия",
+    "kk": "Химия"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 195,
+   "goals_kk": 192,
+   "plan_rows": 71,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "fizika-10-11-em",
+   "subject": {
+    "ru": "Физика",
+    "kk": "Физика"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "естественно-математическое"
+   },
+   "goals": 174,
+   "goals_kk": 174,
+   "plan_rows": 198,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "fizika-10-11-og",
+   "subject": {
+    "ru": "Физика",
+    "kk": "Физика"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 88,
+   "goals_kk": 87,
+   "plan_rows": 65,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "biologiya-10-11-em",
+   "subject": {
+    "ru": "Биология",
+    "kk": "Биология"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "естественно-математическое"
+   },
+   "goals": 94,
+   "goals_kk": 94,
+   "plan_rows": 188,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "biologiya-10-11-og",
+   "subject": {
+    "ru": "Биология",
+    "kk": "Биология"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 81,
+   "goals_kk": 79,
+   "plan_rows": 74,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "geografiya-10-11-em",
+   "subject": {
+    "ru": "География",
+    "kk": "География"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "естественно-математическое"
+   },
+   "goals": 105,
+   "goals_kk": 83,
+   "plan_rows": 113,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 3,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "geografiya-10-11-og",
+   "subject": {
+    "ru": "География",
+    "kk": null
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 83,
+   "goals_kk": 0,
+   "plan_rows": 139,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 4,
+   "hours": {
+    "10": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "11": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "istoriya-kazahstana-10-11-em-og",
+   "subject": {
+    "ru": "История Казахстана",
+    "kk": "Қазақстан тарихы"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "оба направления"
+   },
+   "goals": 117,
+   "goals_kk": 116,
+   "plan_rows": 92,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11",
+    "12"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "12": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "vsemirnaya-istoriya-10-11-em",
+   "subject": {
+    "ru": "Всемирная история",
+    "kk": "Дүниежүзі тарихы"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "естественно-математическое"
+   },
+   "goals": 125,
+   "goals_kk": 124,
+   "plan_rows": 24,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "11": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "vsemirnaya-istoriya-10-11-og",
+   "subject": {
+    "ru": "Всемирная история",
+    "kk": "Дүниежүзі тарихы"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 137,
+   "goals_kk": 136,
+   "plan_rows": 25,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {}
+  },
+  {
+   "id": "osnovy-prava-10-11-em",
+   "subject": {
+    "ru": "Основы права",
+    "kk": "Құқық негіздері"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "естественно-математическое"
+   },
+   "goals": 93,
+   "goals_kk": 93,
+   "plan_rows": 36,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "11": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "osnovy-prava-10-11-og",
+   "subject": {
+    "ru": "Основы права",
+    "kk": "Құқық негіздері"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 101,
+   "goals_kk": 101,
+   "plan_rows": 73,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "11": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "inostrannyi-yazyk-vtoroi-francuzskii-yazyk-10-11-og",
+   "subject": {
+    "ru": "Иностранный язык (второй). Французский язык",
+    "kk": "Француз тілі"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 102,
+   "goals_kk": 102,
+   "plan_rows": 111,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11",
+    "12"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "12": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "inostrannyi-yazyk-vtoroi-angliiskii-yazyk-10-11-og",
+   "subject": {
+    "ru": "Иностранный язык (второй). Английский язык",
+    "kk": "Ағылшын тілі"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 119,
+   "goals_kk": 118,
+   "plan_rows": 115,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "12": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "inostrannyi-yazyk-vtoroi-nemeckii-yazyk-10-11-og",
+   "subject": {
+    "ru": "Иностранный язык (второй). Немецкий язык",
+    "kk": "Неміс тілі"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 94,
+   "goals_kk": 94,
+   "plan_rows": 109,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "12": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "fizicheskaya-kultura-10-11-em-og",
+   "subject": {
+    "ru": "Физическая культура",
+    "kk": null
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "оба направления"
+   },
+   "goals": 0,
+   "goals_kk": 0,
+   "plan_rows": 0,
+   "plan_quarters": [],
+   "plan_codes_known": null,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "11": {
+     "week": 3.0,
+     "year": 102.0
+    },
+    "12": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "nachalnaya-voennaya-i-tehnologicheskaya-podgotovka-10-11-em-og",
+   "subject": {
+    "ru": "Начальная военная и технологическая подготовка",
+    "kk": null
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "оба направления"
+   },
+   "goals": 0,
+   "goals_kk": 0,
+   "plan_rows": 0,
+   "plan_quarters": [],
+   "plan_codes_known": null,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 1.0,
+     "year": 34.0
+    },
+    "11": {
+     "week": 1.0,
+     "year": 34.0
+    }
+   }
+  },
+  {
+   "id": "abaitanu-10-11-kazahskim-adv",
+   "subject": {
+    "ru": "Абайтану",
+    "kk": "Абай мектептерінің"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "instruction": "казахским",
+    "advanced": true
+   },
+   "goals": 30,
+   "goals_kk": 30,
+   "plan_rows": 10,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {}
+  },
+  {
+   "id": "grafika-i-proektirovanie-10-11",
+   "subject": {
+    "ru": "Графика и проектирование",
+    "kk": "Графика және жобалау"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {},
+   "goals": 65,
+   "goals_kk": 58,
+   "plan_rows": 32,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "osnovy-predprinimatelstva-i-biznesa-10-11-em-og",
+   "subject": {
+    "ru": "Основы предпринимательства и бизнеса",
+    "kk": "Кәсіпкерлік және бизнес негіздері"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "direction": "оба направления"
+   },
+   "goals": 145,
+   "goals_kk": 145,
+   "plan_rows": 59,
+   "plan_quarters": [],
+   "plan_codes_known": 1.0,
+   "content_grades": [
+    "10",
+    "11"
+   ],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "globalnye-kompetencii-10",
+   "subject": {
+    "ru": "Глобальные компетенции",
+    "kk": null
+   },
+   "grades": [
+    10
+   ],
+   "variant": {},
+   "goals": 0,
+   "goals_kk": 0,
+   "plan_rows": 0,
+   "plan_quarters": [],
+   "plan_codes_known": null,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {}
+  },
+  {
+   "id": "globalnye-kompetencii-11",
+   "subject": {
+    "ru": "Глобальные компетенции",
+    "kk": null
+   },
+   "grades": [
+    11
+   ],
+   "variant": {},
+   "goals": 0,
+   "goals_kk": 0,
+   "plan_rows": 0,
+   "plan_quarters": [],
+   "plan_codes_known": null,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {}
+  }
+ ]
+}

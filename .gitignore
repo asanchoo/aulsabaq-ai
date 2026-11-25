@@ -48,3 +48,6 @@ next-env.d.ts
 
 # Звук видео из ElevenLabs: кэш фраз и эффектов, готовое видео со звуком лежит рядом
 /docs/presentation/video/audio/
+
+# скачанный приказ для scripts/curriculum/build.py
+/.cache/
