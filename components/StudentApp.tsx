@@ -10,9 +10,7 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
-import { useRouter } from "next/navigation";
 import { getClockDict, getDict, t, type Locale } from "@/lib/i18n";
-import { forgetStudent } from "@/lib/local";
 import {
   isFinished,
   MAX_HINTS,
@@ -117,7 +115,6 @@ export function StudentApp({
   const dict = getDict(lang);
   const d = dict.student;
   const clockLabels = getClockDict(lang);
-  const router = useRouter();
   const [view, setView] = useState<StudentView | null>(null);
   const [missing, setMissing] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
@@ -347,12 +344,6 @@ export function StudentApp({
     }
   }
 
-  function leave() {
-    if (!window.confirm(d.leaveConfirm)) return;
-    forgetStudent();
-    router.push(`/${lang}/join`);
-  }
-
   const state = card.state;
   const todo = state.status === "todo";
   const hintsLeft = MAX_HINTS - state.hints;
@@ -377,13 +368,6 @@ export function StudentApp({
             {view.subject}: {view.topic}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={leave}
-          className="link min-h-10 shrink-0 text-[0.88rem] text-muted"
-        >
-          {d.leave}
-        </button>
       </header>
 
       <nav aria-label={d.cardsNav}>

@@ -6,6 +6,7 @@ import { RunSync } from "./RunSync";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import {
   getClockDict,
+  getPhonePolicy,
   getDemoClassDict,
   getDict,
   t,
@@ -140,6 +141,9 @@ export function TeacherWorkspace({
               onFocus={(e) => e.currentTarget.select()}
             />
           )}
+          <p className="mt-3 text-sm leading-relaxed text-ink">
+            {getPhonePolicy(lang)}
+          </p>
           {isDemo && token && (
             <div className="mt-5 border-t border-line-strong pt-4">
               <p className="text-sm leading-relaxed text-ink">{demo.hint}</p>

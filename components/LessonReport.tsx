@@ -1,5 +1,7 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { NEXT_LESSON_KEY, nextLessonDraft } from "@/lib/next-lesson";
 import { createPortal } from "react-dom";
 import { getReportDict, t, type Locale, getDict } from "@/lib/i18n";
 import { lessonReport, reportCsv, type HelpRecord } from "@/lib/lesson-report";
@@ -21,6 +23,8 @@ export function LessonReport({
   onClose: () => void;
 }) {
   const d = getReportDict(lang);
+  const router = useRouter();
+  const [draftError, setDraftError] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const node = dialog.current;
@@ -61,6 +65,23 @@ export function LessonReport({
       <p className="mt-3 text-sm text-muted">{d.note}</p>
       <div className="mt-5 flex flex-wrap gap-2 print:hidden">
         <button
+          type="button"
+          className="btn btn-primary btn-sm"
+          onClick={() => {
+            try {
+              sessionStorage.setItem(
+                NEXT_LESSON_KEY,
+                JSON.stringify(nextLessonDraft(plan, students, history)),
+              );
+              router.push(`/${lang}/teacher/new`);
+            } catch {
+              setDraftError(true);
+            }
+          }}
+        >
+          {d.nextLesson}
+        </button>
+        <button
           className="btn btn-primary btn-sm"
           onClick={() => window.print()}
         >
@@ -70,6 +91,11 @@ export function LessonReport({
           {d.csv}
         </button>
       </div>
+      {draftError && (
+        <p role="alert" className="mt-3 text-help">
+          {d.draftError}
+        </p>
+      )}
       {report.map((r) => {
         const group = plan.groups.find((g) => g.id === r.groupId)!;
         return (
