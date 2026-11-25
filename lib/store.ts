@@ -1,3 +1,4 @@
+import { personalPlan } from "./card-variants";
 import { parseRun, type RunState } from "./run-state";
 import { createHash, randomBytes } from "node:crypto";
 import { rpc, StorageError } from "./db";
@@ -151,6 +152,7 @@ export async function createSession(
 }
 
 export type StoredSession = {
+  ownNumbers?: boolean;
   lessonId: string;
   plan: LessonPlan;
   groupId: string;
@@ -188,7 +190,8 @@ export async function getSession(
   if (!plan.success) return null;
   return {
     lessonId: row.lesson_id,
-    plan: plan.data,
+    ownNumbers: plan.data.numberVariants !== false && plan.data.groups.find((g) => g.id === row.group_id)?.cards.some((c) => !!c.variant),
+    plan: personalPlan(plan.data, sessionId),
     groupId: row.group_id,
     name: row.display_name,
     progress: row.progress,

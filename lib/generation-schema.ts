@@ -1,3 +1,4 @@
+import { CardVariantSchema } from "./variant-schema";
 import { z } from "zod";
 import { EXAMPLE_LEVELS, GroupCoreSchema, LangSchema, QuickTaskSchema, TaskCardSchema, TermSchema, type LessonCore } from "./schema";
 import { VisualDraftSchema } from "./visuals";
@@ -56,13 +57,14 @@ export const StagesSchema = z.object({
 
 /** Карточка от модели: id и назначение ставит код (повторение пишет запрос объяснения, практику — запрос содержания). */
 export const GeneratedCardSchema = TaskCardSchema.omit({ id: true, purpose: true }).extend({
+  variant: CardVariantSchema.nullable().default(null).catch(null),
   answer: z.string().nullable(),
   accept: z.array(z.string().max(80)).max(6),
   inputHint: z.string().max(120).nullable(),
   /** Минуты среднего ученика, можно с половиной: 0.5, 1, 1.5… */
   minutes: z.number().min(0.5).max(20),
 });
-export type GeneratedCard = z.infer<typeof GeneratedCardSchema>;
+export type GeneratedCard = Omit<z.infer<typeof GeneratedCardSchema>, "variant"> & { variant?: z.infer<typeof CardVariantSchema> | null };
 
 export const GeneratedContentSchema = z.object({
   subject: z.string().min(1),
@@ -131,7 +133,7 @@ export function contentToLesson(
  * проверка тогда идёт по answer, а повторять из-за этого весь урок дороже, чем потерять удобство.
  */
 export function cardFromModel<T extends GeneratedCard>(c: T) {
-  const { accept, inputHint, answer, ...rest } = c;
+  const { accept, inputHint, answer, variant, ...rest } = c;
   const closed = c.type === "closed";
   const base = { prompt: c.prompt, answer: answer ?? undefined };
   const trimmed = closed ? accept.map((a) => a.trim()).filter(Boolean) : [];
@@ -141,6 +143,7 @@ export function cardFromModel<T extends GeneratedCard>(c: T) {
   const showHint = hint && !inputHintReveals({ ...base, accept: kept, inputHint: hint });
   return {
     ...rest,
+    ...(variant ? { variant } : {}),
     answer: base.answer,
     ...(kept.length ? { accept: kept } : {}),
     ...(showHint ? { inputHint: hint } : {}),

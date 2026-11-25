@@ -8,8 +8,16 @@
 type Fn = (x: number) => number;
 
 const FUNCTIONS: Record<string, (v: number) => number> = {
-  sin: Math.sin, cos: Math.cos, tan: Math.tan, tg: Math.tan,
-  sqrt: Math.sqrt, abs: Math.abs, exp: Math.exp, ln: Math.log, log: Math.log10, lg: Math.log10,
+  sin: Math.sin,
+  cos: Math.cos,
+  tan: Math.tan,
+  tg: Math.tan,
+  sqrt: Math.sqrt,
+  abs: Math.abs,
+  exp: Math.exp,
+  ln: Math.log,
+  log: Math.log10,
+  lg: Math.log10,
 };
 
 function tokenize(raw: string): string[] | null {
@@ -19,7 +27,10 @@ function tokenize(raw: string): string[] | null {
     .replace(/[−–]/g, "-")
     .replace(/[×·]/g, "*")
     .replace(/÷/g, "/")
-    .replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, (sup) => `^${[...sup].map((c) => "⁰¹²³⁴⁵⁶⁷⁸⁹".indexOf(c)).join("")}`)
+    .replace(
+      /[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g,
+      (sup) => `^${[...sup].map((c) => "⁰¹²³⁴⁵⁶⁷⁸⁹".indexOf(c)).join("")}`,
+    )
     .replace(/√/g, "sqrt ")
     .replace(/π/g, "pi")
     .replace(/,/g, ".");
@@ -45,7 +56,8 @@ export function compileExpression(source: string): Fn | null {
   const tokens: string[] = parsed;
   let i = 0;
   const peek = () => tokens[i];
-  const startsFactor = (t: string | undefined) => !!t && (/^\d/.test(t) || /^[a-z]/.test(t) || t === "(");
+  const startsFactor = (t: string | undefined) =>
+    !!t && (/^\d/.test(t) || /^[a-z]/.test(t) || t === "(");
 
   // expr := term (('+'|'-') term)*
   function expr(): Fn | null {
@@ -128,4 +140,119 @@ export function compileExpression(source: string): Fn | null {
 
   const result = expr();
   return result && i === tokens.length ? result : null;
+}
+/** Small arithmetic/condition grammar for untrusted variant templates. Every intermediate is inspectable.
+ * No property access, function calls, loops or dynamic JavaScript execution are accepted. */
+export function evaluateVariantExpression(
+  source: string,
+  values: Record<string, number>,
+  inspect?: (n: number) => boolean,
+  operation?: (op: string, left: number, right: number) => boolean,
+): number | null {
+  if (source.length > 120) return null;
+  const tokens =
+    source.match(
+      /\d+(?:\.\d+)?|[a-z][a-z0-9_]*|&&|\|\||>=|<=|==|!=|[+\-*/%^()<>]/g,
+    ) ?? [];
+  if (tokens.join("") !== source.replace(/\s/g, "") || tokens.length > 100)
+    return null;
+  let at = 0;
+  const checked = (n: number) => {
+    if (!Number.isFinite(n) || Math.abs(n) > 1e12 || (inspect && !inspect(n)))
+      throw new Error("range");
+    return n;
+  };
+  const operators: Record<string, number> = {
+    "||": 1,
+    "&&": 2,
+    "==": 3,
+    "!=": 3,
+    ">": 3,
+    "<": 3,
+    ">=": 3,
+    "<=": 3,
+    "+": 4,
+    "-": 4,
+    "*": 5,
+    "/": 5,
+    "%": 5,
+    "^": 6,
+  };
+  function atom(): number {
+    const token = tokens[at++];
+    if (token === "(") {
+      const value = expression(1);
+      if (tokens[at++] !== ")") throw new Error("parenthesis");
+      return value;
+    }
+    if (token === "-" || token === "+")
+      return checked((token === "-" ? -1 : 1) * atom());
+    if (/^\d/.test(token ?? "")) return checked(Number(token));
+    if (Object.hasOwn(values, token)) return checked(values[token]);
+    throw new Error("token");
+  }
+  function expression(min: number): number {
+    let left = atom();
+    while ((operators[tokens[at]] ?? 0) >= min) {
+      const op = tokens[at++];
+      const right = expression(operators[op] + (op === "^" ? 0 : 1));
+      if (operation && !operation(op, left, right))
+        throw new Error("operation");
+      switch (op) {
+        case "+":
+          left += right;
+          break;
+        case "-":
+          left -= right;
+          break;
+        case "*":
+          left *= right;
+          break;
+        case "/":
+          if (!right) throw new Error("zero");
+          left /= right;
+          break;
+        case "%":
+          if (!right) throw new Error("zero");
+          left %= right;
+          break;
+        case "^":
+          if (Math.abs(right) > 10) throw new Error("power");
+          left **= right;
+          break;
+        case "==":
+          left = Number(left === right);
+          break;
+        case "!=":
+          left = Number(left !== right);
+          break;
+        case ">":
+          left = Number(left > right);
+          break;
+        case "<":
+          left = Number(left < right);
+          break;
+        case ">=":
+          left = Number(left >= right);
+          break;
+        case "<=":
+          left = Number(left <= right);
+          break;
+        case "&&":
+          left = Number(!!left && !!right);
+          break;
+        case "||":
+          left = Number(!!left || !!right);
+          break;
+      }
+      checked(left);
+    }
+    return left;
+  }
+  try {
+    const answer = expression(1);
+    return at === tokens.length ? answer : null;
+  } catch {
+    return null;
+  }
 }

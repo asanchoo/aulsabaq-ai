@@ -78,6 +78,7 @@ export function applyEdit(plan: LessonPlan, edit: LessonEdit): EditResult {
       const next: TaskCard = { ...c, prompt: ce.prompt, answer: c.type === "closed" ? answer : answer ?? c.answer, hint: ce.hint, successCriteria: ce.successCriteria };
       // Учитель поменял задание или эталон: короткие ответы модели и «что вписать» могли устареть, проверяем по эталону.
       if (next.prompt !== c.prompt || next.answer !== c.answer) {
+        delete next.variant;
         delete next.accept;
         delete next.inputHint;
       }

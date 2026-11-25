@@ -213,7 +213,40 @@
           "hint": "Сколько будет 7 + 5? Сколько это десятков и единиц?",
           "difficulty": 1,
           "purpose": "practice",
-          "minutes": 1
+          "minutes": 1,
+          "variant": {
+            "prompt": "Вычисли: {a} + {b}",
+            "hint": "Проверь результат обратным действием.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 10,
+                "max": 99
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a+b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a % 10 + b % 10 >= 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 47
+              },
+              {
+                "name": "b",
+                "value": 25
+              }
+            ]
+          }
         },
         {
           "id": "g1-c2",
@@ -224,7 +257,40 @@
           "hint": "Сначала сложи 8 и 6. Не забудь десяток, который получится.",
           "difficulty": 1,
           "purpose": "practice",
-          "minutes": 1
+          "minutes": 1,
+          "variant": {
+            "prompt": "Вычисли: {a} + {b}",
+            "hint": "Проверь результат обратным действием.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 10,
+                "max": 99
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a+b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a % 10 + b % 10 >= 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 58
+              },
+              {
+                "name": "b",
+                "value": 36
+              }
+            ]
+          }
         },
         {
           "type": "closed",
@@ -235,7 +301,40 @@
           "purpose": "practice",
           "minutes": 1,
           "answer": "63",
-          "id": "g1-c3"
+          "id": "g1-c3",
+          "variant": {
+            "prompt": "Вычисли: {a} + {b}",
+            "hint": "Проверь результат обратным действием.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 10,
+                "max": 99
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a+b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a % 10 + b % 10 >= 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 29
+              },
+              {
+                "name": "b",
+                "value": 34
+              }
+            ]
+          }
         },
         {
           "type": "closed",
@@ -246,7 +345,40 @@
           "purpose": "practice",
           "minutes": 1,
           "answer": "83",
-          "id": "g1-c4"
+          "id": "g1-c4",
+          "variant": {
+            "prompt": "Вычисли: {a} + {b}",
+            "hint": "Проверь результат обратным действием.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 10,
+                "max": 99
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a+b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a % 10 + b % 10 >= 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 66
+              },
+              {
+                "name": "b",
+                "value": 17
+              }
+            ]
+          }
         },
         {
           "id": "g1-c5",
@@ -257,7 +389,41 @@
           "hint": "Из 3 нельзя вычесть 8. Займи один десяток: сколько тогда станет единиц?",
           "difficulty": 2,
           "purpose": "practice",
-          "minutes": 1.5
+          "minutes": 1.5,
+          "variant": {
+            "prompt": "Вычисли: {a} − {b}",
+            "hint": "Проверь результат обратным действием.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 10,
+                "max": 99
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a-b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a >= b",
+              "a % 10 < b % 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 63
+              },
+              {
+                "name": "b",
+                "value": 28
+              }
+            ]
+          }
         },
         {
           "type": "closed",
@@ -268,7 +434,41 @@
           "difficulty": 2,
           "purpose": "practice",
           "minutes": 1.5,
-          "id": "g1-c6"
+          "id": "g1-c6",
+          "variant": {
+            "prompt": "Вычисли: {a} − {b}",
+            "hint": "Проверь результат обратным действием.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 10,
+                "max": 99
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a-b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a >= b",
+              "a % 10 < b % 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 75
+              },
+              {
+                "name": "b",
+                "value": 39
+              }
+            ]
+          }
         },
         {
           "type": "closed",
@@ -279,7 +479,41 @@
           "purpose": "practice",
           "minutes": 1.5,
           "answer": "34",
-          "id": "g1-c7"
+          "id": "g1-c7",
+          "variant": {
+            "prompt": "Вычисли: {a} − {b}",
+            "hint": "Проверь результат обратным действием.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 10,
+                "max": 99
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a-b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a >= b",
+              "a % 10 < b % 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 81
+              },
+              {
+                "name": "b",
+                "value": 47
+              }
+            ]
+          }
         },
         {
           "type": "closed",
@@ -301,7 +535,44 @@
           "hint": "Книг стало больше или меньше? Значит, какое действие нужно?",
           "difficulty": 2,
           "purpose": "practice",
-          "minutes": 2
+          "minutes": 2,
+          "accept": [
+            "52"
+          ],
+          "variant": {
+            "prompt": "В классной библиотеке было {a} книги. Ребята принесли ещё {b}. Сколько книг стало?",
+            "hint": "Когда стало больше, нужно сложить. Проверь обратным действием.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 21,
+                "max": 59
+              },
+              {
+                "name": "b",
+                "min": 11,
+                "max": 39
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a+b",
+            "conditions": [
+              "a % 10 + b % 10 >= 10",
+              "answer <= 100",
+              "a % 10 >= 2",
+              "a % 10 <= 4"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 34
+              },
+              {
+                "name": "b",
+                "value": 18
+              }
+            ]
+          }
         },
         {
           "type": "closed",
@@ -362,7 +633,40 @@
           "hint": "Сколько не хватает до 40? Сколько останется прибавить?",
           "difficulty": 1,
           "minutes": 1,
-          "purpose": "practice"
+          "purpose": "practice",
+          "variant": {
+            "prompt": "Вычисли: {a} + {b}",
+            "hint": "Проверь результат обратным действием.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 1,
+                "max": 9
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a+b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a % 10 + b % 10 >= 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 38
+              },
+              {
+                "name": "b",
+                "value": 5
+              }
+            ]
+          }
         },
         {
           "id": "g1-x2",
@@ -377,7 +681,40 @@
           "hint": "Дополни 27 до круглого десятка. Сколько ещё осталось прибавить?",
           "difficulty": 1,
           "minutes": 1,
-          "purpose": "practice"
+          "purpose": "practice",
+          "variant": {
+            "prompt": "Вычисли: {a} + {b}",
+            "hint": "Проверь результат обратным действием.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 1,
+                "max": 9
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a+b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a % 10 + b % 10 >= 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 27
+              },
+              {
+                "name": "b",
+                "value": 6
+              }
+            ]
+          }
         },
         {
           "id": "g1-x3",
@@ -392,7 +729,40 @@
           "hint": "Сначала сложи единицы: 5 и 8. Получился ли новый десяток?",
           "difficulty": 1,
           "minutes": 1,
-          "purpose": "practice"
+          "purpose": "practice",
+          "variant": {
+            "prompt": "Вычисли: {a} + {b}",
+            "hint": "Проверь результат обратным действием.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 10,
+                "max": 99
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a+b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a % 10 + b % 10 >= 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 45
+              },
+              {
+                "name": "b",
+                "value": 18
+              }
+            ]
+          }
         },
         {
           "id": "g1-x4",
@@ -407,7 +777,40 @@
           "hint": "Сложи единицы, потом десятки. Не забудь перенести десяток.",
           "difficulty": 1,
           "minutes": 1,
-          "purpose": "practice"
+          "purpose": "practice",
+          "variant": {
+            "prompt": "Вычисли: {a} + {b}",
+            "hint": "Проверь результат обратным действием.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 10,
+                "max": 99
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a+b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a % 10 + b % 10 >= 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 56
+              },
+              {
+                "name": "b",
+                "value": 27
+              }
+            ]
+          }
         },
         {
           "id": "g1-x5",
@@ -422,7 +825,40 @@
           "hint": "Сколько единиц получится, если сложить 9 и 4?",
           "difficulty": 1,
           "minutes": 1,
-          "purpose": "practice"
+          "purpose": "practice",
+          "variant": {
+            "prompt": "Вычисли: {a} + {b}",
+            "hint": "Проверь результат обратным действием.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 10,
+                "max": 99
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a+b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a % 10 + b % 10 >= 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 19
+              },
+              {
+                "name": "b",
+                "value": 34
+              }
+            ]
+          }
         },
         {
           "id": "g1-x6",
@@ -763,7 +1199,46 @@
           "difficulty": 2,
           "purpose": "practice",
           "minutes": 2,
-          "id": "g2-c9"
+          "id": "g2-c9",
+          "variant": {
+            "prompt": "Раздели столбиком: {a} : {b}",
+            "hint": "Проверь результат обратным действием.",
+            "ranges": [
+              {
+                "name": "q",
+                "min": 100,
+                "max": 999
+              },
+              {
+                "name": "b",
+                "min": 2,
+                "max": 9
+              }
+            ],
+            "derived": [
+              {
+                "name": "a",
+                "expression": "q*b"
+              }
+            ],
+            "answerExpression": "q",
+            "conditions": [
+              "answer <= 1000000",
+              "answer >= 0",
+              "a >= 100",
+              "a <= 999"
+            ],
+            "original": [
+              {
+                "name": "q",
+                "value": 147
+              },
+              {
+                "name": "b",
+                "value": 5
+              }
+            ]
+          }
         },
         {
           "type": "closed",
@@ -774,7 +1249,46 @@
           "purpose": "practice",
           "minutes": 2,
           "answer": "152",
-          "id": "g2-c10"
+          "id": "g2-c10",
+          "variant": {
+            "prompt": "Раздели столбиком: {a} : {b}",
+            "hint": "Проверь результат обратным действием.",
+            "ranges": [
+              {
+                "name": "q",
+                "min": 100,
+                "max": 999
+              },
+              {
+                "name": "b",
+                "min": 2,
+                "max": 9
+              }
+            ],
+            "derived": [
+              {
+                "name": "a",
+                "expression": "q*b"
+              }
+            ],
+            "answerExpression": "q",
+            "conditions": [
+              "answer <= 1000000",
+              "answer >= 0",
+              "a >= 100",
+              "a <= 999"
+            ],
+            "original": [
+              {
+                "name": "q",
+                "value": 152
+              },
+              {
+                "name": "b",
+                "value": 3
+              }
+            ]
+          }
         },
         {
           "type": "closed",
@@ -785,7 +1299,46 @@
           "purpose": "practice",
           "minutes": 2,
           "answer": "91",
-          "id": "g2-c11"
+          "id": "g2-c11",
+          "variant": {
+            "prompt": "Раздели столбиком: {a} : {b}",
+            "hint": "Проверь результат обратным действием.",
+            "ranges": [
+              {
+                "name": "q",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 2,
+                "max": 9
+              }
+            ],
+            "derived": [
+              {
+                "name": "a",
+                "expression": "q*b"
+              }
+            ],
+            "answerExpression": "q",
+            "conditions": [
+              "answer <= 1000000",
+              "answer >= 0",
+              "a >= 100",
+              "a <= 999"
+            ],
+            "original": [
+              {
+                "name": "q",
+                "value": 91
+              },
+              {
+                "name": "b",
+                "value": 9
+              }
+            ]
+          }
         },
         {
           "id": "g2-c12",
@@ -814,7 +1367,46 @@
           "hint": "Делим по разрядам: сколько сотен получится, если 8 сотен разделить на 2?",
           "difficulty": 1,
           "minutes": 1,
-          "purpose": "practice"
+          "purpose": "practice",
+          "variant": {
+            "prompt": "Раздели: {a} : {b}",
+            "hint": "Проверь результат обратным действием.",
+            "ranges": [
+              {
+                "name": "q",
+                "min": 100,
+                "max": 999
+              },
+              {
+                "name": "b",
+                "min": 2,
+                "max": 9
+              }
+            ],
+            "derived": [
+              {
+                "name": "a",
+                "expression": "q*b"
+              }
+            ],
+            "answerExpression": "q",
+            "conditions": [
+              "answer <= 1000000",
+              "answer >= 0",
+              "a >= 100",
+              "a <= 999"
+            ],
+            "original": [
+              {
+                "name": "q",
+                "value": 423
+              },
+              {
+                "name": "b",
+                "value": 2
+              }
+            ]
+          }
         },
         {
           "id": "g2-x2",
@@ -829,7 +1421,46 @@
           "hint": "Первое неполное делимое 9. Сколько раз 5 помещается в 9?",
           "difficulty": 1,
           "minutes": 1,
-          "purpose": "practice"
+          "purpose": "practice",
+          "variant": {
+            "prompt": "Раздели: {a} : {b}",
+            "hint": "Проверь результат обратным действием.",
+            "ranges": [
+              {
+                "name": "q",
+                "min": 100,
+                "max": 999
+              },
+              {
+                "name": "b",
+                "min": 2,
+                "max": 9
+              }
+            ],
+            "derived": [
+              {
+                "name": "a",
+                "expression": "q*b"
+              }
+            ],
+            "answerExpression": "q",
+            "conditions": [
+              "answer <= 1000000",
+              "answer >= 0",
+              "a >= 100",
+              "a <= 999"
+            ],
+            "original": [
+              {
+                "name": "q",
+                "value": 189
+              },
+              {
+                "name": "b",
+                "value": 5
+              }
+            ]
+          }
         },
         {
           "id": "g2-x3",
@@ -844,7 +1475,46 @@
           "hint": "Сколько раз 4 помещается в 6? Какой остаток переходит к десяткам?",
           "difficulty": 1,
           "minutes": 1,
-          "purpose": "practice"
+          "purpose": "practice",
+          "variant": {
+            "prompt": "Раздели: {a} : {b}",
+            "hint": "Проверь результат обратным действием.",
+            "ranges": [
+              {
+                "name": "q",
+                "min": 100,
+                "max": 999
+              },
+              {
+                "name": "b",
+                "min": 2,
+                "max": 9
+              }
+            ],
+            "derived": [
+              {
+                "name": "a",
+                "expression": "q*b"
+              }
+            ],
+            "answerExpression": "q",
+            "conditions": [
+              "answer <= 1000000",
+              "answer >= 0",
+              "a >= 100",
+              "a <= 999"
+            ],
+            "original": [
+              {
+                "name": "q",
+                "value": 168
+              },
+              {
+                "name": "b",
+                "value": 4
+              }
+            ]
+          }
         },
         {
           "id": "g2-x4",
@@ -859,7 +1529,46 @@
           "hint": "Начни с 7 сотен. Сколько раз 6 помещается в 7?",
           "difficulty": 1,
           "minutes": 1,
-          "purpose": "practice"
+          "purpose": "practice",
+          "variant": {
+            "prompt": "Раздели: {a} : {b}",
+            "hint": "Проверь результат обратным действием.",
+            "ranges": [
+              {
+                "name": "q",
+                "min": 100,
+                "max": 999
+              },
+              {
+                "name": "b",
+                "min": 2,
+                "max": 9
+              }
+            ],
+            "derived": [
+              {
+                "name": "a",
+                "expression": "q*b"
+              }
+            ],
+            "answerExpression": "q",
+            "conditions": [
+              "answer <= 1000000",
+              "answer >= 0",
+              "a >= 100",
+              "a <= 999"
+            ],
+            "original": [
+              {
+                "name": "q",
+                "value": 123
+              },
+              {
+                "name": "b",
+                "value": 6
+              }
+            ]
+          }
         },
         {
           "id": "g2-x5",
@@ -874,7 +1583,46 @@
           "hint": "Сколько десятков получится, если 1 десяток разделить на 8? Не забудь записать это в частное.",
           "difficulty": 2,
           "minutes": 1.5,
-          "purpose": "practice"
+          "purpose": "practice",
+          "variant": {
+            "prompt": "Раздели: {a} : {b}",
+            "hint": "Проверь результат обратным действием.",
+            "ranges": [
+              {
+                "name": "q",
+                "min": 100,
+                "max": 999
+              },
+              {
+                "name": "b",
+                "min": 2,
+                "max": 9
+              }
+            ],
+            "derived": [
+              {
+                "name": "a",
+                "expression": "q*b"
+              }
+            ],
+            "answerExpression": "q",
+            "conditions": [
+              "answer <= 1000000",
+              "answer >= 0",
+              "a >= 100",
+              "a <= 999"
+            ],
+            "original": [
+              {
+                "name": "q",
+                "value": 102
+              },
+              {
+                "name": "b",
+                "value": 8
+              }
+            ]
+          }
         },
         {
           "id": "g2-x6",
@@ -889,7 +1637,46 @@
           "hint": "После деления сотен посмотри на десятки: хватит ли их, чтобы разделить на 9?",
           "difficulty": 2,
           "minutes": 1.5,
-          "purpose": "practice"
+          "purpose": "practice",
+          "variant": {
+            "prompt": "Раздели: {a} : {b}",
+            "hint": "Проверь результат обратным действием.",
+            "ranges": [
+              {
+                "name": "q",
+                "min": 100,
+                "max": 999
+              },
+              {
+                "name": "b",
+                "min": 2,
+                "max": 9
+              }
+            ],
+            "derived": [
+              {
+                "name": "a",
+                "expression": "q*b"
+              }
+            ],
+            "answerExpression": "q",
+            "conditions": [
+              "answer <= 1000000",
+              "answer >= 0",
+              "a >= 100",
+              "a <= 999"
+            ],
+            "original": [
+              {
+                "name": "q",
+                "value": 103
+              },
+              {
+                "name": "b",
+                "value": 9
+              }
+            ]
+          }
         },
         {
           "id": "g2-x7",
@@ -1056,5 +1843,6 @@
       "activity": "Общая рефлексия: каждый класс показывает один пример, «светофор» самооценки."
     }
   ],
-  "teacherNotes": "Посадите классы в разные ряды лицом к своей доске. Карточки для самостоятельной работы раздайте до начала урока. Пока работаете с одним классом, договоритесь о тихом сигнале «мне нужна помощь» — поднятая карточка. На рефлексии пусть старшие проверят один пример младших."
+  "teacherNotes": "Посадите классы в разные ряды лицом к своей доске. Карточки для самостоятельной работы раздайте до начала урока. Пока работаете с одним классом, договоритесь о тихом сигнале «мне нужна помощь» — поднятая карточка. На рефлексии пусть старшие проверят один пример младших.",
+  "numberVariants": true
 }

@@ -1,3 +1,4 @@
+import { CardVariantSchema } from "./variant-schema";
 import { z } from "zod";
 import { VisualSchema } from "./visuals";
 import { TrainerSkillSchema } from "./trainer";
@@ -14,6 +15,7 @@ export const LangSchema = z.enum(["kk", "ru"]);
 
 export const TaskCardSchema = z.object({
   id: z.string().min(1),
+  variant: CardVariantSchema.optional(),
   type: z.enum(["closed", "open"]),
   prompt: z.string().min(1),
   /** Для closed — эталон для самопроверки. Наличие проверяет validateLessonPlan (инвариант 5). */
@@ -148,6 +150,7 @@ export const GroupSchema = z.object({
 
 export const LessonPlanSchema = z.object({
   subject: z.string().min(1),
+  numberVariants: z.boolean().optional(),
   language: LangSchema,
   durationMin: z.number().int(),
   groups: z.array(GroupSchema),

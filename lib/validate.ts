@@ -1,3 +1,4 @@
+import { inferVariant, mathSubject, validateVariant } from "./card-variants";
 import { findMixedScriptWord, findWrongEquation, prettyMathDeep } from "./arithmetic";
 import { acceptMismatch, inputHintReveals } from "./check-answer";
 import { cardFromModel, GeneratedExplanationSchema, type GeneratedCard, type GeneratedExplanation } from "./generation-schema";
@@ -581,4 +582,30 @@ export function sanitizeCurriculumGoals(
       return trusted ? [trusted] : [];
     }).slice(0, 5) } : {}),
   })) };
+}
+
+/** Variants are optional enhancements: discard a broken one without retrying or rejecting the lesson. */
+export function sanitizeVariants(plan: LessonPlan, infer = true): { plan: LessonPlan; warnings: string[] } {
+  const warnings: string[] = [];
+  const math = mathSubject(plan.subject);
+  return { warnings, plan: { ...plan, ...(math ? { numberVariants: plan.numberVariants ?? true } : {}),
+    groups: plan.groups.map((g) => {
+      // A task referring to another card must keep that card's numbers too.
+      const linked = new Set<number>();
+      g.cards.forEach((c, i) => {
+        for (const match of c.prompt.matchAll(/карточк[аиу]?\s*(\d+)|(\d+)[- ]карточка/giu)) {
+          linked.add(i); linked.add(Number(match[1] ?? match[2]) - 1);
+        }
+      });
+      const clean = (card: TaskCard): TaskCard => {
+        const variant = math && !linked.has(g.cards.indexOf(card)) ? card.variant ?? (infer ? inferVariant(card, g, g.language ?? plan.language) ?? undefined : undefined) : undefined;
+        const candidate = { ...card, variant };
+        const reason = variant ? validateVariant(candidate, g, g.language ?? plan.language) : null;
+        if (reason) warnings.push(`VARIANT: ${card.id}: ${reason}`);
+        if (!variant || reason) { const original = { ...card }; delete original.variant; return original; }
+        return candidate;
+      };
+      return { ...g, cards: g.cards.map(clean), ...(g.extraCards ? { extraCards: g.extraCards.map(clean) } : {}) };
+    }),
+  } };
 }

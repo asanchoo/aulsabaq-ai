@@ -1,5 +1,7 @@
 "use client";
 
+import { personalCard } from "@/lib/card-variants";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   getReportDict,
@@ -487,7 +489,7 @@ export function StudentsPanel({
                                 if (!st) return null;
                                 return (
                                   <li key={c.id}>
-                                    {t(dict.common.card, { n: i + 1 })}:{" "}
+                                    {t(dict.common.card, { n: i + 1 })}: {plan.numberVariants !== false ? personalCard(c, g, s.id, g.language ?? plan.language).prompt : c.prompt}{" "}
                                     {d.status[st.status]}
                                     {st.attempts > 0 &&
                                       `, ${t(d.attempts, { n: st.attempts })}`}
