@@ -60,13 +60,18 @@ export function StudentsPanel({ lessonId, token, plan, joinCode, dict }: { lesso
   }, [load]);
 
   async function helped(sessionId: string) {
-    setStudents((list) => list?.map((s) => (s.id === sessionId ? { ...s, needsHelp: false } : s)) ?? null);
-    await fetch(`/api/lessons/${lessonId}/students`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-teacher-token": token },
-      body: JSON.stringify({ action: "clear_help", sessionId }),
-    }).catch(() => undefined);
-    void load();
+    try {
+      const response = await fetch(`/api/lessons/${lessonId}/students`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-teacher-token": token },
+        body: JSON.stringify({ action: "clear_help", sessionId }),
+      });
+      if (!response.ok) throw new Error(String(response.status));
+      setStudents((list) => list?.map((s) => s.id === sessionId ? { ...s, needsHelp: false } : s) ?? null);
+      await load();
+    } catch {
+      setOffline(true);
+    }
   }
 
   const groupOf = (id: string) => plan.groups.find((g) => g.id === id);
