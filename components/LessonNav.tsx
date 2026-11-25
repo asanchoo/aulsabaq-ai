@@ -1,34 +1,55 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getLessonToolsDict, type Locale } from "@/lib/i18n";
+import { currentLessonSection } from "@/lib/lesson-navigation";
 
-const ids = ["timeline", "explain", "cards", "students"] as const;
+const ids = ["students", "timeline", "explain", "cards"] as const;
+type SectionId = (typeof ids)[number];
+
+/** Use the final sticky position even when a click starts at the page's very top. */
+function navigationOffset(nav: HTMLElement | null) {
+  if (!nav) return 140;
+  return (
+    (Number.parseFloat(getComputedStyle(nav).top) || 0) +
+    nav.getBoundingClientRect().height +
+    16
+  );
+}
 export function LessonNav({ lang }: { lang: Locale }) {
   const d = getLessonToolsDict(lang);
-  const [active, setActive] = useState<string>("timeline");
-  const [students, setStudents] = useState(false);
+  const nav = useRef<HTMLElement>(null);
+  const [active, setActive] = useState<string | null>(null);
+  const [sections, setSections] = useState<SectionId[]>([]);
   useEffect(() => {
+    const root = nav.current?.closest("[data-lesson-view]");
+    if (!root) return;
     let scheduled = 0;
     const update = () => {
       scheduled = 0;
-      setStudents(!!document.getElementById("students"));
-      const sections = ids
-        .map((id) => ({
-          id,
-          top: document.getElementById(id)?.getBoundingClientRect().top,
-        }))
-        .filter((s) => s.top !== undefined);
-      const above = sections
-        .filter((s) => s.top! <= 145)
-        .sort((a, b) => b.top! - a.top!);
-      setActive(above[0]?.id ?? sections[0]?.id ?? "timeline");
+      const visible = Array.from(
+        root.querySelectorAll<HTMLElement>(ids.map((id) => `#${id}`).join(",")),
+      ).filter((element) => element.getClientRects().length > 0);
+      const order = visible.map((element) => element.id as SectionId);
+      setSections((previous) =>
+        previous.join() === order.join() ? previous : order,
+      );
+      setActive(
+        currentLessonSection(
+          visible.map((element) => ({
+            id: element.id,
+            top: element.getBoundingClientRect().top,
+          })),
+          navigationOffset(nav.current),
+          window.innerHeight,
+        ),
+      );
     };
     const schedule = () => {
       if (!scheduled) scheduled = requestAnimationFrame(update);
     };
     const observer = new MutationObserver(schedule);
-    observer.observe(document.getElementById("main") ?? document.body, {
+    observer.observe(root, {
       childList: true,
       subtree: true,
     });
@@ -44,34 +65,38 @@ export function LessonNav({ lang }: { lang: Locale }) {
   }, []);
   return (
     <nav
+      ref={nav}
       aria-label={d.navigation}
       className="lesson-nav sticky top-16 z-20 -mx-4 mb-5 flex gap-1 overflow-x-auto border-b border-line bg-white px-4 py-2 lg:hidden print:hidden"
     >
-      {ids
-        .filter((id) => id !== "students" || students)
-        .map((id) => (
-          <a
-            key={id}
-            href={`#${id}`}
-            onClick={(event) => {
-              const target = document.getElementById(id);
-              if (!target) return;
-              event.preventDefault();
-              target.setAttribute("tabindex", "-1");
-              target.focus({ preventScroll: true });
-              window.scrollTo({
-                top: window.scrollY + target.getBoundingClientRect().top - 140,
-                behavior: "instant",
-              });
-              window.history.replaceState(null, "", `#${id}`);
-              setActive(id);
-            }}
-            aria-current={active === id ? "location" : undefined}
-            className={`inline-flex min-h-11 shrink-0 items-center rounded-btn px-2 text-[0.8rem] font-semibold ${active === id ? "bg-mint text-ink" : "text-muted"}`}
-          >
-            {d[id]}
-          </a>
-        ))}
+      {sections.map((id) => (
+        <a
+          key={id}
+          href={`#${id}`}
+          onClick={(event) => {
+            const target = nav.current
+              ?.closest("[data-lesson-view]")
+              ?.querySelector<HTMLElement>(`#${id}`);
+            if (!target) return;
+            event.preventDefault();
+            target.setAttribute("tabindex", "-1");
+            target.focus({ preventScroll: true });
+            window.scrollTo({
+              top:
+                window.scrollY +
+                target.getBoundingClientRect().top -
+                navigationOffset(nav.current),
+              behavior: "instant",
+            });
+            window.history.replaceState(null, "", `#${id}`);
+            setActive(id);
+          }}
+          aria-current={active === id ? "location" : undefined}
+          className={`inline-flex min-h-11 shrink-0 items-center rounded-btn px-2 text-[0.8rem] font-semibold ${active === id ? "bg-mint text-ink" : "text-muted"}`}
+        >
+          {d[id]}
+        </a>
+      ))}
     </nav>
   );
 }

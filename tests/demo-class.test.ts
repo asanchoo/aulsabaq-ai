@@ -45,3 +45,11 @@ it("works with four groups and either demo language", () => {
     ),
   ).toHaveLength(9);
 });
+it("shows errors, hints and help within the reviewer's first 30 seconds", () => {
+  expect(demoClass(plan, 42, 100000, 20).some((s) => s.needsHelp)).toBe(false);
+  const rows = demoClass(plan, 42, 100000, 30);
+  const helped = rows.find((s) => s.needsHelp)!;
+  expect(helped.hintsUsed).toBeGreaterThan(0);
+  expect(helped.helpRequestedAt).toBe(new Date(125000).toISOString());
+  expect(Object.values(helped.cards).some((c) => c.attempts >= 3)).toBe(true);
+});

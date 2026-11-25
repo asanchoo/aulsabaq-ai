@@ -30,6 +30,25 @@ const GUIDE = "guide";
 /** Экран тренажёра: после основных карточек и запаса. */
 const TRAINER = "trainer";
 
+/** Lucide Lock, inline to avoid importing an icon bundle. */
+function CardLock() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="size-3.5 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
+
 /** Видел ли ученик памятку: помним в браузере, чтобы не показывать её снова после каждого обновления. */
 function guideSeen(sessionId: string): boolean {
   if (typeof window === "undefined") return false;
@@ -102,6 +121,7 @@ export function StudentApp({
   const [view, setView] = useState<StudentView | null>(null);
   const [missing, setMissing] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
+  const [lockedNotice, setLockedNotice] = useState<string | null>(null);
   const [answer, setAnswer] = useState("");
   const [feedback, setFeedback] = useState<{
     cardId: string;
@@ -228,14 +248,25 @@ export function StudentApp({
       (selected === null && !seenGuide && firstOpen?.purpose === "practice"));
   const g = d.guide;
   const x = d.extra;
+  const wait = view.clock?.unlockInMinutes;
+  const lockMessage =
+    clockLabels.locked +
+    (wait != null && wait > 0
+      ? `. ${t(clockLabels.unlockWait, { n: wait })}`
+      : "");
+  const showLockNotice = [...cards, ...extras].some(
+    (c) => c.id === lockedNotice && c.locked,
+  );
 
   function openGuide() {
+    setLockedNotice(null);
     setSelected(GUIDE);
     setError(null);
     requestAnimationFrame(() => heading.current?.focus());
   }
 
   function openTrainer() {
+    setLockedNotice(null);
     setSelected(TRAINER);
     setError(null);
   }
@@ -260,6 +291,11 @@ export function StudentApp({
   }
 
   function open(target: StudentCard) {
+    if (target.locked) {
+      setLockedNotice(target.id);
+      return;
+    }
+    setLockedNotice(null);
     setSelected(target.id);
     setAnswer("");
     setFeedback(null);
@@ -391,19 +427,27 @@ export function StudentApp({
                 <li>
                   <button
                     type="button"
-                    disabled={c.locked}
+                    aria-disabled={c.locked || undefined}
+                    aria-describedby={c.locked ? "card-lock-notice" : undefined}
                     onClick={() => open(c)}
                     aria-current={current ? "step" : undefined}
-                    aria-label={`${t(dict.common.card, { n: c.number })}: ${d.status[c.state.status]}`}
-                    className={`tabular grid size-11 place-items-center rounded-full text-[0.95rem] font-semibold transition-colors ${
-                      done
-                        ? c.state.status === "self_wrong"
-                          ? "bg-help-soft text-help"
-                          : "bg-mint text-ink"
-                        : "border border-line-strong bg-white text-ink"
+                    aria-label={`${t(dict.common.card, { n: c.number })}: ${c.locked ? clockLabels.lockedCard : d.status[c.state.status]}`}
+                    className={`btn btn-secondary tabular min-h-11 size-11 gap-1 p-0 text-[0.95rem] font-semibold ${
+                      c.locked
+                        ? "border-dashed bg-surface text-muted"
+                        : done
+                          ? c.state.status === "self_wrong"
+                            ? "bg-help-soft text-help"
+                            : "bg-mint text-ink"
+                          : "border border-line-strong bg-white text-ink"
                     } ${current ? "ring-2 ring-ink ring-offset-2" : ""}`}
                   >
-                    {done && c.state.status !== "self_wrong" ? (
+                    {c.locked ? (
+                      <>
+                        <CardLock />
+                        <span>{c.number}</span>
+                      </>
+                    ) : done && c.state.status !== "self_wrong" ? (
                       <svg
                         aria-hidden
                         viewBox="0 0 24 24"
@@ -449,16 +493,22 @@ export function StudentApp({
                     <li key={c.id}>
                       <button
                         type="button"
-                        disabled={c.locked}
+                        aria-disabled={c.locked || undefined}
+                        aria-describedby={
+                          c.locked ? "card-lock-notice" : undefined
+                        }
                         onClick={() => open(c)}
                         aria-current={current ? "step" : undefined}
-                        aria-label={`${t(x.of, { n: c.number, m: extras.length })}: ${d.status[c.state.status]}`}
-                        className={`tabular grid size-11 place-items-center rounded-full text-[0.95rem] font-semibold transition-colors ${
-                          done
-                            ? "bg-mint-soft text-ink"
-                            : "border border-dashed border-line-strong bg-white text-ink"
+                        aria-label={`${t(x.of, { n: c.number, m: extras.length })}: ${c.locked ? clockLabels.lockedCard : d.status[c.state.status]}`}
+                        className={`btn btn-secondary tabular min-h-11 size-11 gap-1 p-0 text-[0.95rem] font-semibold ${
+                          c.locked
+                            ? "border-dashed bg-surface text-muted"
+                            : done
+                              ? "bg-mint-soft text-ink"
+                              : "border border-dashed border-line-strong bg-white text-ink"
                         } ${current ? "ring-2 ring-ink ring-offset-2" : ""}`}
                       >
+                        {c.locked && <CardLock />}
                         {c.number}
                       </button>
                     </li>
@@ -481,6 +531,15 @@ export function StudentApp({
           </div>
         )}
       </nav>
+      <p
+        id="card-lock-notice"
+        role="status"
+        className={
+          showLockNotice ? "rounded-card bg-surface p-4 text-ink" : "sr-only"
+        }
+      >
+        {showLockNotice ? lockMessage : ""}
+      </p>
 
       {showGuide && (
         <article
@@ -564,7 +623,7 @@ export function StudentApp({
 
       {!showGuide && !showTrainer && card.locked && (
         <p role="status" className="rounded-card bg-stage p-5">
-          {clockLabels.locked}
+          {lockMessage}
         </p>
       )}
       {!showGuide && !showTrainer && !card.locked && (

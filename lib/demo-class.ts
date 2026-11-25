@@ -29,11 +29,11 @@ export function demoClass(
       Math.max(0, Math.floor((elapsed - offset) / (11 + (i % 3)))),
     );
     const difficult =
-      (i === 0 || i === plan.groups.length) && elapsed >= 30 && elapsed < 120;
+      (i === 0 || i === plan.groups.length) && elapsed >= 20 && elapsed < 120;
     const current = difficult
       ? Math.min(1, group.cards.length - 1)
       : Math.min(solved, group.cards.length - 1);
-    const help = i === 0 && elapsed >= 45 && elapsed < 120;
+    const help = i === 0 && elapsed >= 25 && elapsed < 120;
     const stamp = new Date(
       startedAt + Math.floor(elapsed / 10) * 10_000,
     ).toISOString();
@@ -68,7 +68,7 @@ export function demoClass(
       hintsUsed: Object.values(cards).reduce((sum, c) => sum + c.hints, 0),
       updatedAt: stamp,
       helpRequestedAt: help
-        ? new Date(startedAt + 45_000).toISOString()
+        ? new Date(startedAt + 25_000).toISOString()
         : undefined,
       cards,
     };

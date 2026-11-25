@@ -24,27 +24,31 @@ export function lessonReport(
   ];
   return plan.groups.map((group) => {
     const own = students.filter((s) => s.groupId === group.id);
-    const hard = group.cards
-      .map((card, index) => {
-        const states = own.map((s) => s.cards[card.id]).filter(Boolean);
-        const attempted = states.filter((s) => s.attempts > 0);
-        const wrong = attempted.filter(
-          (s) => s.attempts > (s.status === "correct" ? 1 : 0),
-        );
-        return {
-          cardId: card.id,
-          number: index + 1,
-          prompt: card.prompt,
-          attempted: attempted.length,
-          wrong: wrong.length,
-          rate: attempted.length ? wrong.length / attempted.length : 0,
-        };
-      })
-      .filter((c) => c.wrong > 0)
+    const results = group.cards.map((card, index) => {
+      const states = own.map((s) => s.cards[card.id]).filter(Boolean);
+      const attempted = states.filter((s) => s.attempts > 0);
+      const wrong = attempted.filter(
+        (s) => s.attempts > (s.status === "correct" ? 1 : 0),
+      );
+      return {
+        cardId: card.id,
+        number: index + 1,
+        prompt: card.prompt,
+        attempted: attempted.length,
+        wrong: wrong.length,
+        rate: attempted.length ? wrong.length / attempted.length : 0,
+      };
+    });
+    const enoughAnswers = results.some((c) => c.attempted >= 2);
+    const hard = results
+      .filter((c) => c.attempted >= 2 && c.wrong > 0)
       .sort(
-        (a, b) => b.rate - a.rate || b.wrong - a.wrong || a.number - b.number,
+        (a, b) => b.wrong - a.wrong || b.rate - a.rate || a.number - b.number,
       )
       .slice(0, 3);
+    const prompt = Array.from(
+      hard[0]?.prompt.replace(/\s+/g, " ").trim() ?? "",
+    );
     const requests = [
       ...new Map(
         help
@@ -66,8 +70,17 @@ export function lessonReport(
       solved,
       total: own.length * group.cards.length,
       hard,
+      enoughAnswers,
       requests,
-      advice: hard[0] ?? null,
+      advice: hard[0]
+        ? {
+            ...hard[0],
+            prompt:
+              prompt.length > 80
+                ? prompt.slice(0, 79).join("") + "…"
+                : prompt.join(""),
+          }
+        : null,
     };
   });
 }

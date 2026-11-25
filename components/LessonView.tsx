@@ -37,7 +37,7 @@ export function LessonView({
     .join(" · ");
 
   return (
-    <>
+    <div data-lesson-view>
       <LessonNav lang={lang} />
       <div className="flex flex-wrap items-center gap-3 text-[0.9rem] print:hidden">
         <Link
@@ -144,6 +144,6 @@ export function LessonView({
           <TaskCards groups={plan.groups} dict={dict} />
         </div>
       </section>
-    </>
+    </div>
   );
 }

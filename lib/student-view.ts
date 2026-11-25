@@ -1,4 +1,8 @@
-import { cardUnlocked, clockMinute } from "./lesson-clock";
+import {
+  cardUnlocked,
+  clockMinute,
+  practiceUnlockInMinutes,
+} from "./lesson-clock";
 import { segmentAt } from "./lesson";
 import type { StoredSession } from "./store";
 import { readProgress, studentCards, type StudentCard } from "./student";
@@ -45,6 +49,7 @@ export type StudentView = {
   clock?: {
     mode: "with_teacher" | "independent" | "joint";
     cards: number[];
+    unlockInMinutes: number | null;
   } | null;
   lessonId: string;
   name: string;
@@ -94,6 +99,12 @@ export function studentView(
     clock: segment
       ? {
           mode: segment.mode,
+          unlockInMinutes: practiceUnlockInMinutes(
+            session.plan,
+            group.id,
+            session.run ?? null,
+            now,
+          ),
           cards: (segment.cardIds ?? [])
             .map((id) => group.cards.findIndex((c) => c.id === id) + 1)
             .filter((n) => n > 0),
@@ -119,7 +130,18 @@ export function studentView(
     needsHelp: session.needsHelp,
     helpCard: session.helpCard,
     guide: studentGuide(group),
-    extraCards: studentCards(group, progress, group.extraCards ?? []),
+    extraCards: studentCards(group, progress, group.extraCards ?? []).map(
+      (c, i) => ({
+        ...c,
+        locked: !cardUnlocked(
+          session.plan,
+          group.id,
+          group.extraCards![i],
+          session.run ?? null,
+          now,
+        ),
+      }),
+    ),
     trainer: task && {
       solved: trainerState.solved,
       wrong: trainerState.wrong,

@@ -47,6 +47,8 @@ export function StudentsPanel({
   dict,
   lang,
   isDemo = false,
+  demoStart = null,
+  onToggleDemo,
 }: {
   lessonId: string;
   token: string;
@@ -55,11 +57,15 @@ export function StudentsPanel({
   dict: Dict;
   lang: Locale;
   isDemo?: boolean;
+  demoStart?: number | null;
+  onToggleDemo: () => void;
 }) {
   const dd = getDemoClassDict(lang);
-  const [demoStart, setDemoStart] = useState<number | null>(null);
   const [demoNow, setDemoNow] = useState(0);
-  const [demoHelped, setDemoHelped] = useState<string[]>([]);
+  const [demoHelped, setDemoHelped] = useState<{
+    start: number | null;
+    ids: string[];
+  }>({ start: null, ids: [] });
   useEffect(() => {
     if (demoStart === null) return;
     const timer = setInterval(() => setDemoNow(Date.now()), 2000);
@@ -82,7 +88,10 @@ export function StudentsPanel({
       demoStart === null
         ? []
         : demoClass(plan, 42, demoStart, (demoNow - demoStart) / 1000).map(
-            (s) => (demoHelped.includes(s.id) ? { ...s, needsHelp: false } : s),
+            (s) =>
+              demoHelped.start === demoStart && demoHelped.ids.includes(s.id)
+                ? { ...s, needsHelp: false }
+                : s,
           );
     return realStudents === null && !simulated.length
       ? null
@@ -169,7 +178,10 @@ export function StudentsPanel({
 
   async function helped(sessionId: string) {
     if (sessionId.startsWith("demo-student-")) {
-      setDemoHelped((ids) => [...ids, sessionId]);
+      setDemoHelped((previous) => ({
+        start: demoStart,
+        ids: [...(previous.start === demoStart ? previous.ids : []), sessionId],
+      }));
       return;
     }
     try {
@@ -272,15 +284,8 @@ export function StudentsPanel({
           <button
             type="button"
             className="btn btn-secondary btn-sm"
-            onClick={() => {
-              if (demoStart !== null) setDemoStart(null);
-              else {
-                const at = Date.now();
-                setDemoHelped([]);
-                setDemoNow(at);
-                setDemoStart(at);
-              }
-            }}
+            aria-pressed={demoStart !== null}
+            onClick={onToggleDemo}
           >
             {demoStart === null ? dd.start : dd.stop}
           </button>
@@ -320,7 +325,6 @@ export function StudentsPanel({
           ) : (
             <p className="mt-2 text-sm text-muted">{hd.empty}</p>
           )}
-          <p className="mt-2 text-xs text-muted">{hd.timeNote}</p>
         </div>
       )}
 
