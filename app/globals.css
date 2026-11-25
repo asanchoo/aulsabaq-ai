@@ -345,3 +345,9 @@ body {
     background: white;
   }
 }
+
+/* Навигация урока: 64px шапки + 60px панели + свободный отступ. */
+@media (max-width: 1023px) {
+  html { scroll-padding-top: 140px; }
+}
+@media print { .lesson-nav { display: none !important; } }

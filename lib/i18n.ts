@@ -1053,3 +1053,11 @@ const creationKk: typeof creationRu = {
 export function getCreationDict(locale: Locale) {
   return locale === "kk" ? creationKk : creationRu;
 }
+
+export function getLessonToolsDict(lang: Locale) {
+  return lang === "kk" ? {
+    navigation: "Сабақ бөлімдері", timeline: "Сабақ барысы", explain: "Түсіндіру", cards: "Карточкалар", students: "Оқушылар", expand: "Түсіндіруді ашу немесе жабу",
+  } : {
+    navigation: "Разделы урока", timeline: "Ход урока", explain: "Объяснение", cards: "Карточки", students: "Ученики", expand: "Развернуть или свернуть объяснение",
+  };
+}

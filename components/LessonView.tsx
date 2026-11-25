@@ -1,3 +1,4 @@
+import { LessonNav } from "./LessonNav";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { LessonActions } from "./LessonActions";
@@ -22,6 +23,7 @@ export function LessonView({ plan, lang, dict, badge, notice, workspace, joinCod
 
   return (
     <>
+      <LessonNav lang={lang} />
       <div className="flex flex-wrap items-center gap-3 text-[0.9rem] print:hidden">
         <Link href={`/${lang}/teacher/new`} className="link inline-flex min-h-11 items-center text-muted hover:text-ink">
           ← {dict.lesson.backCreate}
