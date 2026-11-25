@@ -1,24 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { t, type Dict } from "@/lib/i18n";
-import { cardNumbers, segmentAt, timeSlots, groupTitle } from "@/lib/lesson";
-import { useLocal } from "@/lib/local";
+import { cardNumbers, segmentAt, groupTitle } from "@/lib/lesson";
 import type { LessonPlan } from "@/lib/schema";
+import { enableSound } from "@/lib/lesson-signal";
 import {
-  elapsedMs,
-  parseRun as parse,
-  runKey as keyOf,
-  type RunState,
-} from "@/lib/run-state";
-import {
-  enableSound,
-  lessonSignal,
-  soundEnabled,
-  SOUND_KEY,
-} from "@/lib/lesson-signal";
-import { useWakeLock } from "./useWakeLock";
+  saveRun as save,
+  changeRun as change,
+  shiftRun,
+  finishRun,
+} from "@/lib/run-controls";
+import { useLessonClock, formatClock as clock } from "./useLessonClock";
 import { modeBlock } from "./modes";
+export { startRun, saveRun } from "@/lib/run-controls";
+export { useRunning, useRunMinute } from "./useLessonClock";
 
 /**
  * Ведение урока: таймер и подсказка, что сейчас делает каждый класс и что будет дальше.
@@ -26,57 +21,6 @@ import { modeBlock } from "./modes";
  * держать расписание в голове трудно, а здесь оно идёт само.
  * Состояние в localStorage: обновили страницу посреди урока, таймер продолжил с того же места.
  */
-
-function save(lessonId: string, state: RunState | null) {
-  try {
-    if (state) localStorage.setItem(keyOf(lessonId), JSON.stringify(state));
-    else localStorage.removeItem(keyOf(lessonId));
-    window.dispatchEvent(new Event("aulsabaq-local-change"));
-  } catch {
-    // хранение запрещено: таймер не переживёт перезагрузку, но работает
-  }
-}
-
-/** Меняет состояние по свежему значению из хранилища: два быстрых нажатия «+1» дают две минуты, а не одну. */
-function change(
-  lessonId: string,
-  fn: (state: RunState, now: number) => RunState | null,
-) {
-  let current: RunState | null = null;
-  try {
-    current = parse(localStorage.getItem(keyOf(lessonId)) ?? "");
-  } catch {
-    // хранение запрещено
-  }
-  if (current) save(lessonId, fn(current, Date.now()));
-}
-
-export function startRun(lessonId: string) {
-  if (soundEnabled()) enableSound(true);
-  save(lessonId, { startedAt: Date.now(), pausedAt: null });
-}
-
-export function useRunning(lessonId: string) {
-  return parse(useLocal(keyOf(lessonId))) !== null;
-}
-
-/** Used by teacher panels so queue priorities follow the same local clock. */
-export function useRunMinute(lessonId: string): number | undefined {
-  const state = parse(useLocal(keyOf(lessonId)));
-  const running = state !== null && state.pausedAt === null;
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (!running) return;
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, [running]);
-  return state ? Math.floor(elapsedMs(state, now) / 60_000) : undefined;
-}
-
-const clock = (ms: number) => {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
-};
 
 export function LessonRunner({
   lessonId,
@@ -88,51 +32,10 @@ export function LessonRunner({
   dict: Dict;
 }) {
   const d = dict.run;
-  const state = parse(useLocal(keyOf(lessonId)));
-  const [now, setNow] = useState(() => Date.now());
-
-  const elapsed = elapsedMs(state, now);
-  const minute = Math.floor(elapsed / 60_000);
-  const ended = minute >= plan.durationMin;
-  const ticking = !!state && state.pausedAt === null && !ended;
-  const sound = useLocal(SOUND_KEY) === "on";
-  const hasState = state !== null;
-  const boundary =
-    timeSlots(plan).find((s) => s.startMin <= minute && minute < s.endMin)
-      ?.startMin ?? (ended ? plan.durationMin : -1);
-  const lastBoundary = useRef<number | null>(null);
-  useWakeLock(ticking);
-  useEffect(() => {
-    if (
-      lastBoundary.current !== null &&
-      lastBoundary.current !== boundary &&
-      ticking
-    )
-      lessonSignal();
-    lastBoundary.current = hasState ? boundary : null;
-  }, [boundary, ticking, hasState]);
-  useEffect(() => {
-    if (!ticking) return;
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, [ticking]);
-
+  const { state, elapsed, minute, ended, sound, slot, next, fresh } =
+    useLessonClock(lessonId, plan);
   if (!state) return null;
-  const slots = timeSlots(plan);
-  const slot = slots.find((s) => s.startMin <= minute && minute < s.endMin);
-  const next = slot ? slots[slots.indexOf(slot) + 1] : undefined;
-  // Первые 10 секунд нового отрезка подсвечиваем: учителю пора переключиться.
-  const fresh =
-    !!slot &&
-    !state.pausedAt &&
-    elapsed - slot.startMin * 60_000 < 10_000 &&
-    slot.startMin > 0;
-
-  const shift = (ms: number) =>
-    change(lessonId, (s, n) => ({
-      ...s,
-      startedAt: Math.min(s.startedAt + ms, s.pausedAt ?? n),
-    }));
+  const shift = (ms: number) => shiftRun(lessonId, ms);
 
   const nextText = next
     ? next.allJoint
@@ -290,12 +193,7 @@ export function LessonRunner({
               className="btn btn-secondary btn-sm"
               onClick={() => {
                 if (window.confirm(d.stopConfirm)) {
-                  window.dispatchEvent(
-                    new CustomEvent("aulsabaq-show-report", {
-                      detail: { lessonId },
-                    }),
-                  );
-                  save(lessonId, null);
+                  finishRun(lessonId);
                 }
               }}
             >
@@ -307,5 +205,3 @@ export function LessonRunner({
     </>
   );
 }
-
-export { save as saveRun };

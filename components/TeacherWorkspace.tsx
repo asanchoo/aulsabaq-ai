@@ -1,5 +1,6 @@
 "use client";
 
+import { useDemoClass } from "./useClassroomStudents";
 import { NumberVariantsControl } from "./NumberVariantsControl";
 import { mathSubject } from "@/lib/card-variants";
 import Link from "next/link";
@@ -7,6 +8,7 @@ import { RunSync } from "./RunSync";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import {
+  getLiveDict,
   getClockDict,
   getPhonePolicy,
   getDemoClassDict,
@@ -62,11 +64,8 @@ export function TeacherWorkspace({
   const token = useSavedLessons().find((l) => l.id === lessonId)?.token ?? null;
   const running = useRunning(lessonId);
   const [editing, setEditing] = useState(false);
-  const [demoStart, setDemoStart] = useState<number | null>(null);
+  const { start: demoStart, toggle: toggleDemo } = useDemoClass(lessonId);
   const demo = getDemoClassDict(lang);
-  function toggleDemo() {
-    setDemoStart((at) => (at === null ? Date.now() : null));
-  }
   const [notice, setNotice] = useState<string[] | null>(null);
   const [manualLink, setManualLink] = useState<"join" | "owner" | null>(null);
   const [copied, setCopied] = useState<"join" | "owner" | null>(null);
@@ -146,7 +145,15 @@ export function TeacherWorkspace({
           <p className="mt-3 text-sm leading-relaxed text-ink">
             {getPhonePolicy(lang)}
           </p>
-          {token && mathSubject(plan.subject) && <NumberVariantsControl lessonId={lessonId} token={token} enabled={plan.numberVariants !== false} lang={lang} running={running} />}
+          {token && mathSubject(plan.subject) && (
+            <NumberVariantsControl
+              lessonId={lessonId}
+              token={token}
+              enabled={plan.numberVariants !== false}
+              lang={lang}
+              running={running}
+            />
+          )}
           {isDemo && token && (
             <div className="mt-5 border-t border-line-strong pt-4">
               <p className="text-sm leading-relaxed text-ink">{demo.hint}</p>
@@ -193,6 +200,12 @@ export function TeacherWorkspace({
                   </svg>
                   {d.run}
                 </button>
+                <Link
+                  href={`/${lang}/teacher/${lessonId}/live`}
+                  className="btn btn-secondary min-h-11"
+                >
+                  {getLiveDict(lang).title}
+                </Link>
                 <button
                   type="button"
                   className="btn btn-secondary"

@@ -2,7 +2,7 @@
 
 import { personalCard } from "@/lib/card-variants";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   getReportDict,
   getDemoClassDict,
@@ -13,16 +13,13 @@ import {
 } from "@/lib/i18n";
 import type { LessonPlan } from "@/lib/schema";
 import { isFinished, isStruggling, type CardState } from "@/lib/student";
-import { lessonSignal } from "@/lib/lesson-signal";
+import { useClassroomStudents } from "./useClassroomStudents";
 import { groupTitle } from "@/lib/lesson";
 
 import { LessonReport } from "./LessonReport";
 import type { HelpRecord } from "@/lib/lesson-report";
-import { demoClass } from "@/lib/demo-class";
 import { buildHelpQueue, type StudentRow } from "@/lib/help-queue";
 import { useRunMinute } from "./LessonRunner";
-
-const POLL_MS = 5000;
 
 const asState = (
   c: StudentRow["cards"][string] | undefined,
@@ -63,16 +60,6 @@ export function StudentsPanel({
   onToggleDemo: () => void;
 }) {
   const dd = getDemoClassDict(lang);
-  const [demoNow, setDemoNow] = useState(0);
-  const [demoHelped, setDemoHelped] = useState<{
-    start: number | null;
-    ids: string[];
-  }>({ start: null, ids: [] });
-  useEffect(() => {
-    if (demoStart === null) return;
-    const timer = setInterval(() => setDemoNow(Date.now()), 2000);
-    return () => clearInterval(timer);
-  }, [demoStart]);
   const d = dict.teacher;
   const rd = getReportDict(lang);
   const [reportRows, setReportRows] = useState<{
@@ -83,22 +70,8 @@ export function StudentsPanel({
 
   const hd = getHelpDict(lang);
   const minute = useRunMinute(lessonId);
-  const observedHelp = useRef(new Map<string, string>());
-  const [realStudents, setStudents] = useState<StudentRow[] | null>(null);
-  const students = useMemo(() => {
-    const simulated =
-      demoStart === null
-        ? []
-        : demoClass(plan, 42, demoStart, (demoNow - demoStart) / 1000).map(
-            (s) =>
-              demoHelped.start === demoStart && demoHelped.ids.includes(s.id)
-                ? { ...s, needsHelp: false }
-                : s,
-          );
-    return realStudents === null && !simulated.length
-      ? null
-      : [...(realStudents ?? []), ...simulated];
-  }, [realStudents, plan, demoStart, demoNow, demoHelped]);
+  const { students, offline, sampleTime, demoNow, helped } =
+    useClassroomStudents(lessonId, token, plan, demoStart);
   useEffect(() => {
     for (const s of students ?? [])
       if (s.needsHelp && s.helpCard)
@@ -118,96 +91,6 @@ export function StudentsPanel({
     window.addEventListener("aulsabaq-show-report", finish);
     return () => window.removeEventListener("aulsabaq-show-report", finish);
   }, [students, lessonId]);
-  const [sampleTime, setSampleTime] = useState(() => Date.now());
-  const [offline, setOffline] = useState(false);
-  const previousHelp = useRef<Set<string> | null>(null);
-  useEffect(() => {
-    if (!students) return;
-    const help = new Set(students.filter((s) => s.needsHelp).map((s) => s.id));
-    if (
-      previousHelp.current &&
-      [...help].some((id) => !previousHelp.current!.has(id))
-    )
-      lessonSignal();
-    previousHelp.current = help;
-    const base = document.title.replace(/^\(\d+\) /, "");
-    document.title = help.size ? `(${help.size}) ${base}` : base;
-    return () => {
-      document.title = base;
-    };
-  }, [students]);
-
-  const load = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/lessons/${lessonId}/students`, {
-        headers: { "x-teacher-token": token },
-        cache: "no-store",
-      });
-      if (!response.ok) throw new Error(String(response.status));
-      const data = await response.json();
-      setSampleTime(Date.now());
-      const rows = data.students as StudentRow[];
-      for (const id of observedHelp.current.keys())
-        if (!rows.some((s) => s.id === id && s.needsHelp))
-          observedHelp.current.delete(id);
-      setStudents(
-        rows.map((s) => {
-          if (!s.needsHelp) return s;
-          if (!observedHelp.current.has(s.id))
-            observedHelp.current.set(s.id, s.updatedAt);
-          return { ...s, helpRequestedAt: observedHelp.current.get(s.id) };
-        }),
-      );
-      setOffline(false);
-    } catch {
-      setOffline(true);
-    }
-  }, [lessonId, token]);
-
-  useEffect(() => {
-    const tick = () => {
-      if (document.visibilityState === "visible") void load();
-    };
-    const first = setTimeout(() => void load(), 0);
-    const timer = setInterval(tick, POLL_MS);
-    document.addEventListener("visibilitychange", tick);
-    return () => {
-      clearTimeout(first);
-      clearInterval(timer);
-      document.removeEventListener("visibilitychange", tick);
-    };
-  }, [load]);
-
-  async function helped(sessionId: string) {
-    if (sessionId.startsWith("demo-student-")) {
-      setDemoHelped((previous) => ({
-        start: demoStart,
-        ids: [...(previous.start === demoStart ? previous.ids : []), sessionId],
-      }));
-      return;
-    }
-    try {
-      const response = await fetch(`/api/lessons/${lessonId}/students`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-teacher-token": token,
-        },
-        body: JSON.stringify({ action: "clear_help", sessionId }),
-      });
-      if (!response.ok) throw new Error(String(response.status));
-      setStudents(
-        (list) =>
-          list?.map((s) =>
-            s.id === sessionId ? { ...s, needsHelp: false } : s,
-          ) ?? null,
-      );
-      await load();
-    } catch {
-      setOffline(true);
-    }
-  }
-
   const groupOf = (id: string) => plan.groups.find((g) => g.id === id);
   const gradeOf = (id: string) => {
     const g = groupOf(id);
@@ -489,7 +372,15 @@ export function StudentsPanel({
                                 if (!st) return null;
                                 return (
                                   <li key={c.id}>
-                                    {t(dict.common.card, { n: i + 1 })}: {plan.numberVariants !== false ? personalCard(c, g, s.id, g.language ?? plan.language).prompt : c.prompt}{" "}
+                                    {t(dict.common.card, { n: i + 1 })}:{" "}
+                                    {plan.numberVariants !== false
+                                      ? personalCard(
+                                          c,
+                                          g,
+                                          s.id,
+                                          g.language ?? plan.language,
+                                        ).prompt
+                                      : c.prompt}{" "}
                                     {d.status[st.status]}
                                     {st.attempts > 0 &&
                                       `, ${t(d.attempts, { n: st.attempts })}`}

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocal } from "@/lib/local";
 import { parseRun, runKey } from "@/lib/run-state";
 import { getClockDict, type Locale } from "@/lib/i18n";
-import { saveRun } from "./LessonRunner";
+import { saveRun } from "@/lib/run-controls";
 
 /** Disabled server-side until migration is applied. Serial writes keep quick pause/shift clicks ordered. */
 export function RunSync({

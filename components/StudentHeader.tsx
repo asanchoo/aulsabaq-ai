@@ -21,6 +21,7 @@ export function StudentHeader({
   const pathname = usePathname();
   const router = useRouter();
   const last = useLastStudent();
+  if (pathname.endsWith("/live")) return null;
   const route = pathname.split("/")[2];
   if (route !== "join" && route !== "student") return children;
   return (
