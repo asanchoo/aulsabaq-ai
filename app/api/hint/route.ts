@@ -10,7 +10,10 @@ import { emptyState, findCard, MAX_HINTS, readProgress } from "@/lib/student";
 
 export const maxDuration = 60;
 
-const BodySchema = z.object({ sessionId: z.string(), cardId: z.string().max(20) });
+const BodySchema = z.object({
+  sessionId: z.string(),
+  cardId: z.string().max(20),
+});
 
 /**
  * POST: следующая подсказка ученику по карточке, не больше трёх.
@@ -31,7 +34,16 @@ export async function POST(request: Request) {
     const found = findCard(session.plan, session.groupId, parsed.data.cardId);
     if (!found) return fail("not_found", 404);
     const { group, card } = found;
-    if (!cardUnlocked(session.plan,group.id,card,session.run??null,Date.now())) return fail("locked",409);
+    if (
+      !cardUnlocked(
+        session.plan,
+        group.id,
+        card,
+        session.run ?? null,
+        Date.now(),
+      )
+    )
+      return fail("locked", 409);
     const state = readProgress(session.progress)[card.id] ?? emptyState();
     if (state.status !== "todo") return fail("finished", 409);
     if (state.hints >= MAX_HINTS) return fail("no_hints", 409);
@@ -43,19 +55,37 @@ export async function POST(request: Request) {
     } else {
       // Общий суточный предел ИИ-подсказок исчерпан: ученик всё равно получает запасную подсказку.
       const aiAllowed = (await checkDailyCap("hint")) === 0;
-      hint = aiAllowed ? await generateHint({
-        language: groupLanguage(session.plan, group), subject: session.plan.subject, grade: group.grade, topic: group.topic,
-        card, studentAnswer: state.lastAnswer, previousHints: state.hintTexts,
-      }) : null;
+      hint = aiAllowed
+        ? await generateHint({
+            language: groupLanguage(session.plan, group),
+            subject: session.plan.subject,
+            grade: group.grade,
+            topic: group.topic,
+            card,
+            studentAnswer: state.lastAnswer,
+            previousHints: state.hintTexts,
+          })
+        : null;
       source = hint ? "ai" : "fallback";
       if (!hint) {
-        const fallback = getDict(groupLanguage(session.plan, group)).student.fallbackHints;
-        hint = t(fallback[Math.min(state.hints - 1, fallback.length - 1)], { criteria: card.successCriteria });
+        const fallback = getDict(groupLanguage(session.plan, group)).student
+          .fallbackHints;
+        hint = t(fallback[Math.min(state.hints - 1, fallback.length - 1)], {
+          criteria: card.successCriteria,
+        });
       }
     }
 
-    const next = { ...state, hints: state.hints + 1, hintTexts: [...state.hintTexts, hint] };
-    await updateSession(parsed.data.sessionId, { cardId: card.id, cardState: next, currentCard: card.id });
+    const next = {
+      ...state,
+      hints: state.hints + 1,
+      hintTexts: [...state.hintTexts, hint],
+    };
+    await updateSession(parsed.data.sessionId, {
+      cardId: card.id,
+      cardState: next,
+      currentCard: card.id,
+    });
     return Response.json({ hint, source, hintsLeft: MAX_HINTS - next.hints });
   } catch (error) {
     return storageFailure(error);
