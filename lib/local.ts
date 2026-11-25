@@ -108,7 +108,7 @@ export type PendingLesson = {
   durationMin: number;
   startedAt: number;
   /** Что учитель ввёл в форму (без фото): после перезагрузки форма снова заполнена, и при ошибке не надо вводить всё заново. */
-  draft?: { grade: number; language: "kk" | "ru"; topic: string; count: string; notes: string; pages: string }[];
+  draft?: { quarter?: number; grade: number; language: "kk" | "ru"; topic: string; count: string; notes: string; pages: string }[];
 };
 
 export function readPending(): PendingLesson | null {

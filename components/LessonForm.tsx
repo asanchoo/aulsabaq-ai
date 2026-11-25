@@ -17,6 +17,7 @@ import {
 import type { JobView, LessonProgress } from "@/lib/progress";
 import { initialProgress } from "@/lib/progress";
 import { LessonBuilding } from "./LessonBuilding";
+import { CurriculumPicker } from "./CurriculumPicker";
 import { AutoTextarea } from "./AutoTextarea";
 
 type Photo = { mimeType: "image/jpeg"; data: string; preview: string };
@@ -25,6 +26,7 @@ type GroupDraft = {
   grade: number;
   language: Locale;
   topic: string;
+  quarter?: number;
   count: string;
   notes: string;
   pages: string;
@@ -149,6 +151,7 @@ export function LessonForm({ lang }: { lang: Locale }) {
             draft.data.groups.map((g, i) => ({
               ...newGroup(i + 1, g.grade, g.language ?? draft.data.language),
               topic: g.topic,
+              quarter: g.quarter,
               notes: g.notes ?? "",
               count: g.studentCount ? String(g.studentCount) : "",
               showNotes: !!g.notes,
@@ -263,6 +266,7 @@ export function LessonForm({ lang }: { lang: Locale }) {
       groups: groups.map((g) => ({
         grade: g.grade,
         topic: g.topic.trim(),
+        ...(g.quarter ? { quarter: g.quarter } : {}),
         language: g.language,
         ...(g.count ? { studentCount: Number(g.count) } : {}),
         ...(g.notes.trim() ? { notes: g.notes.trim() } : {}),
@@ -319,13 +323,14 @@ export function LessonForm({ lang }: { lang: Locale }) {
           durationMin: input.data.durationMin,
           startedAt: Date.now(),
           draft: groups.map(
-            ({ grade, language, topic, count, notes, pages }) => ({
+            ({ grade, language, topic, count, notes, pages, quarter }) => ({
               grade,
               language,
               topic,
               count,
               notes,
               pages,
+              quarter,
             }),
           ),
         };
@@ -582,6 +587,10 @@ export function LessonForm({ lang }: { lang: Locale }) {
                             : undefined
                         }
                       />
+                      <CurriculumPicker key={`${subject}-${group.grade}-${group.language}-${group.quarter}`} subject={subject} grade={group.grade}
+                        language={group.language} quarter={group.quarter}
+                        onQuarter={(quarter) => update(group.id, { quarter })}
+                        onTopic={(topic) => update(group.id, { topic })} />
                     </div>
                     <div>
                       <label

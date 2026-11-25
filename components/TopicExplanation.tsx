@@ -1,6 +1,7 @@
 import { ExplanationDisclosure } from "./ExplanationDisclosure";
 import { ExplanationSlides } from "./ExplanationSlides";
 import {
+  getCurriculumDict,
   getDict,
   getLessonToolsDict,
   t,
@@ -48,6 +49,7 @@ export function TopicExplanation({
                   {grade}
                 </h3>
                 <p className="mt-1 font-medium">{g.topic}</p>
+                {g.curriculumGoals?.length ? <p className="mt-2 text-sm text-muted">{getCurriculumDict(g.language ?? lang).goals}: {g.curriculumGoals.map((goal) => goal.code).join(", ")}</p> : null}
                 {g.source && (
                   <p className="mt-1 text-[0.9rem] text-muted">
                     {l.source}
@@ -63,6 +65,7 @@ export function TopicExplanation({
               {/* Слайды видит класс: у класса со своим языком (урок на двух языках) подписи на его языке. */}
               <ExplanationSlides
                 explanation={e}
+                curriculumGoals={g.curriculumGoals}
                 grade={
                   g.language
                     ? groupTitle(groups, g, getDict(g.language).common)

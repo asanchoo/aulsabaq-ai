@@ -1,3 +1,4 @@
+import { curriculumGoals, resolveCurriculumGoal } from "./curriculum";
 import { z } from "zod";
 import {
   cardFromModel, contentToLesson, GeneratedCardSchema, GeneratedContentSchema, GeneratedExplanationSchema, requestForModel,
@@ -11,7 +12,7 @@ import { applyRulesReview, introducesSuspects, isLanguageSubject, rulesRequest, 
 import { applyCorrections, collectTexts, safeCorrections } from "./proofread";
 import { ProviderError, resolveFastProvider, resolveProvider, type Provider, type ProviderImage } from "./providers";
 import { planSchedule } from "./schedule";
-import { checkExplanation, checkReviewCards, checkSingleCard, hintRevealsAnswer, maxCardMinutes, minCards, parseExplained, validateLessonPlan } from "./validate";
+import { sanitizeCurriculumGoals, checkExplanation, checkReviewCards, checkSingleCard, hintRevealsAnswer, maxCardMinutes, minCards, parseExplained, validateLessonPlan } from "./validate";
 import { findMixedScriptWord, prettyMathDeep } from "./arithmetic";
 import { groupLanguage, TaskCardSchema, type Explanation, type LessonCore, type LessonPlan, type TaskCard } from "./schema";
 
@@ -135,6 +136,11 @@ function photosOf(input: LessonRequest, only?: number): ProviderImage[] {
   }))));
 }
 
+/** Both content requests share the same trusted objectives, selected before the model writes anything. */
+function goalsFor(input: LessonRequest, index: number) {
+  return curriculumGoals({ subject: input.subject, ...input.groups[index], language: requestLanguage(input, index) });
+}
+
 type Explained = { explanation: Explanation; reviewCards: GeneratedCard[] };
 
 /**
@@ -165,7 +171,7 @@ function planJob(input: LessonRequest, explained: Explained[]): Job<LessonCore> 
     name: "plan",
     instructions: lessonInstructions(input.language, requestLanguages(input)),
     request: {
-      request: requestForModel(input),
+      request: { ...requestForModel(input), groups: requestForModel(input).groups.map((g, i) => ({ ...g, curriculumGoals: goalsFor(input, i) })) },
       // Сколько минут каждый класс работает сам: карточек должно хватить на это время, с запасом.
       cardPlan: schedule.cards.map((c, i) => {
         const grade = input.groups[i].grade;
@@ -204,6 +210,7 @@ function explanationJob(input: LessonRequest, index: number): Job<Explained> {
     instructions: explanationInstructions(requestLanguage(input, index)),
     request: {
       subject: input.subject, language: requestLanguage(input, index), grade: group.grade, topic: group.topic,
+      curriculumGoals: goalsFor(input, index),
       notes: group.notes ?? null, pages: group.pages ?? null, textbookPhotos: group.photos?.length ?? 0,
       explainMinutes,
       // Сколько минут класс сам повторяет до объяснения и сколько карточек повторения нужно (0 — не нужно).
@@ -247,6 +254,7 @@ async function extraBank(provider: Provider, input: LessonRequest, index: number
       instructions: extraInstructions(requestLanguage(input, index)),
       input: JSON.stringify({
         subject: input.subject, language: requestLanguage(input, index), grade: group.grade, topic: group.topic, count: EXTRA_COUNT,
+        curriculumGoals: goalsFor(input, index),
         keyIdea: explanation.keyIdea,
         examples: [explanation.example, ...explanation.examples].map((x) => x.problem),
         practiceOnSlides: explanation.practice.map((p) => p.task),
@@ -307,6 +315,7 @@ export async function generateLesson(input: LessonRequest, onProgress?: (progres
       const source = asked.pages || asked.photos?.length ? { pages: asked.pages || null, photos: asked.photos?.length ?? 0 } : null;
       return {
         id: g.id, grade: g.grade, topic: g.topic, learningGoal: g.learningGoal,
+        quarter: asked.quarter, curriculumGoals: goalsFor(input, i),
         explanation: explanations[i], cards: g.cards, homework: g.homework, source,
         ...(mixed ? { language: requestLanguage(input, i) } : {}),
         ...bankFor(banks[i], g.cards),
@@ -319,7 +328,7 @@ export async function generateLesson(input: LessonRequest, onProgress?: (progres
   emit({ stage: "check", check: language ? "rules" : "verify" });
   const reviewed = language ? await reviewRules(checker, lesson, startedAt) : await verifyAnswers(checker, lesson, startedAt);
   emit({ stage: "proof", extra: reviewed.groups.reduce((n, g) => n + (g.extraCards?.length ?? 0), 0) });
-  return proofreadLesson(checker, reviewed, startedAt);
+  return sanitizeCurriculumGoals(await proofreadLesson(checker, reviewed, startedAt), resolveCurriculumGoal);
 }
 
 // ---------------------------------------------------------------------------

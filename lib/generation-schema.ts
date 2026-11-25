@@ -18,6 +18,7 @@ export const LessonRequestSchema = z.object({
   groups: z.array(z.object({
     grade: z.number().int().min(1).max(11),
     topic: z.string().trim().min(1).max(300),
+    quarter: z.number().int().min(1).max(4).optional(),
     studentCount: z.number().int().min(1).max(100).optional(),
     /** Что учитель хочет сказать о классе: что уже прошли, уровень, на что обратить внимание. Необязательно. */
     notes: z.string().trim().max(300).optional(),
@@ -69,7 +70,7 @@ export const GeneratedContentSchema = z.object({
   durationMin: z.number().int(),
   opening: z.string().min(1),
   closing: z.string().min(1),
-  groups: z.array(GroupCoreSchema.omit({ id: true, source: true, language: true, extraCards: true, trainer: true }).extend({
+  groups: z.array(GroupCoreSchema.omit({ id: true, source: true, language: true, extraCards: true, trainer: true, quarter: true, curriculumGoals: true }).extend({
     /** Карточки практики по новой теме. Карточки повторения уже написал запрос объяснения. */
     cards: z.array(GeneratedCardSchema),
     stages: StagesSchema,
