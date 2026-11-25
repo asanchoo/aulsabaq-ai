@@ -37,7 +37,7 @@ export function TaskCardVariants({
           ))}
         </div>
       )}
-      <TaskCards groups={printed.groups} dict={dict} />
+      <TaskCards groups={printed.groups} dict={dict} plan={printed} lang={lang} />
     </>
   );
 }
