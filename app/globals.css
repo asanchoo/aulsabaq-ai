@@ -35,7 +35,8 @@
 
 @theme inline {
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-mono:
+    var(--font-jetbrains), ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 
 :root {
@@ -182,7 +183,9 @@ body {
     border-radius: var(--radius-btn);
     background: #fff;
     font-size: 1rem;
-    transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+    transition:
+      border-color 160ms var(--ease-out),
+      box-shadow 160ms var(--ease-out);
   }
   .field::placeholder {
     color: var(--color-faint);
@@ -348,14 +351,35 @@ body {
 
 /* Навигация урока: 64px шапки + 60px панели + свободный отступ. */
 @media (max-width: 1023px) {
-  html { scroll-padding-top: 140px; }
+  html {
+    scroll-padding-top: 140px;
+  }
 }
-@media print { .lesson-nav { display: none !important; } }
+@media print {
+  .lesson-nav {
+    display: none !important;
+  }
+}
 
 @media print {
-  body:has(.lesson-report[open]) > :not(.lesson-report) { display: none !important; }
-  .lesson-report[open] { position: static; display: block; max-height: none; width: 100%; margin: 0; padding: 0; overflow: visible; border: 0; }
+  body:has(.lesson-report[open]) > :not(.lesson-report) {
+    display: none !important;
+  }
+  .lesson-report[open] {
+    position: static;
+    display: block;
+    max-height: none;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    border: 0;
+  }
 }
 
-body:has(.projector) > header { display: none; }
-.projector:fullscreen { overflow-y: auto; }
+body:has(.projector) > header {
+  display: none;
+}
+.projector:fullscreen {
+  overflow-y: auto;
+}
