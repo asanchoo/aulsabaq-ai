@@ -28,7 +28,7 @@ export function TaskCardVariants({
             <button
               key={n}
               type="button"
-              className="btn-secondary min-h-11"
+              className="btn btn-secondary aria-pressed:bg-ink aria-pressed:text-white min-h-11"
               aria-pressed={variant === n}
               onClick={() => setVariant(n)}
             >

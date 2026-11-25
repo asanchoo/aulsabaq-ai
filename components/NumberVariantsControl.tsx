@@ -45,7 +45,7 @@ export function NumberVariantsControl({
     <div className="mt-4">
       <button
         type="button"
-        className="btn-secondary min-h-11"
+        className="btn btn-secondary aria-pressed:bg-ink aria-pressed:text-white min-h-11 w-full px-3 text-sm whitespace-normal"
         aria-pressed={enabled}
         disabled={busy || running}
         onClick={() => void toggle()}
