@@ -47,6 +47,19 @@ export function useRunning(lessonId: string) {
   return parse(useLocal(keyOf(lessonId))) !== null;
 }
 
+/** Used by teacher panels so queue priorities follow the same local clock. */
+export function useRunMinute(lessonId: string): number | undefined {
+  const state = parse(useLocal(keyOf(lessonId)));
+  const running = state !== null && state.pausedAt === null;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!running) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [running]);
+  return state ? Math.floor(elapsedMs(state, now) / 60_000) : undefined;
+}
+
 const clock = (ms: number) => {
   const total = Math.max(0, Math.floor(ms / 1000));
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
