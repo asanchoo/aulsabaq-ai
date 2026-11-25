@@ -1,13 +1,13 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { getDict, t, type Locale } from "@/lib/i18n";
-import type { Explanation, WorkedExample } from "@/lib/schema";
+import { getCurriculumDict, getDict, t, type Locale } from "@/lib/i18n";
+import type { CurriculumGoal, Explanation, WorkedExample } from "@/lib/schema";
 import { Visual } from "./Visual";
 import { isMathOnly } from "@/lib/lesson";
 import QRCode from "qrcode";
 
-type Props = { explanation: Explanation; grade: string; topic: string; lang: Locale; joinCode?: string };
+type Props = { explanation: Explanation; grade: string; topic: string; lang: Locale; joinCode?: string; curriculumGoals?: CurriculumGoal[] };
 
 /**
  * Объяснение темы как слайды для показа классу (проектор, телевизор, ноутбук).
@@ -20,7 +20,7 @@ type Props = { explanation: Explanation; grade: string; topic: string; lang: Loc
  */
 type Slide = { kicker: string; frames: number; render: (shown: number) => ReactNode };
 
-export function ExplanationSlides({ explanation: e, grade, topic, lang, joinCode }: Props) {
+export function ExplanationSlides({ explanation: e, grade, topic, lang, joinCode, curriculumGoals }: Props) {
   const dict = getDict(lang);
   const l = dict.lesson;
   const labels = l.slides;
@@ -265,6 +265,13 @@ export function ExplanationSlides({ explanation: e, grade, topic, lang, joinCode
       ),
     },
   ];
+  if (curriculumGoals?.length) slides.push({
+    kicker: getCurriculumDict(lang).sourceTitle, frames: 0,
+    render: () => <div className="grid gap-4 text-[clamp(1rem,2vw,1.6rem)]">
+      {curriculumGoals.map((goal) => <p key={goal.code}><strong>{goal.code}</strong> {goal.text}</p>)}
+      <p className="mt-4 text-sm text-muted">{getCurriculumDict(lang).source}</p>
+    </div>,
+  });
   const last = slides.length - 1;
 
   function open() {

@@ -567,3 +567,18 @@ function range(seg: Segment) {
 function unique<T>(items: T[]): T[] {
   return [...new Set(items)];
 }
+
+/** Сервер передаёт проверку по каталогу: клиентский валидатор не загружает 12 МБ программ.
+ * Неизвестная цель удаляется мягко; каталог возвращает собственный текст вместо текста модели. */
+export function sanitizeCurriculumGoals(
+  plan: LessonPlan,
+  resolve: (goal: NonNullable<LessonPlan["groups"][number]["curriculumGoals"]>[number], grade: number, language: "ru" | "kk") => NonNullable<LessonPlan["groups"][number]["curriculumGoals"]>[number] | null,
+): LessonPlan {
+  return { ...plan, groups: plan.groups.map((group) => ({
+    ...group,
+    ...(group.curriculumGoals ? { curriculumGoals: group.curriculumGoals.flatMap((goal) => {
+      const trusted = resolve(goal, group.grade, group.language ?? plan.language);
+      return trusted ? [trusted] : [];
+    }).slice(0, 5) } : {}),
+  })) };
+}

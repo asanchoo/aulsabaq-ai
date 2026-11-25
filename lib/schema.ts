@@ -115,11 +115,20 @@ export const ExplanationSchema = z.object({
   summary: z.array(z.string().min(1)).max(6).default([]),
 });
 
+export const CurriculumGoalSchema = z.object({
+  code: z.string().regex(/^\d+\.\d+\.\d+(?:\.\d+)?$/),
+  text: z.string().min(1),
+  programId: z.string().min(1),
+});
+export type CurriculumGoal = z.infer<typeof CurriculumGoalSchema>;
+
 export const GroupSchema = z.object({
   id: z.string().min(1),
   grade: z.number().int().min(1).max(11),
   topic: z.string().min(1),
   learningGoal: z.string().min(1),
+  quarter: z.number().int().min(1).max(4).optional(),
+  curriculumGoals: z.array(CurriculumGoalSchema).max(5).optional(),
   explanation: ExplanationSchema,
   cards: z.array(TaskCardSchema),
   /** Короткое домашнее задание по новой теме. */

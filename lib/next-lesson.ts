@@ -36,6 +36,7 @@ export function nextLessonDraft(
         .slice(0, 300);
       return {
         grade: group.grade,
+        ...(group.quarter ? { quarter: group.quarter } : {}),
         language: groupLanguage(plan, group),
         topic: group.topic,
         notes,
