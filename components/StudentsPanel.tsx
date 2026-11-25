@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { getHelpDict, t, type Dict, type Locale } from "@/lib/i18n";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { getDemoClassDict, getHelpDict, t, type Dict, type Locale } from "@/lib/i18n";
 import type { LessonPlan } from "@/lib/schema";
 import { isFinished, isStruggling, type CardState } from "@/lib/student";
 import { lessonSignal } from "@/lib/lesson-signal";
 import { groupTitle } from "@/lib/lesson";
 
+import { demoClass } from "@/lib/demo-class";
 import { buildHelpQueue, type StudentRow } from "@/lib/help-queue";
 import { useRunMinute } from "./LessonRunner";
 
@@ -19,12 +20,25 @@ const asState = (c: StudentRow["cards"][string] | undefined): CardState | undefi
  * Панель учителя: кто вошёл, кто на какой карточке, кто просит помощи и где классу было трудно.
  * Опрашивает сервер раз в 5 секунд, пока вкладка открыта (SPEC §4: polling проще Realtime и хватает для урока).
  */
-export function StudentsPanel({ lessonId, token, plan, joinCode, dict, lang }: { lessonId: string; token: string; plan: LessonPlan; joinCode: string; dict: Dict; lang: Locale }) {
+export function StudentsPanel({ lessonId, token, plan, joinCode, dict, lang, isDemo = false }: { lessonId: string; token: string; plan: LessonPlan; joinCode: string; dict: Dict; lang: Locale; isDemo?: boolean }) {
+  const dd = getDemoClassDict(lang);
+  const [demoStart, setDemoStart] = useState<number | null>(null);
+  const [demoNow, setDemoNow] = useState(0);
+  const [demoHelped, setDemoHelped] = useState<string[]>([]);
+  useEffect(() => {
+    if (demoStart === null) return;
+    const timer = setInterval(() => setDemoNow(Date.now()), 2000);
+    return () => clearInterval(timer);
+  }, [demoStart]);
   const d = dict.teacher;
   const hd = getHelpDict(lang);
   const minute = useRunMinute(lessonId);
   const observedHelp = useRef(new Map<string, string>());
-  const [students, setStudents] = useState<StudentRow[] | null>(null);
+  const [realStudents, setStudents] = useState<StudentRow[] | null>(null);
+  const students = useMemo(() => {
+    const simulated = demoStart === null ? [] : demoClass(plan, 42, demoStart, (demoNow - demoStart) / 1000).map((s) => demoHelped.includes(s.id) ? { ...s, needsHelp: false } : s);
+    return realStudents === null && !simulated.length ? null : [...(realStudents ?? []), ...simulated];
+  }, [realStudents, plan, demoStart, demoNow, demoHelped]);
   const [sampleTime, setSampleTime] = useState(() => Date.now());
   const [offline, setOffline] = useState(false);
   const previousHelp = useRef<Set<string> | null>(null);
@@ -73,6 +87,7 @@ export function StudentsPanel({ lessonId, token, plan, joinCode, dict, lang }: {
   }, [load]);
 
   async function helped(sessionId: string) {
+    if (sessionId.startsWith("demo-student-")) { setDemoHelped((ids) => [...ids, sessionId]); return; }
     try {
       const response = await fetch(`/api/lessons/${lessonId}/students`, {
         method: "POST",
@@ -94,7 +109,7 @@ export function StudentsPanel({ lessonId, token, plan, joinCode, dict, lang }: {
   };
   const cardNo = (groupId: string, cardId: string | null) => (groupOf(groupId)?.cards.findIndex((c) => c.id === cardId) ?? -1) + 1;
 
-  const queue = buildHelpQueue(students ?? [], plan, sampleTime, minute).slice(0, 3);
+  const queue = buildHelpQueue(students ?? [], plan, Math.max(sampleTime, demoNow), minute).slice(0, 3);
   const help = (students ?? []).filter((s) => s.needsHelp);
   const hard = plan.groups.flatMap((g) => {
     const own = (students ?? []).filter((s) => s.groupId === g.id);
@@ -112,6 +127,14 @@ export function StudentsPanel({ lessonId, token, plan, joinCode, dict, lang }: {
         </div>
         {offline && <p role="status" className="text-[0.88rem] text-help">{d.offline}</p>}
       </div>
+
+      {isDemo && <div className="mt-5">
+        <button type="button" className="btn btn-secondary btn-sm" onClick={() => {
+          if (demoStart !== null) setDemoStart(null);
+          else { const at = Date.now(); setDemoHelped([]); setDemoNow(at); setDemoStart(at); }
+        }}>{demoStart === null ? dd.start : dd.stop}</button>
+        {demoStart !== null && <p role="status" className="mt-3 rounded-card bg-stage p-3 text-sm">{dd.notice}</p>}
+      </div>}
 
       {students && <div className="mt-5 rounded-card border border-line p-4">
         <h3 className="font-semibold">{hd.title}</h3>
@@ -164,7 +187,7 @@ export function StudentsPanel({ lessonId, token, plan, joinCode, dict, lang }: {
                     return (
                       <li key={s.id} className="rounded-btn bg-white px-3 py-2.5">
                         <div className="flex items-center justify-between gap-3">
-                          <span className="min-w-0 truncate font-medium">{s.name}</span>
+                          <span className="min-w-0 truncate font-medium">{s.name}{s.id.startsWith("demo-student-") && <span className="ml-2 text-xs text-muted">{dd.label}</span>}</span>
                           <span className="tabular shrink-0 text-[0.85rem] text-muted">
                             {t(d.finished, { a: finished, b: g.cards.length })}
                             {more && <span className="ml-1.5 text-ink">+ {more}</span>}

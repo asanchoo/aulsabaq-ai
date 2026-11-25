@@ -128,7 +128,7 @@ export function TeacherWorkspace({ lessonId, joinCode, plan, lang, isDemo }: { l
         />
       )}
 
-      {token && <StudentsPanel lessonId={lessonId} token={token} plan={plan} joinCode={joinCode} dict={dict} lang={lang} />}
+      {token && <StudentsPanel lessonId={lessonId} token={token} plan={plan} joinCode={joinCode} dict={dict} lang={lang} isDemo={isDemo} />}
       <LessonRunner lessonId={lessonId} plan={plan} dict={dict} />
     </>
   );
