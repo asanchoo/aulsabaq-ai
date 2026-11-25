@@ -1,0 +1,205 @@
+{
+  "date": "2026-11-24T13:57:41.068Z",
+  "provider": "openai",
+  "primaryModel": "gpt-6-luna",
+  "verificationModel": null,
+  "cases": [
+    {
+      "id": 1,
+      "input": {
+        "subject": "Математика",
+        "language": "ru",
+        "durationMin": 45,
+        "groups": [
+          {
+            "grade": 2,
+            "topic": "Сложение двузначных чисел с переходом через десяток"
+          },
+          {
+            "grade": 4,
+            "topic": "Деление трёхзначного числа на однозначное"
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "input": {
+        "subject": "Математика",
+        "language": "ru",
+        "durationMin": 45,
+        "groups": [
+          {
+            "grade": 1,
+            "topic": "Сложение в пределах 10"
+          },
+          {
+            "grade": 2,
+            "topic": "Вычитание в пределах 100"
+          },
+          {
+            "grade": 3,
+            "topic": "Таблица умножения на 7"
+          }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "input": {
+        "subject": "Русский язык",
+        "language": "ru",
+        "durationMin": 45,
+        "groups": [
+          {
+            "grade": 2,
+            "topic": "Безударные гласные в корне"
+          },
+          {
+            "grade": 4,
+            "topic": "Однородные члены предложения"
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "input": {
+        "subject": "Познание мира",
+        "language": "ru",
+        "durationMin": 45,
+        "groups": [
+          {
+            "grade": 2,
+            "topic": "Времена года"
+          },
+          {
+            "grade": 3,
+            "topic": "Круговорот воды в природе"
+          }
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "input": {
+        "subject": "Русский язык",
+        "language": "ru",
+        "durationMin": 45,
+        "groups": [
+          {
+            "grade": 2,
+            "topic": "Имя существительное"
+          },
+          {
+            "grade": 3,
+            "topic": "Имя прилагательное"
+          },
+          {
+            "grade": 4,
+            "topic": "Глагол"
+          }
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "input": {
+        "subject": "Математика",
+        "language": "kk",
+        "durationMin": 45,
+        "groups": [
+          {
+            "grade": 2,
+            "topic": "Ондықтан аттап екі таңбалы сандарды қосу"
+          },
+          {
+            "grade": 4,
+            "topic": "Үш таңбалы санды бір таңбалы санға бөлу"
+          }
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "input": {
+        "subject": "Математика",
+        "language": "kk",
+        "durationMin": 45,
+        "groups": [
+          {
+            "grade": 1,
+            "topic": "10 көлеміндегі сандарды қосу"
+          },
+          {
+            "grade": 2,
+            "topic": "100 көлеміндегі сандарды азайту"
+          },
+          {
+            "grade": 3,
+            "topic": "7-ге көбейту кестесі"
+          }
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "input": {
+        "subject": "Қазақ тілі",
+        "language": "kk",
+        "durationMin": 45,
+        "groups": [
+          {
+            "grade": 2,
+            "topic": "Зат есім"
+          },
+          {
+            "grade": 4,
+            "topic": "Сөйлемнің бірыңғай мүшелері"
+          }
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "input": {
+        "subject": "Дүниетану",
+        "language": "kk",
+        "durationMin": 45,
+        "groups": [
+          {
+            "grade": 2,
+            "topic": "Жыл мезгілдері"
+          },
+          {
+            "grade": 3,
+            "topic": "Табиғаттағы су айналымы"
+          }
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "input": {
+        "subject": "Қазақ тілі",
+        "language": "kk",
+        "durationMin": 45,
+        "groups": [
+          {
+            "grade": 2,
+            "topic": "Сын есім"
+          },
+          {
+            "grade": 3,
+            "topic": "Етістік"
+          },
+          {
+            "grade": 4,
+            "topic": "Сөйлем мүшелері"
+          }
+        ]
+      }
+    }
+  ],
+  "scope": "Timeline and cards only; baseline gets JSON schema and one prompt, product runs its normal full pipeline. Neither arm is human-scored for pedagogy or grammar."
+}

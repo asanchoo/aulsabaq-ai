@@ -1,0 +1,36 @@
+{
+  "id": 4,
+  "input": {
+    "subject": "Познание мира",
+    "language": "ru",
+    "durationMin": 45,
+    "groups": [
+      {
+        "grade": 2,
+        "topic": "Времена года"
+      },
+      {
+        "grade": 3,
+        "topic": "Круговорот воды в природе"
+      }
+    ]
+  },
+  "baseline": {
+    "valid": false,
+    "schema": false,
+    "errors": [
+      "SCHEMA"
+    ],
+    "codes": [
+      "SCHEMA"
+    ],
+    "ms": 30581
+  },
+  "product": {
+    "valid": true,
+    "schema": true,
+    "errors": [],
+    "codes": [],
+    "ms": 76161
+  }
+}

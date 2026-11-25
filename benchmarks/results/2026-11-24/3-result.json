@@ -1,0 +1,36 @@
+{
+  "id": 3,
+  "input": {
+    "subject": "Русский язык",
+    "language": "ru",
+    "durationMin": 45,
+    "groups": [
+      {
+        "grade": 2,
+        "topic": "Безударные гласные в корне"
+      },
+      {
+        "grade": 4,
+        "topic": "Однородные члены предложения"
+      }
+    ]
+  },
+  "baseline": {
+    "valid": false,
+    "schema": false,
+    "errors": [
+      "SCHEMA"
+    ],
+    "codes": [
+      "SCHEMA"
+    ],
+    "ms": 31365
+  },
+  "product": {
+    "valid": true,
+    "schema": true,
+    "errors": [],
+    "codes": [],
+    "ms": 192417
+  }
+}
