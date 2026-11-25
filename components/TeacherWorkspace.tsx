@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { RunSync } from "./RunSync";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { getDict, t, type Locale } from "@/lib/i18n";
+import { getClockDict, getDict, t, type Locale } from "@/lib/i18n";
 import { rememberLesson, useSavedLessons } from "@/lib/local";
 import type { LessonPlan } from "@/lib/schema";
 import { LessonEditor } from "./LessonEditor";
@@ -132,6 +133,7 @@ export function TeacherWorkspace({ lessonId, joinCode, plan, lang, isDemo }: { l
 
       {token && <RunSync lessonId={lessonId} token={token} lang={lang} />}
       {token && <StudentsPanel lessonId={lessonId} token={token} plan={plan} joinCode={joinCode} dict={dict} lang={lang} isDemo={isDemo} />}
+      <Link href={`/${lang}/teacher/${lessonId}/projector`} target="_blank" rel="noopener noreferrer" className="btn btn-secondary mt-4 print:hidden">{getClockDict(lang).projector}</Link>
       <LessonRunner lessonId={lessonId} plan={plan} dict={dict} />
     </>
   );
