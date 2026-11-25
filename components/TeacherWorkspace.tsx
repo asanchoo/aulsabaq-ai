@@ -4,7 +4,13 @@ import Link from "next/link";
 import { RunSync } from "./RunSync";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { getClockDict, getDict, t, type Locale } from "@/lib/i18n";
+import {
+  getClockDict,
+  getDemoClassDict,
+  getDict,
+  t,
+  type Locale,
+} from "@/lib/i18n";
 import { rememberLesson, useSavedLessons } from "@/lib/local";
 import type { LessonPlan } from "@/lib/schema";
 import { LessonEditor } from "./LessonEditor";
@@ -53,6 +59,11 @@ export function TeacherWorkspace({
   const token = useSavedLessons().find((l) => l.id === lessonId)?.token ?? null;
   const running = useRunning(lessonId);
   const [editing, setEditing] = useState(false);
+  const [demoStart, setDemoStart] = useState<number | null>(null);
+  const demo = getDemoClassDict(lang);
+  function toggleDemo() {
+    setDemoStart((at) => (at === null ? Date.now() : null));
+  }
   const [notice, setNotice] = useState<string[] | null>(null);
   const [manualLink, setManualLink] = useState<"join" | "owner" | null>(null);
   const [copied, setCopied] = useState<"join" | "owner" | null>(null);
@@ -128,6 +139,25 @@ export function TeacherWorkspace({
               value={joinUrl}
               onFocus={(e) => e.currentTarget.select()}
             />
+          )}
+          {isDemo && token && (
+            <div className="mt-5 border-t border-line-strong pt-4">
+              <p className="text-sm leading-relaxed text-ink">{demo.hint}</p>
+              <button
+                type="button"
+                className="btn btn-secondary mt-3"
+                aria-pressed={demoStart !== null}
+                onClick={() => {
+                  toggleDemo();
+                  const panel = document.getElementById("students");
+                  panel?.setAttribute("tabindex", "-1");
+                  panel?.focus({ preventScroll: true });
+                  panel?.scrollIntoView({ block: "start" });
+                }}
+              >
+                {demoStart === null ? demo.start : demo.stop}
+              </button>
+            </div>
           )}
         </div>
 
@@ -253,6 +283,8 @@ export function TeacherWorkspace({
           dict={dict}
           lang={lang}
           isDemo={isDemo}
+          demoStart={demoStart}
+          onToggleDemo={toggleDemo}
         />
       )}
       <Link

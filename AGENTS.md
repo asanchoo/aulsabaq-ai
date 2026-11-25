@@ -46,6 +46,12 @@ AulSabaq AI — веб-приложение для учителей малоко
 7. Продукт, только то, что увидит рецензент или комиссия: навигация по длинной странице урока на телефоне,
    звук и Wake Lock у таймера, этапы 4–5 из `docs/FORMAT.md`.
 
+## Сейчас: 24–26 ноября
+Решение автора 24 ноября: до 26 ноября организатор разрешил дорабатывать проект, поэтому продукт временно идёт
+первым. Задачи T1–T10, правила для них и журнал «кто что сделал» в `docs/PLAN.md`, раздел «Этап 4».
+Берёшь задачу из таблицы: делай только её, соблюдай колонку «Зависит», в конце впиши строку в журнал.
+После 26 ноября снова действует порядок из списка выше.
+
 ## Порядок работы (обязательный)
 SPEC → PLAN → IMPLEMENT → REVIEW.
 1. Перед кодом перечитай нужный раздел `docs/SPEC.md`.
@@ -168,3 +174,13 @@ npm run typecheck  # next typegen && tsc --noEmit
 npm test           # vitest run
 npm run build
 ```
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

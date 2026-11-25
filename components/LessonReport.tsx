@@ -116,11 +116,13 @@ export function LessonReport({
             <p className="mt-4 rounded-card bg-stage p-3">
               {r.advice
                 ? t(d.advice, {
-                    n: r.advice.number,
+                    task: r.advice.prompt,
                     wrong: r.advice.wrong,
                     total: r.advice.attempted,
                   })
-                : d.noAdvice}
+                : r.enoughAnswers
+                  ? d.noMistakes
+                  : d.noAdvice}
             </p>
           </section>
         );
