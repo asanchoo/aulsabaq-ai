@@ -1,12 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getDemoClassDict, getHelpDict, t, type Dict, type Locale } from "@/lib/i18n";
+import { getReportDict, getDemoClassDict, getHelpDict, t, type Dict, type Locale } from "@/lib/i18n";
 import type { LessonPlan } from "@/lib/schema";
 import { isFinished, isStruggling, type CardState } from "@/lib/student";
 import { lessonSignal } from "@/lib/lesson-signal";
 import { groupTitle } from "@/lib/lesson";
 
+import { LessonReport } from "./LessonReport";
+import type { HelpRecord } from "@/lib/lesson-report";
 import { demoClass } from "@/lib/demo-class";
 import { buildHelpQueue, type StudentRow } from "@/lib/help-queue";
 import { useRunMinute } from "./LessonRunner";
@@ -31,6 +33,10 @@ export function StudentsPanel({ lessonId, token, plan, joinCode, dict, lang, isD
     return () => clearInterval(timer);
   }, [demoStart]);
   const d = dict.teacher;
+  const rd = getReportDict(lang);
+  const [reportRows, setReportRows] = useState<{ rows: StudentRow[]; history: HelpRecord[] } | null>(null);
+  const helpHistory = useRef(new Map<string, HelpRecord>());
+
   const hd = getHelpDict(lang);
   const minute = useRunMinute(lessonId);
   const observedHelp = useRef(new Map<string, string>());
@@ -39,6 +45,12 @@ export function StudentsPanel({ lessonId, token, plan, joinCode, dict, lang, isD
     const simulated = demoStart === null ? [] : demoClass(plan, 42, demoStart, (demoNow - demoStart) / 1000).map((s) => demoHelped.includes(s.id) ? { ...s, needsHelp: false } : s);
     return realStudents === null && !simulated.length ? null : [...(realStudents ?? []), ...simulated];
   }, [realStudents, plan, demoStart, demoNow, demoHelped]);
+  useEffect(() => {
+    for (const s of students ?? []) if (s.needsHelp && s.helpCard) helpHistory.current.set(`${s.id}:${s.helpCard}`, {studentId:s.id,name:s.name,groupId:s.groupId,cardId:s.helpCard});
+    const finish = (event: Event) => { if ((event as CustomEvent).detail?.lessonId === lessonId) setReportRows({ rows: students ?? [], history: [...helpHistory.current.values()] }); };
+    window.addEventListener("aulsabaq-show-report", finish);
+    return () => window.removeEventListener("aulsabaq-show-report", finish);
+  }, [students, lessonId]);
   const [sampleTime, setSampleTime] = useState(() => Date.now());
   const [offline, setOffline] = useState(false);
   const previousHelp = useRef<Set<string> | null>(null);
@@ -128,6 +140,8 @@ export function StudentsPanel({ lessonId, token, plan, joinCode, dict, lang, isD
         {offline && <p role="status" className="text-[0.88rem] text-help">{d.offline}</p>}
       </div>
 
+      <button type="button" className="btn btn-secondary btn-sm mt-4" disabled={!students} onClick={() => setReportRows({ rows: students ?? [], history: [...helpHistory.current.values()] })}>{rd.title}</button>
+      {reportRows && <LessonReport plan={plan} students={reportRows.rows} history={reportRows.history} lang={lang} onClose={() => setReportRows(null)} />}
       {isDemo && <div className="mt-5">
         <button type="button" className="btn btn-secondary btn-sm" onClick={() => {
           if (demoStart !== null) setDemoStart(null);
