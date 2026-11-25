@@ -1,3 +1,4 @@
+import { parseRun, type RunState } from "./run-state";
 import { createHash, randomBytes } from "node:crypto";
 import { rpc, StorageError } from "./db";
 import { LessonPlanSchema, type LessonPlan } from "./schema";
@@ -101,14 +102,15 @@ export type StoredSession = {
   currentCard: string | null;
   needsHelp: boolean;
   helpCard: string | null;
+  run?: RunState | null;
 };
 
 export async function getSession(sessionId: string): Promise<StoredSession | null> {
   if (!isUuid(sessionId)) return null;
   const rows = await rpc<{
     lesson_id: string; plan: unknown; group_id: string; display_name: string; progress: unknown;
-    current_card: string | null; needs_help: boolean; help_card: string | null;
-  }[]>("get_session", { p_session: sessionId });
+    current_card: string | null; needs_help: boolean; help_card: string | null; started_at?: string | null; paused_at?: string | null;
+  }[]>(process.env.RUN_SYNC === "on" ? "get_session_with_run" : "get_session", { p_session: sessionId });
   const row = rows[0];
   if (!row) return null;
   const plan = LessonPlanSchema.safeParse(row.plan);
@@ -116,6 +118,7 @@ export async function getSession(sessionId: string): Promise<StoredSession | nul
   return {
     lessonId: row.lesson_id, plan: plan.data, groupId: row.group_id, name: row.display_name, progress: row.progress,
     currentCard: row.current_card, needsHelp: row.needs_help, helpCard: row.help_card,
+    run: row.started_at ? parseRun(JSON.stringify({ startedAt: Date.parse(row.started_at), pausedAt: row.paused_at ? Date.parse(row.paused_at) : null })) : null,
   };
 }
 
@@ -163,4 +166,14 @@ export async function getJob(id: string, token: string): Promise<StoredJob | nul
   );
   const row = rows[0];
   return row ? { status: row.status, progress: row.progress, lessonId: row.lesson_id, joinCode: row.join_code, error: row.error, updatedAt: row.updated_at, createdAt: row.created_at } : null;
+}
+
+
+export async function getLessonRun(id: string): Promise<RunState | null> {
+  const rows = await rpc<{started_at:string|null;paused_at:string|null}[]>("get_lesson_run",{p_id:id});
+  const r=rows[0];
+  return r?.started_at ? parseRun(JSON.stringify({startedAt:Date.parse(r.started_at),pausedAt:r.paused_at?Date.parse(r.paused_at):null})) : null;
+}
+export async function setLessonRun(id:string,token:string,run:RunState|null):Promise<boolean> {
+  return rpc<boolean>("set_run",{p_id:id,p_token_hash:hashToken(token),p_started_at:run?.startedAt!=null?new Date(run.startedAt).toISOString():null,p_paused_at:run?.pausedAt!=null?new Date(run.pausedAt).toISOString():null});
 }
