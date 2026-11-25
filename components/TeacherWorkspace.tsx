@@ -1,5 +1,7 @@
 "use client";
 
+import { NumberVariantsControl } from "./NumberVariantsControl";
+import { mathSubject } from "@/lib/card-variants";
 import Link from "next/link";
 import { RunSync } from "./RunSync";
 
@@ -144,6 +146,7 @@ export function TeacherWorkspace({
           <p className="mt-3 text-sm leading-relaxed text-ink">
             {getPhonePolicy(lang)}
           </p>
+          {token && mathSubject(plan.subject) && <NumberVariantsControl lessonId={lessonId} token={token} enabled={plan.numberVariants !== false} lang={lang} running={running} />}
           {isDemo && token && (
             <div className="mt-5 border-t border-line-strong pt-4">
               <p className="text-sm leading-relaxed text-ink">{demo.hint}</p>

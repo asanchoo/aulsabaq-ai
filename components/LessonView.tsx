@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { LessonActions } from "./LessonActions";
 import { ModeLegend } from "./LessonScore";
 import { LessonTimeline } from "./LessonTimeline";
-import { TaskCards } from "./TaskCards";
+import { TaskCardVariants } from "./TaskCardVariants";
 import { TopicExplanation } from "./TopicExplanation";
 import { t, type Dict, type Locale } from "@/lib/i18n";
 import { lessonToText, groupTitle } from "@/lib/lesson";
@@ -141,7 +141,7 @@ export function LessonView({
           {dict.lesson.cardsTitle}
         </h2>
         <div className="mt-6 print:mt-0">
-          <TaskCards groups={plan.groups} dict={dict} />
+          <TaskCardVariants plan={plan} dict={dict} lang={lang} />
         </div>
       </section>
     </div>

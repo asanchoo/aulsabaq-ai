@@ -10,7 +10,7 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
-import { getClockDict, getDict, t, type Locale } from "@/lib/i18n";
+import { getVariantsDict, getClockDict, getDict, t, type Locale } from "@/lib/i18n";
 import {
   isFinished,
   MAX_HINTS,
@@ -367,6 +367,7 @@ export function StudentApp({
           <p className="truncate text-[0.88rem] text-muted">
             {view.subject}: {view.topic}
           </p>
+          {view.ownNumbers && <p className="mt-1 text-sm text-muted">{getVariantsDict(lang).own}</p>}
         </div>
       </header>
 

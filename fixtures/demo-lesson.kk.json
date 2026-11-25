@@ -16,7 +16,40 @@
           "purpose": "practice",
           "inputHint": "Тек сан",
           "difficulty": 1,
-          "successCriteria": "Қосындыны дұрыс есептейді."
+          "successCriteria": "Қосындыны дұрыс есептейді.",
+          "variant": {
+            "prompt": "{a} + {b} өрнегін есепте.",
+            "hint": "Нәтижені кері амалмен тексер.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 1,
+                "max": 9
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a+b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a % 10 + b % 10 >= 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 39
+              },
+              {
+                "name": "b",
+                "value": 6
+              }
+            ]
+          }
         },
         {
           "id": "g1-c2",
@@ -31,7 +64,41 @@
           "purpose": "practice",
           "inputHint": "Тек сан",
           "difficulty": 1,
-          "successCriteria": "Айырманы дұрыс есептейді."
+          "successCriteria": "Айырманы дұрыс есептейді.",
+          "variant": {
+            "prompt": "{a} − {b} өрнегін есепте.",
+            "hint": "Нәтижені кері амалмен тексер.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 1,
+                "max": 9
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a-b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a >= b",
+              "a % 10 < b % 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 52
+              },
+              {
+                "name": "b",
+                "value": 7
+              }
+            ]
+          }
         },
         {
           "id": "g1-c3",
@@ -46,7 +113,40 @@
           "purpose": "practice",
           "inputHint": "Тек сан",
           "difficulty": 1,
-          "successCriteria": "Қосылғышты толық ондыққа жететін және қалған бөліктерге ажыратады."
+          "successCriteria": "Қосылғышты толық ондыққа жететін және қалған бөліктерге ажыратады.",
+          "variant": {
+            "prompt": "{a} + {b} өрнегін есепте.",
+            "hint": "Нәтижені кері амалмен тексер.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 1,
+                "max": 9
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a+b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a % 10 + b % 10 >= 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 28
+              },
+              {
+                "name": "b",
+                "value": 5
+              }
+            ]
+          }
         },
         {
           "id": "g1-c4",
@@ -61,7 +161,41 @@
           "purpose": "practice",
           "inputHint": "Тек сан",
           "difficulty": 1,
-          "successCriteria": "Азайтуды толық ондық арқылы орындайды."
+          "successCriteria": "Азайтуды толық ондық арқылы орындайды.",
+          "variant": {
+            "prompt": "{a} − {b} өрнегін есепте.",
+            "hint": "Нәтижені кері амалмен тексер.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 1,
+                "max": 9
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a-b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a >= b",
+              "a % 10 < b % 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 71
+              },
+              {
+                "name": "b",
+                "value": 8
+              }
+            ]
+          }
         },
         {
           "id": "g1-c5",
@@ -76,7 +210,40 @@
           "purpose": "practice",
           "inputHint": "Тек сан",
           "difficulty": 2,
-          "successCriteria": "Ондықтан аттап қосады."
+          "successCriteria": "Ондықтан аттап қосады.",
+          "variant": {
+            "prompt": "{a} + {b} өрнегін есепте.",
+            "hint": "Нәтижені кері амалмен тексер.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 1,
+                "max": 9
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a+b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a % 10 + b % 10 >= 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 47
+              },
+              {
+                "name": "b",
+                "value": 8
+              }
+            ]
+          }
         },
         {
           "id": "g1-c6",
@@ -91,7 +258,41 @@
           "purpose": "practice",
           "inputHint": "Тек сан",
           "difficulty": 2,
-          "successCriteria": "Ондықтан аттап азайтады."
+          "successCriteria": "Ондықтан аттап азайтады.",
+          "variant": {
+            "prompt": "{a} − {b} өрнегін есепте.",
+            "hint": "Нәтижені кері амалмен тексер.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 1,
+                "max": 9
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a-b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a >= b",
+              "a % 10 < b % 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 64
+              },
+              {
+                "name": "b",
+                "value": 9
+              }
+            ]
+          }
         },
         {
           "id": "g1-c7",
@@ -125,18 +326,50 @@
         },
         {
           "id": "g1-c9",
-          "hint": "Азайту кезінде жауап азайғыштан кіші болуы керек; 53-тен алдымен 3-ті азайт.",
+          "hint": "Кітап саны артты. Қай амал қажет?",
           "type": "closed",
           "accept": [
-            "45"
+            "52"
           ],
-          "answer": "45",
-          "prompt": "Оқушы 53 − 8 = 55 деп жазды. Қатесін тап: 55-ке 8-ді қосқанда 53 шыға ма? Дұрыс айырманы жаз.",
+          "answer": "52",
+          "prompt": "Сынып кітапханасында 34 кітап бар. Тағы 18 кітап әкелінді. Барлығы неше кітап болды?",
           "minutes": 2,
           "purpose": "practice",
           "inputHint": "Тек сан",
           "difficulty": 2,
-          "successCriteria": "Қате азайтуды байқап, дұрыс айырманы табады."
+          "successCriteria": "Қосу амалын қолданып, кері амалмен тексер.",
+          "variant": {
+            "prompt": "Сынып кітапханасында {a} кітап бар. Тағы {b} кітап әкелінді. Барлығы неше кітап болды?",
+            "hint": "Кітап саны артты. Қай амал қажет?",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 21,
+                "max": 59
+              },
+              {
+                "name": "b",
+                "min": 11,
+                "max": 39
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a+b",
+            "conditions": [
+              "a % 10 + b % 10 >= 10",
+              "answer <= 100"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 34
+              },
+              {
+                "name": "b",
+                "value": 18
+              }
+            ]
+          }
         },
         {
           "id": "g1-c10",
@@ -230,7 +463,40 @@
           "purpose": "practice",
           "inputHint": "Тек санды жаз",
           "difficulty": 1,
-          "successCriteria": "Қосындыны дұрыс есептейді."
+          "successCriteria": "Қосындыны дұрыс есептейді.",
+          "variant": {
+            "prompt": "{a} + {b} өрнегін есепте.",
+            "hint": "Нәтижені кері амалмен тексер.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 1,
+                "max": 9
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a+b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a % 10 + b % 10 >= 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 36
+              },
+              {
+                "name": "b",
+                "value": 7
+              }
+            ]
+          }
         },
         {
           "id": "g1-x2",
@@ -245,7 +511,41 @@
           "purpose": "practice",
           "inputHint": "Тек санды жаз",
           "difficulty": 1,
-          "successCriteria": "Айырманы дұрыс есептейді."
+          "successCriteria": "Айырманы дұрыс есептейді.",
+          "variant": {
+            "prompt": "{a} − {b} өрнегін есепте.",
+            "hint": "Нәтижені кері амалмен тексер.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 1,
+                "max": 9
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a-b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a >= b",
+              "a % 10 < b % 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 48
+              },
+              {
+                "name": "b",
+                "value": 9
+              }
+            ]
+          }
         },
         {
           "id": "g1-x3",
@@ -260,7 +560,40 @@
           "purpose": "practice",
           "inputHint": "Тек санды жаз",
           "difficulty": 1,
-          "successCriteria": "Қосындыны дұрыс есептейді."
+          "successCriteria": "Қосындыны дұрыс есептейді.",
+          "variant": {
+            "prompt": "{a} + {b} өрнегін есепте.",
+            "hint": "Нәтижені кері амалмен тексер.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 1,
+                "max": 9
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a+b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a % 10 + b % 10 >= 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 57
+              },
+              {
+                "name": "b",
+                "value": 8
+              }
+            ]
+          }
         },
         {
           "id": "g1-x4",
@@ -275,7 +608,41 @@
           "purpose": "practice",
           "inputHint": "Тек санды жаз",
           "difficulty": 1,
-          "successCriteria": "Айырманы дұрыс есептейді."
+          "successCriteria": "Айырманы дұрыс есептейді.",
+          "variant": {
+            "prompt": "{a} − {b} өрнегін есепте.",
+            "hint": "Нәтижені кері амалмен тексер.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 1,
+                "max": 9
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a-b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a >= b",
+              "a % 10 < b % 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 64
+              },
+              {
+                "name": "b",
+                "value": 6
+              }
+            ]
+          }
         },
         {
           "id": "g1-x5",
@@ -290,7 +657,40 @@
           "purpose": "practice",
           "inputHint": "Тек санды жаз",
           "difficulty": 1,
-          "successCriteria": "Қосындыны дұрыс есептейді."
+          "successCriteria": "Қосындыны дұрыс есептейді.",
+          "variant": {
+            "prompt": "{a} + {b} өрнегін есепте.",
+            "hint": "Нәтижені кері амалмен тексер.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 1,
+                "max": 9
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a+b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a % 10 + b % 10 >= 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 29
+              },
+              {
+                "name": "b",
+                "value": 5
+              }
+            ]
+          }
         },
         {
           "id": "g1-x6",
@@ -305,7 +705,41 @@
           "purpose": "practice",
           "inputHint": "Тек санды жаз",
           "difficulty": 2,
-          "successCriteria": "Айырманы дұрыс есептейді."
+          "successCriteria": "Айырманы дұрыс есептейді.",
+          "variant": {
+            "prompt": "{a} − {b} өрнегін есепте.",
+            "hint": "Нәтижені кері амалмен тексер.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 1,
+                "max": 9
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a-b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a >= b",
+              "a % 10 < b % 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 73
+              },
+              {
+                "name": "b",
+                "value": 8
+              }
+            ]
+          }
         },
         {
           "id": "g1-x7",
@@ -320,7 +754,40 @@
           "purpose": "practice",
           "inputHint": "Тек санды жаз",
           "difficulty": 2,
-          "successCriteria": "Қосындыны дұрыс есептейді."
+          "successCriteria": "Қосындыны дұрыс есептейді.",
+          "variant": {
+            "prompt": "{a} + {b} өрнегін есепте.",
+            "hint": "Нәтижені кері амалмен тексер.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 1,
+                "max": 9
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a+b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a % 10 + b % 10 >= 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 45
+              },
+              {
+                "name": "b",
+                "value": 7
+              }
+            ]
+          }
         },
         {
           "id": "g1-x8",
@@ -335,7 +802,41 @@
           "purpose": "practice",
           "inputHint": "Тек санды жаз",
           "difficulty": 2,
-          "successCriteria": "Айырманы дұрыс есептейді."
+          "successCriteria": "Айырманы дұрыс есептейді.",
+          "variant": {
+            "prompt": "{a} − {b} өрнегін есепте.",
+            "hint": "Нәтижені кері амалмен тексер.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 1,
+                "max": 9
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a-b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a >= b",
+              "a % 10 < b % 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 82
+              },
+              {
+                "name": "b",
+                "value": 5
+              }
+            ]
+          }
         },
         {
           "id": "g1-x9",
@@ -350,7 +851,40 @@
           "purpose": "practice",
           "inputHint": "Тек санды жаз",
           "difficulty": 2,
-          "successCriteria": "Қосындыны дұрыс есептейді."
+          "successCriteria": "Қосындыны дұрыс есептейді.",
+          "variant": {
+            "prompt": "{a} + {b} өрнегін есепте.",
+            "hint": "Нәтижені кері амалмен тексер.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 1,
+                "max": 9
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a+b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a % 10 + b % 10 >= 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 68
+              },
+              {
+                "name": "b",
+                "value": 9
+              }
+            ]
+          }
         },
         {
           "id": "g1-x10",
@@ -365,7 +899,41 @@
           "purpose": "practice",
           "inputHint": "Тек санды жаз",
           "difficulty": 2,
-          "successCriteria": "Айырманы дұрыс есептейді."
+          "successCriteria": "Айырманы дұрыс есептейді.",
+          "variant": {
+            "prompt": "{a} − {b} өрнегін есепте.",
+            "hint": "Нәтижені кері амалмен тексер.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 1,
+                "max": 9
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a-b",
+            "conditions": [
+              "answer <= 100",
+              "answer >= 0",
+              "a >= b",
+              "a % 10 < b % 10"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 91
+              },
+              {
+                "name": "b",
+                "value": 7
+              }
+            ]
+          }
         },
         {
           "id": "g1-x11",
@@ -703,7 +1271,39 @@
           "purpose": "review",
           "inputHint": "Тек санды жаз",
           "difficulty": 1,
-          "successCriteria": "Көбейту кестесі бойынша көбейтіндіні табады."
+          "successCriteria": "Көбейту кестесі бойынша көбейтіндіні табады.",
+          "variant": {
+            "prompt": "Көбейт: {a} · {b}.",
+            "hint": "Нәтижені кері амалмен тексер.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 1,
+                "max": 9
+              },
+              {
+                "name": "b",
+                "min": 1,
+                "max": 9
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a*b",
+            "conditions": [
+              "answer <= 1000000",
+              "answer >= 0"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 7
+              },
+              {
+                "name": "b",
+                "value": 8
+              }
+            ]
+          }
         },
         {
           "id": "g2-c2",
@@ -718,7 +1318,46 @@
           "purpose": "review",
           "inputHint": "Тек санды жаз",
           "difficulty": 1,
-          "successCriteria": "Бөлуді көбейту кестесімен орындайды."
+          "successCriteria": "Бөлуді көбейту кестесімен орындайды.",
+          "variant": {
+            "prompt": "Есепте: {a} : {b}.",
+            "hint": "Нәтижені кері амалмен тексер.",
+            "ranges": [
+              {
+                "name": "q",
+                "min": 2,
+                "max": 9
+              },
+              {
+                "name": "b",
+                "min": 2,
+                "max": 9
+              }
+            ],
+            "derived": [
+              {
+                "name": "a",
+                "expression": "q*b"
+              }
+            ],
+            "answerExpression": "q",
+            "conditions": [
+              "answer <= 1000000",
+              "answer >= 0",
+              "a >= 10",
+              "a <= 99"
+            ],
+            "original": [
+              {
+                "name": "q",
+                "value": 9
+              },
+              {
+                "name": "b",
+                "value": 6
+              }
+            ]
+          }
         },
         {
           "id": "g2-c3",
@@ -733,7 +1372,46 @@
           "purpose": "review",
           "inputHint": "Тек санды жаз",
           "difficulty": 2,
-          "successCriteria": "Екі таңбалы санды бір таңбалы санға бөледі."
+          "successCriteria": "Екі таңбалы санды бір таңбалы санға бөледі.",
+          "variant": {
+            "prompt": "Есепте: {a} : {b}.",
+            "hint": "Нәтижені кері амалмен тексер.",
+            "ranges": [
+              {
+                "name": "q",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 2,
+                "max": 9
+              }
+            ],
+            "derived": [
+              {
+                "name": "a",
+                "expression": "q*b"
+              }
+            ],
+            "answerExpression": "q",
+            "conditions": [
+              "answer <= 1000000",
+              "answer >= 0",
+              "a >= 10",
+              "a <= 99"
+            ],
+            "original": [
+              {
+                "name": "q",
+                "value": 21
+              },
+              {
+                "name": "b",
+                "value": 4
+              }
+            ]
+          }
         },
         {
           "id": "g2-c4",
@@ -748,7 +1426,46 @@
           "purpose": "review",
           "inputHint": "Тек санды жаз",
           "difficulty": 2,
-          "successCriteria": "Ондық пен бірлікті ретімен бөледі."
+          "successCriteria": "Ондық пен бірлікті ретімен бөледі.",
+          "variant": {
+            "prompt": "Есепте: {a} : {b}.",
+            "hint": "Нәтижені кері амалмен тексер.",
+            "ranges": [
+              {
+                "name": "q",
+                "min": 10,
+                "max": 99
+              },
+              {
+                "name": "b",
+                "min": 2,
+                "max": 9
+              }
+            ],
+            "derived": [
+              {
+                "name": "a",
+                "expression": "q*b"
+              }
+            ],
+            "answerExpression": "q",
+            "conditions": [
+              "answer <= 1000000",
+              "answer >= 0",
+              "a >= 10",
+              "a <= 99"
+            ],
+            "original": [
+              {
+                "name": "q",
+                "value": 32
+              },
+              {
+                "name": "b",
+                "value": 3
+              }
+            ]
+          }
         },
         {
           "id": "g2-c5",
@@ -793,7 +1510,39 @@
           "purpose": "review",
           "inputHint": "Тек санды жаз",
           "difficulty": 2,
-          "successCriteria": "Көбейту кестесін қолданады."
+          "successCriteria": "Көбейту кестесін қолданады.",
+          "variant": {
+            "prompt": "Көбейт: {a} · {b}.",
+            "hint": "Нәтижені кері амалмен тексер.",
+            "ranges": [
+              {
+                "name": "a",
+                "min": 1,
+                "max": 9
+              },
+              {
+                "name": "b",
+                "min": 1,
+                "max": 9
+              }
+            ],
+            "derived": [],
+            "answerExpression": "a*b",
+            "conditions": [
+              "answer <= 1000000",
+              "answer >= 0"
+            ],
+            "original": [
+              {
+                "name": "a",
+                "value": 6
+              },
+              {
+                "name": "b",
+                "value": 9
+              }
+            ]
+          }
         },
         {
           "id": "g2-c8",
@@ -808,7 +1557,46 @@
           "purpose": "review",
           "inputHint": "Тек санды жаз",
           "difficulty": 2,
-          "successCriteria": "Бөлу мен көбейтудің байланысын қолданады."
+          "successCriteria": "Бөлу мен көбейтудің байланысын қолданады.",
+          "variant": {
+            "prompt": "Есепте: {a} : {b}.",
+            "hint": "Нәтижені кері амалмен тексер.",
+            "ranges": [
+              {
+                "name": "q",
+                "min": 2,
+                "max": 9
+              },
+              {
+                "name": "b",
+                "min": 2,
+                "max": 9
+              }
+            ],
+            "derived": [
+              {
+                "name": "a",
+                "expression": "q*b"
+              }
+            ],
+            "answerExpression": "q",
+            "conditions": [
+              "answer <= 1000000",
+              "answer >= 0",
+              "a >= 10",
+              "a <= 99"
+            ],
+            "original": [
+              {
+                "name": "q",
+                "value": 9
+              },
+              {
+                "name": "b",
+                "value": 8
+              }
+            ]
+          }
         },
         {
           "id": "g2-c9",
@@ -1463,5 +2251,6 @@
     }
   ],
   "durationMin": 45,
-  "teacherNotes": "Екінші сыныпқа толық ондыққа жететін бөлікті ауызша ататып, содан кейін ғана есептеу жолын жаздыртыңыз.\nТөртінші сыныпта бөліндінің әр цифрын разряд ретімен жазуды және бос разрядқа 0 қоюды үнемі ескертіңіз.\nКарточкаларды орындап болған оқушылардан жауаптарын кері амалмен тексеруді сұраңыз."
+  "teacherNotes": "Екінші сыныпқа толық ондыққа жететін бөлікті ауызша ататып, содан кейін ғана есептеу жолын жаздыртыңыз.\nТөртінші сыныпта бөліндінің әр цифрын разряд ретімен жазуды және бос разрядқа 0 қоюды үнемі ескертіңіз.\nКарточкаларды орындап болған оқушылардан жауаптарын кері амалмен тексеруді сұраңыз.",
+  "numberVariants": true
 }

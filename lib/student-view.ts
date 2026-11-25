@@ -1,3 +1,4 @@
+import { personalPlan } from "./card-variants";
 import {
   cardUnlocked,
   clockMinute,
@@ -51,6 +52,7 @@ export type StudentView = {
     cards: number[];
     unlockInMinutes: number | null;
   } | null;
+  ownNumbers?: boolean;
   lessonId: string;
   name: string;
   subject: string;
@@ -83,7 +85,8 @@ export function studentView(
   session: StoredSession,
   sessionId: string,
 ): StudentView | null {
-  const group = session.plan.groups.find((g) => g.id === session.groupId);
+  const plan = personalPlan(session.plan, sessionId);
+  const group = plan.groups.find((g) => g.id === session.groupId);
   if (!group) return null;
   const progress = readProgress(session.progress);
   const trainerState = readTrainer(session.progress);
@@ -110,6 +113,7 @@ export function studentView(
             .filter((n) => n > 0),
         }
       : null,
+    ownNumbers: session.ownNumbers ?? (plan.numberVariants !== false && session.plan.groups.find((g) => g.id === session.groupId)?.cards.some((c) => !!c.variant)),
     lessonId: session.lessonId,
     name: session.name,
     subject: session.plan.subject,

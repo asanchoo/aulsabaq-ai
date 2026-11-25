@@ -129,9 +129,11 @@ const OpenAIResponse = z.object({
 export function toOpenAISchema(schema: unknown): unknown {
   if (Array.isArray(schema)) return schema.map(toOpenAISchema);
   if (!schema || typeof schema !== "object") return schema;
-  return Object.fromEntries(
+  const result = Object.fromEntries(
     Object.entries(schema).filter(([key]) => !["$schema", "minLength", "maxLength"].includes(key)).map(([k, v]) => [k, toOpenAISchema(v)]),
   );
+  if (result.properties && typeof result.properties === "object") result.required = Object.keys(result.properties);
+  return result;
 }
 
 function openaiProvider(apiKey: string, models: string[], reasoning?: string): Provider {

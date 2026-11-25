@@ -12,7 +12,7 @@ import { applyRulesReview, introducesSuspects, isLanguageSubject, rulesRequest, 
 import { applyCorrections, collectTexts, safeCorrections } from "./proofread";
 import { ProviderError, resolveFastProvider, resolveProvider, type Provider, type ProviderImage } from "./providers";
 import { planSchedule } from "./schedule";
-import { sanitizeCurriculumGoals, checkExplanation, checkReviewCards, checkSingleCard, hintRevealsAnswer, maxCardMinutes, minCards, parseExplained, validateLessonPlan } from "./validate";
+import { sanitizeVariants, sanitizeCurriculumGoals, checkExplanation, checkReviewCards, checkSingleCard, hintRevealsAnswer, maxCardMinutes, minCards, parseExplained, validateLessonPlan } from "./validate";
 import { findMixedScriptWord, prettyMathDeep } from "./arithmetic";
 import { groupLanguage, TaskCardSchema, type Explanation, type LessonCore, type LessonPlan, type TaskCard } from "./schema";
 
@@ -328,7 +328,9 @@ export async function generateLesson(input: LessonRequest, onProgress?: (progres
   emit({ stage: "check", check: language ? "rules" : "verify" });
   const reviewed = language ? await reviewRules(checker, lesson, startedAt) : await verifyAnswers(checker, lesson, startedAt);
   emit({ stage: "proof", extra: reviewed.groups.reduce((n, g) => n + (g.extraCards?.length ?? 0), 0) });
-  return sanitizeCurriculumGoals(await proofreadLesson(checker, reviewed, startedAt), resolveCurriculumGoal);
+  const sanitized = sanitizeVariants(sanitizeCurriculumGoals(await proofreadLesson(checker, reviewed, startedAt), resolveCurriculumGoal));
+  for (const warning of sanitized.warnings) console.warn(warning);
+  return sanitized.plan;
 }
 
 // ---------------------------------------------------------------------------
@@ -578,6 +580,7 @@ export async function regenerateCard(plan: LessonPlan, groupId: string, cardId: 
     instructions: cardInstructions(groupLanguage(plan, group)),
     request: {
       subject: plan.subject, language: groupLanguage(plan, group), grade: group.grade, topic: group.topic,
+      curriculumGoals: group.curriculumGoals ?? [],
       purpose: old.purpose, type: old.type, difficulty: old.difficulty, minutes: old.minutes ?? null,
       currentCard: { prompt: old.prompt, answer: old.answer ?? null },
       otherCards: group.cards.filter((c) => c.id !== cardId).map((c) => c.prompt),
@@ -597,5 +600,8 @@ export async function regenerateCard(plan: LessonPlan, groupId: string, cardId: 
     },
     attempts: 3,
   };
-  return generateChecked(provider, job, Date.now());
+  const replacement = await generateChecked(provider, job, Date.now());
+  const safe = sanitizeVariants({ ...plan, groups: plan.groups.map((g) => g.id === groupId
+    ? { ...g, cards: g.cards.map((c) => c.id === cardId ? replacement : c) } : g) });
+  return safe.plan.groups.find((g) => g.id === groupId)!.cards.find((c) => c.id === cardId)!;
 }
