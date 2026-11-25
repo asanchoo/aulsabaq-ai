@@ -95,3 +95,79 @@ it("ignores stale or foreign card ids and malformed times", () => {
     buildHelpQueue([pupil("a", { updatedAt: "bad" })], plan, now, 10),
   ).toEqual([]);
 });
+
+const completedOlder = (): StudentRow =>
+  pupil("older", {
+    name: "Дана",
+    cards: Object.fromEntries(
+      group.cards.map((c) => [
+        c.id,
+        { status: "correct" as const, attempts: 1, hints: 0, lastAnswer: null },
+      ]),
+    ),
+  });
+const youngerRequest = (id = "younger"): StudentRow =>
+  pupil(id, {
+    name: "Айша",
+    groupId: plan.groups[0].id,
+    needsHelp: true,
+    helpCard: plan.groups[0].cards[0].id,
+    currentCard: plan.groups[0].cards[0].id,
+  });
+it("предлагает закончившего старшего во время его самостоятельной работы", () => {
+  const item = buildHelpQueue(
+    [completedOlder(), youngerRequest()],
+    plan,
+    now,
+    28,
+  ).find((x) => x.studentId === "younger");
+  expect(item?.peer).toEqual({ id: "older", name: "Дана", grade: 4 });
+});
+it("не отвлекает старшего во время объяснения, общей работы или без часов", () => {
+  for (const minute of [20, 2, undefined])
+    expect(
+      buildHelpQueue(
+        [completedOlder(), youngerRequest()],
+        plan,
+        now,
+        minute,
+      ).every((item) => !item.peer),
+    ).toBe(true);
+});
+it("не предлагает незаконченного, ошибившегося или просящего помощи ученика", () => {
+  for (const patch of [
+    { needsHelp: true },
+    { cards: {} },
+    {
+      cards: {
+        ...completedOlder().cards,
+        [card]: {
+          status: "self_wrong" as const,
+          attempts: 1,
+          hints: 0,
+          lastAnswer: null,
+        },
+      },
+    },
+  ])
+    expect(
+      buildHelpQueue(
+        [{ ...completedOlder(), ...patch }, youngerRequest()],
+        plan,
+        now,
+        28,
+      ).every((x) => !x.peer),
+    ).toBe(true);
+});
+it("одного помощника не назначает сразу двум младшим и не меняет входные данные", () => {
+  const students = [
+    completedOlder(),
+    youngerRequest(),
+    youngerRequest("second"),
+  ];
+  const before = structuredClone(students);
+  expect(
+    buildHelpQueue(students, plan, now, 28).filter((x) => x.peer).length,
+  ).toBe(1);
+  expect(students).toEqual(before);
+});

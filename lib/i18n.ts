@@ -1321,6 +1321,7 @@ export function getLessonToolsDict(lang: Locale) {
 export function getHelpDict(lang: Locale) {
   return lang === "kk"
     ? {
+        peer: "Үлкен оқушыдан {n}-карточкамен көмектесуді сұраңыз: {helper} ({older}-сынып) және {name} ({younger}-сынып).",
         title: "Қазір кімге көмектесу керек",
         empty: "Әзірге көмек қажет емес.",
         requested: "{name}: {n}-карточкада көмек сұрайды, {m} минут күтті.",
@@ -1331,6 +1332,7 @@ export function getHelpDict(lang: Locale) {
         available: "Мұғалім осы сыныпқа {n} минуттан кейін келеді.",
       }
     : {
+        peer: "Попросите старшего помочь с карточкой {n}: {helper} ({older} кл.) и {name} ({younger} кл.).",
         title: "Кому помочь сейчас",
         empty: "Пока никто не нуждается в помощи.",
         requested: "{name}: просит помощи на карточке {n}, ждёт {m} мин.",

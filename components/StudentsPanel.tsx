@@ -199,6 +199,17 @@ export function StudentsPanel({
                       total: item.total,
                     })}
                   </p>
+                  {item.peer && (
+                    <p className="mt-2 rounded-card bg-mint-soft p-2 text-sm">
+                      {t(hd.peer, {
+                        helper: item.peer.name,
+                        older: item.peer.grade,
+                        name: item.name ?? "",
+                        younger: groupOf(item.groupId)?.grade ?? "",
+                        n: cardNo(item.groupId, item.cardId),
+                      })}
+                    </p>
+                  )}
                   {item.availableIn !== null && item.availableIn > 0 && (
                     <p className="mt-1 text-sm text-muted">
                       {t(hd.available, { n: item.availableIn })}
