@@ -27,6 +27,7 @@ export type HelpItem = {
   groupId: string;
   studentId?: string;
   name?: string;
+  peer?: { id: string; name: string; grade: number };
   cardId: string;
   reason: "requested" | "attempts" | "idle" | "class_stuck";
   waitMinutes: number;
@@ -138,6 +139,7 @@ export function buildHelpQueue(
       }
     }
   }
+  const assigned = new Set<string>();
   return out
     .sort(
       (a, b) =>
@@ -148,6 +150,48 @@ export function buildHelpQueue(
     .map(({ priority, since, ...item }) => {
       void priority;
       void since;
-      return item;
+      const younger = plan.groups.find((g) => g.id === item.groupId);
+      if (!item.studentId || !younger || minute === undefined) return item;
+      // A finished pupil may be suggested once, only while their own class works independently.
+      const helper = students
+        .filter((student) => {
+          const older = plan.groups.find((g) => g.id === student.groupId);
+          return (
+            older &&
+            older.grade > younger.grade &&
+            older.cards.length > 0 &&
+            !assigned.has(student.id) &&
+            !student.needsHelp &&
+            older.cards.every((card) =>
+              ["correct", "done", "self_correct"].includes(
+                student.cards[card.id]?.status,
+              ),
+            ) &&
+            plan.timeline.some(
+              (segment) =>
+                segment.groupId === older.id &&
+                segment.mode === "independent" &&
+                segment.startMin <= minute &&
+                minute < segment.endMin,
+            )
+          );
+        })
+        .sort((a, b) => {
+          const grade = (id: string) =>
+            plan.groups.find((g) => g.id === id)!.grade;
+          return (
+            grade(a.groupId) - grade(b.groupId) || a.id.localeCompare(b.id)
+          );
+        })[0];
+      if (!helper) return item;
+      assigned.add(helper.id);
+      return {
+        ...item,
+        peer: {
+          id: helper.id,
+          name: helper.name,
+          grade: plan.groups.find((g) => g.id === helper.groupId)!.grade,
+        },
+      };
     });
 }

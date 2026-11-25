@@ -296,6 +296,17 @@ function Controller({
                       count: item.count,
                       total: item.total,
                     })}
+                    {item.peer && (
+                      <span className="mt-1 block font-medium">
+                        {t(hd.peer, {
+                          helper: item.peer.name,
+                          older: item.peer.grade,
+                          name: item.name ?? "",
+                          younger: group.grade,
+                          n: cardNumber(group, item.cardId) ?? "",
+                        })}
+                      </span>
+                    )}
                     {item.studentId?.startsWith("demo-student-")
                       ? ` · ${demo.label}`
                       : ""}
