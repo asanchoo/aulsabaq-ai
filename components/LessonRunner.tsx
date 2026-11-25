@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { t, type Dict } from "@/lib/i18n";
 import { cardNumbers, segmentAt, timeSlots, groupTitle } from "@/lib/lesson";
 import { useLocal } from "@/lib/local";
 import type { LessonPlan } from "@/lib/schema";
+import { elapsedMs, parseRun as parse, runKey as keyOf, type RunState } from "@/lib/run-state";
+import { enableSound, lessonSignal, soundEnabled, SOUND_KEY } from "@/lib/lesson-signal";
+import { useWakeLock } from "./useWakeLock";
 import { modeBlock } from "./modes";
 
 /**
@@ -13,19 +16,6 @@ import { modeBlock } from "./modes";
  * держать расписание в голове трудно, а здесь оно идёт само.
  * Состояние в localStorage: обновили страницу посреди урока, таймер продолжил с того же места.
  */
-
-type RunState = { startedAt: number; pausedAt: number | null };
-
-const keyOf = (lessonId: string) => `aulsabaq-run-${lessonId}`;
-
-function parse(raw: string): RunState | null {
-  try {
-    const v = JSON.parse(raw);
-    return v && typeof v.startedAt === "number" ? v : null;
-  } catch {
-    return null;
-  }
-}
 
 function save(lessonId: string, state: RunState | null) {
   try {
@@ -49,6 +39,7 @@ function change(lessonId: string, fn: (state: RunState, now: number) => RunState
 }
 
 export function startRun(lessonId: string) {
+  if (soundEnabled()) enableSound(true);
   save(lessonId, { startedAt: Date.now(), pausedAt: null });
 }
 
@@ -66,7 +57,19 @@ export function LessonRunner({ lessonId, plan, dict }: { lessonId: string; plan:
   const state = parse(useLocal(keyOf(lessonId)));
   const [now, setNow] = useState(() => Date.now());
 
-  const ticking = !!state && !state.pausedAt;
+  const elapsed = elapsedMs(state, now);
+  const minute = Math.floor(elapsed / 60_000);
+  const ended = minute >= plan.durationMin;
+  const ticking = !!state && state.pausedAt === null && !ended;
+  const sound = useLocal(SOUND_KEY) === "on";
+  const hasState = state !== null;
+  const boundary = timeSlots(plan).find((s) => s.startMin <= minute && minute < s.endMin)?.startMin ?? (ended ? plan.durationMin : -1);
+  const lastBoundary = useRef<number | null>(null);
+  useWakeLock(ticking);
+  useEffect(() => {
+    if (lastBoundary.current !== null && lastBoundary.current !== boundary && ticking) lessonSignal();
+    lastBoundary.current = hasState ? boundary : null;
+  }, [boundary, ticking, hasState]);
   useEffect(() => {
     if (!ticking) return;
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -74,10 +77,6 @@ export function LessonRunner({ lessonId, plan, dict }: { lessonId: string; plan:
   }, [ticking]);
 
   if (!state) return null;
-  const at = state.pausedAt ?? Math.max(now, state.startedAt);
-  const elapsed = Math.max(0, at - state.startedAt);
-  const minute = Math.floor(elapsed / 60_000);
-  const ended = minute >= plan.durationMin;
   const slots = timeSlots(plan);
   const slot = slots.find((s) => s.startMin <= minute && minute < s.endMin);
   const next = slot ? slots[slots.indexOf(slot) + 1] : undefined;
@@ -141,6 +140,7 @@ export function LessonRunner({ lessonId, plan, dict }: { lessonId: string; plan:
           </div>
 
           <div className="flex flex-wrap gap-2 lg:w-[15rem] lg:justify-end">
+            <button type="button" className="btn btn-secondary btn-sm" aria-pressed={sound} onClick={() => enableSound(!sound)}>{sound ? d.soundOn : d.soundOff}</button>
             {state.pausedAt ? (
               <button type="button" className="btn btn-primary btn-sm" onClick={() => change(lessonId, (s, n) => ({ startedAt: s.startedAt + (n - (s.pausedAt ?? n)), pausedAt: null }))}>
                 {d.resume}
@@ -150,8 +150,8 @@ export function LessonRunner({ lessonId, plan, dict }: { lessonId: string; plan:
             )}
             <button type="button" className="btn btn-secondary btn-sm" aria-label={d.earlier} title={d.earlier} onClick={() => shift(60_000)}>−1</button>
             <button type="button" className="btn btn-secondary btn-sm" aria-label={d.later} title={d.later} onClick={() => shift(-60_000)}>+1</button>
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => save(lessonId, { startedAt: Date.now(), pausedAt: null })}>{d.restart}</button>
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => save(lessonId, null)}>{d.stop}</button>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => { if (window.confirm(d.restartConfirm)) save(lessonId, { startedAt: Date.now(), pausedAt: null }); }}>{d.restart}</button>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => { if (window.confirm(d.stopConfirm)) save(lessonId, null); }}>{d.stop}</button>
           </div>
         </div>
       </section>
