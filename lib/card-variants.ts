@@ -135,7 +135,7 @@ export function inferVariant(
 ): CardVariant | null {
   if (card.type !== "closed" || !card.answer) return null;
   const m = card.prompt.match(
-    /^(?:(?:Вычисли|Есепте|Көбейт|Қос|Азайт|Раздели(?: столбиком)?|Бөл(?:у)?|Баған түрінде бөл)\s*:?\s*)?(\d+)\s*([+−\-*×·:÷/])\s*(\d+)\s*(?:өрнегін есепте)?[.?]?$/iu,
+    /^(?:(?:Вычисли|Найди (?:сумму|разность|произведение|частное|значение выражения)|Есепте|Көбейт|Қос|Азайт|Раздели(?: столбиком)?|Бөл(?:у)?|Баған түрінде бөл)\s*:?\s*)?(\d+)\s*([+−\-*×·:÷/])\s*(\d+)\s*(?:өрнегін есепте|(?:қосындысын|айырмасын|көбейтіндісін|бөліндісін|мәнін) тап)?[.?]?$/iu,
   );
   if (!m) return null;
   const a = +m[1],
@@ -220,6 +220,20 @@ function matchingSkill(card: TaskCard, group: Group): TrainerSkill | null {
   return null;
 }
 
+/** Сокращения и неизменяемые слова после числа: им согласование не нужно. */
+const RU_UNITS = /^(см|мм|дм|км|м|кг|г|т|л|мл|ч|мин|сек|с|тг|тенге|раза?|руб|шт|га)$/u;
+
+/** Группа согласования русского существительного с числом: 1 метр, 2–4 метра, 5–20 метров. */
+function pluralClass(n: number | undefined): string {
+  if (n === undefined || !Number.isInteger(n)) return "other";
+  const last2 = Math.abs(n) % 100;
+  const last = last2 % 10;
+  if (last2 >= 11 && last2 <= 14) return "many";
+  if (last === 1) return "one";
+  if (last >= 2 && last <= 4) return "few";
+  return "many";
+}
+
 /** The same session/card seed is used by rendering, answer checks and hints; after 200 misses use the original. */
 export function personalCard(
   card: TaskCard,
@@ -231,6 +245,13 @@ export function personalCard(
   if (!template) return card;
   const r = random(`${seed}:${card.id}`);
   const skill = matchingSkill(card, group);
+  // Русский: «15 метров» → «21 метров» неверно. Если сразу после числа стоит слово, число варианта берём
+  // из той же группы согласования, что и исходное (1; 2–4; 5–20 и 0), тогда форма слова остаётся верной.
+  const original = Object.fromEntries(template.original.map((x) => [x.name, x.value]));
+  const agreeing = lang === "ru"
+    ? [...`${template.prompt} ${template.hint}`.matchAll(/\{([a-z][a-z0-9_]*)\}\s+([а-яё]+)/giu)]
+        .filter((m) => !RU_UNITS.test(m[2].toLowerCase()) && m[1] in original).map((m) => m[1])
+    : [];
   for (let attempt = 0; attempt < 200; attempt++) {
     const values: Record<string, number> = {};
     for (const range of template.ranges)
@@ -240,13 +261,15 @@ export function personalCard(
       const task = seededTask(skill, `${seed}:${card.id}`, attempt, lang);
       const numbers = task.prompt.match(/\d+/g)?.map(Number);
       if (numbers?.length === 2) {
-        if (template.answerExpression === "q") {
-          values.q = Number(task.answer);
-          values.b = numbers[1];
-        } else {
-          values.a = numbers[0];
-          values.b = numbers[1];
-        }
+        const fromSkill = template.answerExpression === "q"
+          ? { q: Number(task.answer), b: numbers[1] }
+          : { a: numbers[0], b: numbers[1] };
+        // Числа тренажёра берём, только если они подходят под диапазоны шаблона. Иначе остаются свои случайные:
+        // тренажёр 1 класса даёт однозначное первое слагаемое, а карточка «15 + 2» требует двузначное,
+        // и без этой проверки все 200 попыток отбрасывались, у 1 класса не было ни одного варианта.
+        const fits = template.ranges.every((range) => !(range.name in fromSkill)
+          || (fromSkill[range.name as keyof typeof fromSkill]! >= range.min && fromSkill[range.name as keyof typeof fromSkill]! <= range.max));
+        if (fits) Object.assign(values, fromSkill);
       }
     }
     if (
@@ -256,6 +279,7 @@ export function personalCard(
       )
     )
       continue;
+    if (agreeing.some((name) => pluralClass(values[name]) !== pluralClass(original[name]))) continue;
     const rendered = render(template, group, values);
     if (!rendered) continue;
     const base = { ...card };

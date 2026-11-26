@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { demoFor } from "../lib/demo";
 import { gradeProfile, withinProfile } from "../lib/grade-profile";
 import {
+  inferVariant,
   personalCard,
   personalPlan,
   validateVariant,
@@ -203,4 +204,59 @@ it("1000 линейных и квадратных уравнений строя�
         );
     }
   }
+});
+
+// Проверка 24, 26 ноября: у 1 класса не было ни одного варианта. Тренажёр «в пределах 20» даёт однозначное
+// первое слагаемое, а карточка «15 + 2» требует двузначное, и проверка отвечала «нет решения».
+describe("варианты 1 класса и новые формулировки", () => {
+  const group = (grade: number, topic: string, cards: unknown[]) =>
+    ({ id: "g1", grade, topic, learningGoal: "x", explanation: null, cards, homework: "x" }) as never;
+  const card = (prompt: string, answer: string) =>
+    ({ id: "g1-c1", type: "closed", prompt, answer, hint: "Подумай.", successCriteria: "x", difficulty: 1, minutes: 2, purpose: "practice" }) as never;
+
+  it("«Вычисли: 15 + 2.» в 1 классе даёт рабочий вариант с суммой не больше 20", () => {
+    const c = card("Вычисли: 15 + 2.", "17");
+    const g = group(1, "Сложение в пределах 20", [c]);
+    const v = inferVariant(c, g, "ru");
+    expect(v).not.toBeNull();
+    const withV = { ...(c as object), variant: v } as never;
+    expect(validateVariant(withV, g, "ru")).toBeNull();
+    for (let s = 0; s < 1000; s++) {
+      const p = personalCard(withV, g, `seed-${s}`, "ru");
+      const nums = (p as { prompt: string }).prompt.match(/\d+/g)!.map(Number);
+      expect(nums[0] + nums[1]).toBeLessThanOrEqual(20);
+      expect(Number((p as { answer: string }).answer)).toBe(nums[0] + nums[1]);
+    }
+  });
+  it("распознаёт «Найди сумму: 12 + 4.» и «221 · 3 көбейтіндісін тап.»", () => {
+    expect(inferVariant(card("Найди сумму: 12 + 4.", "16"), group(1, "Сложение в пределах 20", []), "ru")).not.toBeNull();
+    expect(inferVariant(card("221 · 3 көбейтіндісін тап.", "663"), group(4, "Көп таңбалы сандарды көбейту", []), "kk")).not.toBeNull();
+  });
+});
+
+// Проверка 24: в русском шаблоне «прошли {a} метров» число 21 дало бы «21 метров».
+describe("согласование числа и слова в русских вариантах", () => {
+  const group = { id: "g1", grade: 3, topic: "Сложение", learningGoal: "x", explanation: null, cards: [], homework: "x" } as never;
+  const make = (prompt: string, a: number, b: number) => ({
+    id: "g1-c1", type: "closed", prompt: prompt.replace("{a}", String(a)).replace("{b}", String(b)), answer: String(a + b),
+    hint: "Сложи два пути.", successCriteria: "x", difficulty: 1, minutes: 2, purpose: "practice",
+    variant: { prompt, hint: "Сложи два пути.", ranges: [{ name: "a", min: 10, max: 99 }, { name: "b", min: 10, max: 99 }],
+      derived: [], answerExpression: "a+b", conditions: ["answer <= 999"], original: [{ name: "a", value: a }, { name: "b", value: b }] },
+  }) as never;
+  it("число перед словом остаётся в своей группе: 15 метров → 16, 25, но не 21 или 22", () => {
+    const card = make("Дети прошли {a} метров, потом ещё {b} м. Сколько всего метров?", 15, 12);
+    expect(validateVariant(card, group, "ru")).toBeNull();
+    for (let s = 0; s < 1000; s++) {
+      const p = personalCard(card, group, `agree-${s}`, "ru") as { prompt: string };
+      const a = Number(p.prompt.match(/прошли (\d+) метров/u)![1]);
+      const last2 = a % 100, last = a % 10;
+      expect(last2 >= 11 && last2 <= 14 || last === 0 || last >= 5).toBe(true);
+    }
+  });
+  it("после сокращения «м» число не ограничено", () => {
+    const card = make("Дети прошли {a} м и ещё {b} м.", 15, 12);
+    const seen = new Set<number>();
+    for (let s = 0; s < 300; s++) seen.add(Number((personalCard(card, group, `u-${s}`, "ru") as { prompt: string }).prompt.match(/прошли (\d+) м/u)![1]) % 10);
+    expect(seen.has(1) || seen.has(2)).toBe(true);
+  });
 });
