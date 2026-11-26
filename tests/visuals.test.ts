@@ -207,12 +207,21 @@ describe("схема строится по шагам на слайде", () => 
     expect(buildUnits(v({ kind: "groups", groups: 7, perGroup: 2, op: "-" }))).toBe(1);
     expect(buildUnits(v({ kind: "fraction", numerator: 3, denominator: 4 }))).toBe(0);
   });
-  it("доля шагов переводится в части: ничего в начале, всё к последнему шагу, без build целиком", () => {
-    // 4 шага примера, 3 цифры частного: 0, 1, 2, 2, 3
-    expect([0, 1, 2, 3, 4].map((n) => shownUnits(3, n / 4))).toEqual([0, 1, 2, 2, 3]);
+  it("шаг на часть, если шагов хватает: «Делим сотни, десятки, единицы, Проверка»", () => {
+    // 4 шага примера, 3 цифры частного: по цифре на шаг, проверка ничего не добавляет
+    expect([0, 1, 2, 3, 4].map((opened) => shownUnits(3, { opened, total: 4 }))).toEqual([0, 1, 2, 3, 3]);
+    // 3 шага и 3 цифры
+    expect([0, 1, 2, 3].map((opened) => shownUnits(3, { opened, total: 3 }))).toEqual([0, 1, 2, 3]);
+  });
+  it("шагов меньше частей: части делятся поровну, к последнему шагу схема целиком", () => {
+    expect([0, 1, 2].map((opened) => shownUnits(4, { opened, total: 2 }))).toEqual([0, 2, 4]);
+    expect([0, 1, 2, 3].map((opened) => shownUnits(5, { opened, total: 3 }))).toEqual([0, 2, 3, 5]);
+  });
+  it("без шагов и без build схема целиком, лишние нажатия не ломают счёт", () => {
     expect(shownUnits(3)).toBe(3);
-    expect(shownUnits(3, 2)).toBe(3);
-    expect(shownUnits(3, -1)).toBe(0);
-    expect(shownUnits(3, Number.NaN)).toBe(3);
+    expect(shownUnits(3, { opened: 0, total: 0 })).toBe(3);
+    expect(shownUnits(3, { opened: 9, total: 4 })).toBe(3);
+    expect(shownUnits(3, { opened: -1, total: 4 })).toBe(0);
+    expect(shownUnits(3, { opened: Number.NaN, total: 4 })).toBe(3);
   });
 });

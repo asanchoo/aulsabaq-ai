@@ -1,19 +1,19 @@
 import { compileExpression } from "@/lib/expression";
 import { t, type Dict } from "@/lib/i18n";
-import { buildUnits, columnBorrows, columnCarries, columnResult, longDivision, partialProducts, shownUnits, type Visual as VisualData } from "@/lib/visuals";
+import { buildUnits, columnBorrows, columnCarries, columnResult, longDivision, partialProducts, shownUnits, type BuildProgress, type Visual as VisualData } from "@/lib/visuals";
 
 /**
  * Наглядный блок объяснения. Модель дала только вид и данные (lib/visuals.ts), а здесь код рисует
  * и сам считает всё, что видит ученик: шаги деления, перенос, результат, точки графика.
  * size="slide" — для показа классу на экране (крупно), "page" — на странице урока.
- * build (0…1) — какая доля шагов слайда уже открыта: уголок, столбик, луч и кучки достраиваются вместе
- * с шагами. Без build схема целиком (страница урока, печать, памятка ученика).
+ * build — сколько шагов слайда открыто из скольких: уголок, столбик, луч и кучки достраиваются вместе
+ * с шагами (shownUnits). Без build схема целиком (страница урока, печать, памятка ученика).
  * Без хуков и без "use client": работает и на сервере (страница урока), и в слайдах.
  */
 type Labels = Dict["visual"];
 type Size = "slide" | "page";
 
-export function Visual({ visual, labels, size = "page", build }: { visual: VisualData; labels: Labels; size?: Size; build?: number }) {
+export function Visual({ visual, labels, size = "page", build }: { visual: VisualData; labels: Labels; size?: Size; build?: BuildProgress }) {
   const text = size === "slide" ? "text-[clamp(1.4rem,3.2vw,2.6rem)]" : "text-[1.15rem]";
   return (
     // @container: схема подстраивается под место, которое ей дали (половина слайда, колонка страницы), а не под экран.
@@ -32,8 +32,8 @@ export function Visual({ visual, labels, size = "page", build }: { visual: Visua
  */
 const reveal = (building: boolean, visible: boolean) => (!building ? "" : visible ? "fade-in" : "invisible");
 
-function body(v: VisualData, labels: Labels, size: Size, build?: number) {
-  const shown = build === undefined ? undefined : shownUnits(buildUnits(v), build);
+function body(v: VisualData, labels: Labels, size: Size, build?: BuildProgress) {
+  const shown = build ? shownUnits(buildUnits(v), build) : undefined;
   switch (v.kind) {
     case "long_division": return <LongDivision dividend={v.dividend} divisor={v.divisor} labels={labels} shown={shown} />;
     case "column": return <Column a={v.a} b={v.b} op={v.op} shown={shown} />;
