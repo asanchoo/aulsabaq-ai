@@ -111,6 +111,10 @@ describe("подсказки тем в форме", () => {
     expect(topics.length).toBeGreaterThan(0);
     for (const t of topics) expect(t).not.toMatch(/^\d/u);
   });
+  it("короткие названия разделов тоже подсказываются («Доли», «Үлес»)", () => {
+    expect(curriculumTopics({ subject: "Математика", grade: 3, language: "ru", quarter: 2 })).toContain("Доли");
+    expect(curriculumTopics({ subject: "Математика", grade: 3, language: "kk", quarter: 2 })).toContain("Үлес");
+  });
 });
 
 describe("основы слов из прогона по гипотезам", () => {
