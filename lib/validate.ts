@@ -283,6 +283,7 @@ function checkCoverage(plan: LessonCore, byGroup: Map<string, Segment[]>, errors
 /**
  * Инвариант 2: в любую минуту учитель работает максимум с одной группой.
  * Исключение — joint (общий этап): тогда в этой минуте в режиме joint должны быть ВСЕ группы.
+ * Общий этап возможен только в одном кабинете: если классы в разных кабинетах (rooms = "separate"), его нет.
  * Проверяем поминутно (урок ≤ 90 минут, это дёшево), а одинаковые конфликты
  * в соседних минутах склеиваем в один диапазон, чтобы не было 10 одинаковых ошибок.
  */
@@ -293,6 +294,9 @@ function checkTeacherLoad(plan: LessonCore, errors: string[]) {
     const withTeacher = unique(active.filter((s) => s.mode === "with_teacher").map((s) => s.groupId));
     const joint = unique(active.filter((s) => s.mode === "joint").map((s) => s.groupId));
 
+    if (joint.length > 0 && plan.rooms === "separate" && allGroups.length > 1) {
+      return `общий этап (joint), а классы в разных кабинетах; учитель может быть только с одним классом`;
+    }
     if (joint.length > 0 && joint.length < allGroups.length) {
       const notJoint = allGroups.filter((id) => !joint.includes(id));
       return `общий этап (joint) у ${joint.join(", ")}, но не у ${notJoint.join(", ")}`;

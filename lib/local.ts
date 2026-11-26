@@ -106,6 +106,8 @@ export type PendingLesson = {
   grades: number[];
   language: "kk" | "ru";
   durationMin: number;
+  /** Где сидят классы; нет поля — один кабинет. */
+  rooms?: "one" | "separate";
   startedAt: number;
   /** Что учитель ввёл в форму (без фото): после перезагрузки форма снова заполнена, и при ошибке не надо вводить всё заново. */
   draft?: { quarter?: number; grade: number; language: "kk" | "ru"; topic: string; count: string; notes: string; pages: string }[];

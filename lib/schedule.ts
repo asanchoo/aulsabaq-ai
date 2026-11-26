@@ -1,4 +1,4 @@
-import type { Segment, TaskCard } from "./schema";
+import type { Rooms, Segment, TaskCard } from "./schema";
 
 /**
  * Расписание совмещённого урока считает код, а не модель.
@@ -14,6 +14,10 @@ import type { Segment, TaskCard } from "./schema";
  * Первый класс начинает сразу с учителем, поэтому повторения у него нет.
  * Один класс: объяснение, потом класс сам решает карточки, потом учитель проверяет. Без отрезка
  * самостоятельной работы между объяснением и проверкой карточкам было бы некуда встать.
+ *
+ * Классы в разных кабинетах (rooms = "separate"): общего начала и итога нет, они возможны только
+ * в одном кабинете. Учитель с первой минуты объясняет первому классу, остальные начинают сами
+ * с повторения; итог урока каждый класс подводит с учителем на своей проверке.
  */
 
 export type StageKind = "opening" | "review" | "explain" | "practice" | "check" | "closing";
@@ -26,7 +30,7 @@ export type PlannedSegment = { groupIndex: number; startMin: number; endMin: num
  */
 export type GroupCardPlan = { reviewMinutes: number; practiceMinutes: number; explainMinutes: number };
 
-export type Schedule = { segments: PlannedSegment[]; cards: GroupCardPlan[] };
+export type Schedule = { segments: PlannedSegment[]; cards: GroupCardPlan[]; rooms: Rooms };
 
 const OPENING_MIN = 5;
 const CLOSING_MIN = 5;
@@ -49,9 +53,13 @@ function split(total: number, n: number): number[] {
 }
 
 
-export function planSchedule(groupCount: number, durationMin: number): Schedule {
-  const middleStart = OPENING_MIN;
-  const middleEnd = durationMin - CLOSING_MIN;
+export function planSchedule(groupCount: number, durationMin: number, rooms: Rooms = "one"): Schedule {
+  // Общие этапы бывают только в одном кабинете. У одного класса общий этап — это просто учитель с классом.
+  const shared = rooms === "one" || groupCount === 1;
+  const opening = shared ? OPENING_MIN : 0;
+  const closing = shared ? CLOSING_MIN : 0;
+  const middleStart = opening;
+  const middleEnd = durationMin - closing;
   const middle = middleEnd - middleStart;
   const explainTotal = Math.round(middle * EXPLAIN_SHARE);
 
@@ -72,7 +80,7 @@ export function planSchedule(groupCount: number, durationMin: number): Schedule 
       ];
 
   const segments: PlannedSegment[] = [];
-  for (let g = 0; g < groupCount; g++) segments.push({ groupIndex: g, startMin: 0, endMin: OPENING_MIN, stage: "opening" });
+  if (opening) for (let g = 0; g < groupCount; g++) segments.push({ groupIndex: g, startMin: 0, endMin: opening, stage: "opening" });
 
   // Пока учитель с одним классом, остальные работают сами: до своего объяснения повторяют, после — практикуются.
   let cursor = middleStart;
@@ -86,7 +94,7 @@ export function planSchedule(groupCount: number, durationMin: number): Schedule 
     if (block.stage === "explain") explained.add(block.groupIndex);
     cursor = end;
   }
-  for (let g = 0; g < groupCount; g++) segments.push({ groupIndex: g, startMin: middleEnd, endMin: durationMin, stage: "closing" });
+  if (closing) for (let g = 0; g < groupCount; g++) segments.push({ groupIndex: g, startMin: middleEnd, endMin: durationMin, stage: "closing" });
 
   const merged = mergeAdjacent(segments);
   const cards = Array.from({ length: groupCount }, (_, g) => {
@@ -94,7 +102,7 @@ export function planSchedule(groupCount: number, durationMin: number): Schedule 
     const minutes = (stage: StageKind) => own.filter((s) => s.stage === stage).reduce((sum, s) => sum + s.endMin - s.startMin, 0);
     return { reviewMinutes: minutes("review"), practiceMinutes: minutes("practice"), explainMinutes: minutes("explain") };
   });
-  return { segments: merged, cards };
+  return { segments: merged, cards, rooms: shared ? "one" : "separate" };
 }
 
 /** Соседние отрезки одного класса с одним этапом склеиваем: «сам 5–17» и «сам 17–28» — это одна работа. */

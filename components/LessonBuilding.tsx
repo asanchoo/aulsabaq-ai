@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { getCreationDict, getDict, t, type Locale } from "@/lib/i18n";
 import { stageIndex, type LessonProgress } from "@/lib/progress";
 import { planSchedule, type StageKind } from "@/lib/schedule";
+import type { Rooms } from "@/lib/schema";
 import { modeFill } from "./modes";
 
 const MODE: Record<StageKind, "with_teacher" | "independent" | "joint"> = {
@@ -16,10 +17,12 @@ const MODE: Record<StageKind, "with_teacher" | "independent" | "joint"> = {
  * По партитуре бежит световая полоса, рядом настоящие этапы с цифрами и факты о том, что делает код.
  * При «уменьшить движение» полосы и заливки нет, этапы и цифры остаются.
  */
-export function LessonBuilding({ lang, grades, durationMin, progress, elapsed, offline, resumed }: {
+export function LessonBuilding({ lang, grades, durationMin, rooms = "one", progress, elapsed, offline, resumed }: {
   lang: Locale;
   grades: number[];
   durationMin: number;
+  /** Где сидят классы: в разных кабинетах у будущего урока нет общих этапов. */
+  rooms?: Rooms;
   progress: LessonProgress;
   /** Секунды с начала сборки (от сервера: не обнуляются после обновления страницы). */
   elapsed: number;
@@ -34,7 +37,7 @@ export function LessonBuilding({ lang, grades, durationMin, progress, elapsed, o
     return () => clearInterval(timer);
   }, [d.tips.length]);
 
-  const schedule = planSchedule(grades.length, durationMin);
+  const schedule = planSchedule(grades.length, durationMin, rooms);
   const at = stageIndex(progress.stage);
   // Какие отрезки уже «готовы»: объяснение у первых explained классов, общее и самостоятельное — когда есть
   // карточки, проверка — после проверки. Порядок готовности объяснений неизвестен, заливаем по порядку классов.

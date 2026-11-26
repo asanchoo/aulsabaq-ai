@@ -88,10 +88,10 @@ export function LessonView({
                 {dict.lesson.timelineTitle}
               </h2>
               <p className="mt-1 max-w-lg text-[0.9rem] text-muted">
-                {dict.lesson.timelineHint}
+                {plan.rooms === "separate" ? dict.lesson.timelineHintSeparate : dict.lesson.timelineHint}
               </p>
             </div>
-            <ModeLegend dict={dict} />
+            <ModeLegend dict={dict} modes={plan.rooms === "separate" ? ["with_teacher", "independent"] : undefined} />
           </div>
           <div className="mt-6 rounded-frame border border-line bg-white px-3 pt-5 pb-3 sm:px-5">
             <LessonTimeline plan={plan} dict={dict} />
