@@ -286,7 +286,7 @@
    "id": "kazahskii-yazyk-2-4-kazahskim",
    "subject": {
     "ru": "Казахский язык",
-    "kk": "Тәжік тілі"
+    "kk": "Қазақ тілі"
    },
    "grades": [
     2,
@@ -556,7 +556,7 @@
    "id": "uzbekskii-yazyk-2-4-uzbekskim",
    "subject": {
     "ru": "Узбекский язык",
-    "kk": "Қазақ тілі"
+    "kk": "Өзбек тілі"
    },
    "grades": [
     2,
@@ -567,7 +567,7 @@
     "instruction": "узбекским"
    },
    "goals": 97,
-   "goals_kk": 94,
+   "goals_kk": 97,
    "plan_rows": 118,
    "plan_quarters": [
     1,
@@ -597,7 +597,7 @@
    "id": "literaturnoe-chtenie-2-4-uzbekskim",
    "subject": {
     "ru": "Литературное чтение",
-    "kk": "Әдебиеттік оқу"
+    "kk": null
    },
    "grades": [
     2,
@@ -608,7 +608,7 @@
     "instruction": "узбекским"
    },
    "goals": 62,
-   "goals_kk": 62,
+   "goals_kk": 0,
    "plan_rows": 184,
    "plan_quarters": [
     1,
@@ -642,7 +642,7 @@
    "id": "tadzhikskii-yazyk-2-4-tadzhikskom",
    "subject": {
     "ru": "Таджикский язык",
-    "kk": "Өзбек тілі"
+    "kk": "Тәжік тілі"
    },
    "grades": [
     2,
@@ -653,7 +653,7 @@
     "instruction": "таджикском"
    },
    "goals": 97,
-   "goals_kk": 94,
+   "goals_kk": 97,
    "plan_rows": 204,
    "plan_quarters": [
     1,
@@ -687,7 +687,7 @@
    "id": "literaturnoe-chtenie-2-4-tadzhikskim",
    "subject": {
     "ru": "Литературное чтение",
-    "kk": null
+    "kk": "Әдебиеттік оқу"
    },
    "grades": [
     2,
@@ -698,7 +698,7 @@
     "instruction": "таджикским"
    },
    "goals": 63,
-   "goals_kk": 0,
+   "goals_kk": 63,
    "plan_rows": 175,
    "plan_quarters": [
     1,
@@ -1290,7 +1290,7 @@
    "id": "kazahskaya-literatura-5-9-kazahskim",
    "subject": {
     "ru": "Казахская литература",
-    "kk": "Өзбек әдебиеті"
+    "kk": "Қазақ әдебиеті"
    },
    "grades": [
     5,
@@ -1525,7 +1525,7 @@
    "id": "uigurskii-yazyk-5-9-uigurskim",
    "subject": {
     "ru": "Уйгурский язык",
-    "kk": "Өзбек тілі"
+    "kk": "Ұйғыр тілі"
    },
    "grades": [
     5,
@@ -1576,7 +1576,7 @@
    "id": "uigurskaya-literatura-5-9-uigurskim",
    "subject": {
     "ru": "Уйгурская литература",
-    "kk": "Қазақ әдебиеті"
+    "kk": "Ұйғыр әдебиеті"
    },
    "grades": [
     5,
@@ -1627,7 +1627,7 @@
    "id": "uzbekskii-yazyk-5-9-uzbekskim",
    "subject": {
     "ru": "Узбекский язык",
-    "kk": "Ұйғыр тілі"
+    "kk": "Өзбек тілі"
    },
    "grades": [
     5,
@@ -1678,7 +1678,7 @@
    "id": "uzbekskaya-literatura-5-9-uzbekskim",
    "subject": {
     "ru": "Узбекская литература",
-    "kk": "Ұйғыр әдебиеті"
+    "kk": "Өзбек әдебиеті"
    },
    "grades": [
     5,
@@ -1943,7 +1943,7 @@
    "id": "nemeckii-yazyk-5-9",
    "subject": {
     "ru": "Немецкий язык",
-    "kk": "Француз тілі"
+    "kk": "Неміс тілі"
    },
    "grades": [
     5,
@@ -1998,7 +1998,7 @@
    "id": "francuzskii-yazyk-5-9",
    "subject": {
     "ru": "Французский язык",
-    "kk": "Неміс тілі"
+    "kk": "Француз тілі"
    },
    "grades": [
     5,
@@ -3117,7 +3117,7 @@
    "id": "russkii-yazyk-10-11-russkim-og",
    "subject": {
     "ru": "Русский язык",
-    "kk": "Тәжік тілі"
+    "kk": "Орыс тілі"
    },
    "grades": [
     10,
@@ -3162,7 +3162,7 @@
    "id": "russkaya-literatura-10-11-russkim-em",
    "subject": {
     "ru": "Русская литература",
-    "kk": "Тәжік әдебиеті"
+    "kk": "Орыс әдебиеті"
    },
    "grades": [
     10,
@@ -3199,7 +3199,7 @@
    "id": "russkaya-literatura-10-11-russkim-og",
    "subject": {
     "ru": "Русская литература",
-    "kk": "Тәжік әдебиеті"
+    "kk": "Орыс әдебиеті"
    },
    "grades": [
     10,
@@ -3321,7 +3321,7 @@
    "id": "uigurskii-yazyk-10-11-uigurskim-em",
    "subject": {
     "ru": "Уйгурский язык",
-    "kk": "Тәжік тілі"
+    "kk": "Ұйғыр тілі"
    },
    "grades": [
     10,
@@ -3401,7 +3401,7 @@
    "id": "uzbekskii-yazyk-10-11-uzbekskim-em",
    "subject": {
     "ru": "Узбекский язык",
-    "kk": "Ұйғыр тілі"
+    "kk": "Өзбек тілі"
    },
    "grades": [
     10,
@@ -3412,7 +3412,7 @@
     "direction": "естественно-математическое"
    },
    "goals": 46,
-   "goals_kk": 46,
+   "goals_kk": 45,
    "plan_rows": 40,
    "plan_quarters": [
     1,
@@ -3438,7 +3438,7 @@
    "id": "uzbekskii-yazyk-10-11-uzbekskim-og",
    "subject": {
     "ru": "Узбекский язык",
-    "kk": "Орыс тілі"
+    "kk": "Өзбек әдебиеті"
    },
    "grades": [
     10,
@@ -3449,7 +3449,7 @@
     "direction": "общественно-гуманитарное"
    },
    "goals": 52,
-   "goals_kk": 52,
+   "goals_kk": 37,
    "plan_rows": 64,
    "plan_quarters": [
     1,
@@ -3478,7 +3478,7 @@
    "id": "tadzhikskii-yazyk-10-11-tadzhikskim-em",
    "subject": {
     "ru": "Таджикский язык",
-    "kk": "Өзбек тілі"
+    "kk": "Тәжік тілі"
    },
    "grades": [
     10,
@@ -3489,7 +3489,7 @@
     "direction": "естественно-математическое"
    },
    "goals": 46,
-   "goals_kk": 45,
+   "goals_kk": 46,
    "plan_rows": 40,
    "plan_quarters": [
     1,
@@ -3518,7 +3518,7 @@
    "id": "tadzhikskii-yazyk-10-11-tadzhikskim-og",
    "subject": {
     "ru": "Таджикский язык",
-    "kk": "Ұйғыр әдебиеті"
+    "kk": "Тәжік тілі"
    },
    "grades": [
     10,
@@ -3529,7 +3529,7 @@
     "direction": "общественно-гуманитарное"
    },
    "goals": 52,
-   "goals_kk": 38,
+   "goals_kk": 52,
    "plan_rows": 64,
    "plan_quarters": [
     1,
@@ -3594,7 +3594,7 @@
    "id": "uigurskaya-literatura-10-11-og",
    "subject": {
     "ru": "Уйгурская литература",
-    "kk": "Орыс әдебиеті"
+    "kk": "Ұйғыр әдебиеті"
    },
    "grades": [
     10,
@@ -3630,43 +3630,6 @@
    "id": "uzbekskaya-literatura-10-11-uzbekskim-em",
    "subject": {
     "ru": "Узбекская литература",
-    "kk": "Орыс әдебиеті"
-   },
-   "grades": [
-    10,
-    11
-   ],
-   "variant": {
-    "instruction": "узбекским",
-    "direction": "естественно-математическое"
-   },
-   "goals": 38,
-   "goals_kk": 38,
-   "plan_rows": 8,
-   "plan_quarters": [
-    1,
-    2,
-    3,
-    4
-   ],
-   "plan_codes_known": 1.0,
-   "content_grades": [],
-   "warnings": 0,
-   "hours": {
-    "10": {
-     "week": 2.0,
-     "year": 68.0
-    },
-    "11": {
-     "week": 2.0,
-     "year": 68.0
-    }
-   }
-  },
-  {
-   "id": "uzbekskaya-literatura-10-11-uzbekskim-og",
-   "subject": {
-    "ru": "Узбекская литература",
     "kk": "Өзбек әдебиеті"
    },
    "grades": [
@@ -3675,38 +3638,6 @@
    ],
    "variant": {
     "instruction": "узбекским",
-    "direction": "общественно-гуманитарное"
-   },
-   "goals": 38,
-   "goals_kk": 37,
-   "plan_rows": 8,
-   "plan_quarters": [],
-   "plan_codes_known": 1.0,
-   "content_grades": [],
-   "warnings": 0,
-   "hours": {
-    "10": {
-     "week": 2.0,
-     "year": 68.0
-    },
-    "11": {
-     "week": 2.0,
-     "year": 68.0
-    }
-   }
-  },
-  {
-   "id": "tadzhikskaya-literatura-10-11-tadzhikskim-em",
-   "subject": {
-    "ru": "Таджикская литература",
-    "kk": "Өзбек әдебиеті"
-   },
-   "grades": [
-    10,
-    11
-   ],
-   "variant": {
-    "instruction": "таджикским",
     "direction": "естественно-математическое"
    },
    "goals": 38,
@@ -3733,9 +3664,9 @@
    }
   },
   {
-   "id": "tadzhikskaya-literatura-10-11-tadzhikskim-og",
+   "id": "uzbekskaya-literatura-10-11-uzbekskim-og",
    "subject": {
-    "ru": "Таджикская литература",
+    "ru": "Узбекская литература",
     "kk": null
    },
    "grades": [
@@ -3743,7 +3674,7 @@
     11
    ],
    "variant": {
-    "instruction": "таджикским",
+    "instruction": "узбекским",
     "direction": "общественно-гуманитарное"
    },
    "goals": 38,
@@ -3765,10 +3696,79 @@
    }
   },
   {
+   "id": "tadzhikskaya-literatura-10-11-tadzhikskim-em",
+   "subject": {
+    "ru": "Таджикская литература",
+    "kk": "Тәжік әдебиеті"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "instruction": "таджикским",
+    "direction": "естественно-математическое"
+   },
+   "goals": 38,
+   "goals_kk": 38,
+   "plan_rows": 8,
+   "plan_quarters": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
+   "id": "tadzhikskaya-literatura-10-11-tadzhikskim-og",
+   "subject": {
+    "ru": "Таджикская литература",
+    "kk": "Тәжік әдебиеті"
+   },
+   "grades": [
+    10,
+    11
+   ],
+   "variant": {
+    "instruction": "таджикским",
+    "direction": "общественно-гуманитарное"
+   },
+   "goals": 38,
+   "goals_kk": 38,
+   "plan_rows": 8,
+   "plan_quarters": [],
+   "plan_codes_known": 1.0,
+   "content_grades": [],
+   "warnings": 0,
+   "hours": {
+    "10": {
+     "week": 2.0,
+     "year": 68.0
+    },
+    "11": {
+     "week": 2.0,
+     "year": 68.0
+    }
+   }
+  },
+  {
    "id": "angliiskii-yazyk-10-11-em",
    "subject": {
     "ru": "Английский язык",
-    "kk": "Шет тілі (екінші). Ағылшын тілі"
+    "kk": "Ағылшын тілі"
    },
    "grades": [
     10,
@@ -3848,7 +3848,7 @@
    "id": "nemeckii-yazyk-10-11-em",
    "subject": {
     "ru": "Немецкий язык",
-    "kk": "Шет тілі (екінші). Неміс тілі"
+    "kk": "Неміс тілі"
    },
    "grades": [
     10,
@@ -3924,7 +3924,7 @@
    "id": "francuzskii-yazyk-10-11-em",
    "subject": {
     "ru": "Французский язык",
-    "kk": "Шет тілі (екінші). Француз тілі"
+    "kk": "Француз тілі"
    },
    "grades": [
     10,
@@ -4741,7 +4741,7 @@
    "id": "inostrannyi-yazyk-vtoroi-francuzskii-yazyk-10-11-og",
    "subject": {
     "ru": "Иностранный язык (второй). Французский язык",
-    "kk": "Француз тілі"
+    "kk": "Шет тілі (екінші). Француз тілі"
    },
    "grades": [
     10,
@@ -4785,7 +4785,7 @@
    "id": "inostrannyi-yazyk-vtoroi-angliiskii-yazyk-10-11-og",
    "subject": {
     "ru": "Иностранный язык (второй). Английский язык",
-    "kk": "Ағылшын тілі"
+    "kk": "Шет тілі (екінші). Ағылшын тілі"
    },
    "grades": [
     10,
@@ -4825,7 +4825,7 @@
    "id": "inostrannyi-yazyk-vtoroi-nemeckii-yazyk-10-11-og",
    "subject": {
     "ru": "Иностранный язык (второй). Немецкий язык",
-    "kk": "Неміс тілі"
+    "kk": "Шет тілі (екінші). Неміс тілі"
    },
    "grades": [
     10,

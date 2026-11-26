@@ -109,8 +109,12 @@ class Blocks(HTMLParser):
 
     def handle_data(self, data):
         if not self.skip:
-            # Невидимые символы внутри кодов («7.​1.​1.​1») мешают их найти
-            self.buf.append(re.sub("[​‌‍­﻿]", "", data))
+            # Невидимые символы внутри кодов («7.\u200b1.\u200b1.\u200b1») мешают их найти
+            data = re.sub("[\u200b\u200c\u200d\u00ad\ufeff]", "", data)
+            # В тексте приказа «ё» местами набрана как «Ұ»: «еҰ», «чҰтность». Заглавная Ұ внутри слова
+            # после строчной буквы не бывает и в казахском, поэтому замена безопасна.
+            data = re.sub(r"(?<=[а-яёәғқңөұүһі])Ұ", "ё", data)
+            self.buf.append(data)
 
 
 def load_blocks(lang: str) -> list:
@@ -410,8 +414,27 @@ def program_id(p: dict) -> str:
     return "-".join(parts)
 
 
-def match_kk(ru: dict, kk_list: list[dict], used: set) -> dict | None:
-    best, score = None, 0.0
+INSTRUCTION_KK = {"казахским": "қазақ", "русским": "орыс", "уйгурским": "ұйғыр", "узбекским": "өзбек",
+                  "таджикским": "тәжік", "таджикском": "тәжік"}
+
+
+def same_instruction(ru: dict, kk: dict) -> int:
+    """+1, если язык обучения в названиях совпадает, −1, если разный, 0, если сравнить нельзя."""
+    want = INSTRUCTION_KK.get(ru["variant"].get("instruction", ""))
+    got = re.search(r"оқыту\s+(\S+)\s+тілінде", kk["title"])
+    if not want or not got:
+        return 0
+    return 1 if got.group(1).lower().startswith(want) else -1
+
+
+def match_kk(ru: dict, kk_list: list[dict], used: set, ru_pos: float) -> dict | None:
+    """Пара на казахском: совпадение кодов целей и место программы в приказе.
+
+    У программ казахского, уйгурского, узбекского и таджикского языка коды целей одинаковые,
+    поэтому одних кодов мало: при равном совпадении берём программу с того же места в приказе
+    (порядок программ в двух текстах почти одинаковый).
+    """
+    best, score, j_best = None, -1.0, 0.0
     a = set(ru["goals"])
     if not a:
         return None
@@ -419,13 +442,14 @@ def match_kk(ru: dict, kk_list: list[dict], used: set) -> dict | None:
         if n in used:
             continue
         b = set(kk["goals"])
-        if not b:
-            continue
+        if not b or same_instruction(ru, kk) < 0:
+            continue  # другой язык обучения: лучше без перевода, чем с чужим
         j = len(a & b) / len(a | b)
-        same_grades = kk["grades"] == ru["grades"]
-        if j > score or (j == score and same_grades):
-            best, score = n, j
-    if best is not None and score >= 0.6:
+        distance = abs(ru_pos - n / max(1, len(kk_list) - 1))
+        value = j - 0.5 * distance + 0.3 * same_instruction(ru, kk)
+        if value > score:
+            best, score, j_best = n, value, j
+    if best is not None and j_best >= 0.6:
         used.add(best)
         return kk_list[best]
     return None
@@ -442,8 +466,8 @@ def main() -> None:
     for old in (OUT / "programs").glob("*.json"):
         old.unlink()
     index, used, seen = [], set(), {}
-    for ru in parsed["ru"]:
-        kk = match_kk(ru, parsed["kk"], used)
+    for n_ru, ru in enumerate(parsed["ru"]):
+        kk = match_kk(ru, parsed["kk"], used, n_ru / max(1, len(parsed["ru"]) - 1))
         pid = program_id(ru)
         if pid in seen:
             seen[pid] += 1
