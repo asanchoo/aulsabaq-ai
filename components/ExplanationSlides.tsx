@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode }
 import { getCurriculumDict, getDict, t, type Locale } from "@/lib/i18n";
 import type { CurriculumGoal, Explanation, WorkedExample } from "@/lib/schema";
 import { Visual } from "./Visual";
+import { buildUnits } from "@/lib/visuals";
 import { isMathOnly } from "@/lib/lesson";
 import QRCode from "qrcode";
 
@@ -55,7 +56,14 @@ export function ExplanationSlides({ explanation: e, grade, topic, lang, joinCode
             {l.answer}: <span className="tabular">{x.answer}</span>
           </p>
         </div>
-        {x.visual && (
+        {/* Уголок, столбик, луч и кучки стоят с первого кадра и достраиваются вместе с шагами (lib/visuals.ts,
+            buildUnits). Остальные схемы, как раньше, появляются вместе с ответом. */}
+        {x.visual && buildUnits(x.visual) > 0 && (
+          <div className="min-w-0">
+            <Visual visual={x.visual} labels={dict.visual} size="slide" build={x.steps.length ? n / x.steps.length : 1} />
+          </div>
+        )}
+        {x.visual && buildUnits(x.visual) === 0 && (
           <div aria-hidden={n <= x.steps.length} className={`min-w-0 ${n > x.steps.length ? "pop" : "invisible"}`}>
             <Visual visual={x.visual} labels={dict.visual} size="slide" />
           </div>
@@ -150,7 +158,8 @@ export function ExplanationSlides({ explanation: e, grade, topic, lang, joinCode
           </ol>
           {stepsSide && (
             <div className="min-w-0">
-              <Visual visual={stepsSide} labels={dict.visual} size="slide" />
+              {/* Схема рядом с шагами достраивается вместе с ними; схемы без построения стоят целиком. */}
+              <Visual visual={stepsSide} labels={dict.visual} size="slide" build={e.steps.length ? n / e.steps.length : undefined} />
             </div>
           )}
         </div>

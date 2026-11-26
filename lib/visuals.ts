@@ -312,3 +312,29 @@ export function columnResult(a: number, b: number, op: "+" | "-" | "×"): number
 export function partialProducts(a: number, b: number): number[] {
   return String(b).split("").reverse().map((d) => a * Number(d));
 }
+
+// --- Схема строится по шагам на слайде ----------------------------------------------------------
+
+/**
+ * Сколько частей у схемы, которая на слайде достраивается вместе с шагами (этап 4 docs/FORMAT.md):
+ * уголок по цифрам частного, столбик по разрядам справа налево (или по частичным произведениям),
+ * луч по прыжкам, кучки по одной. 0 значит, что схема показывается сразу целиком.
+ */
+export function buildUnits(v: Visual): number {
+  switch (v.kind) {
+    case "long_division": return longDivision(v.dividend, v.divisor).steps.length;
+    case "column": {
+      const partials = v.op === "×" && String(v.b).length > 1 ? partialProducts(v.a, v.b).length : 0;
+      return partials ? partials + 1 : Math.max(String(v.a).length, String(v.b).length);
+    }
+    case "number_line": return v.points.length - 1;
+    case "groups": return v.op === "×" ? v.groups : 1;
+    default: return 0;
+  }
+}
+
+/** Сколько частей показать, когда открыта доля шагов build (0…1). Без build схема целиком (страница урока, печать). */
+export function shownUnits(units: number, build?: number): number {
+  if (build === undefined || !Number.isFinite(build)) return units;
+  return Math.min(units, Math.max(0, Math.round(build * units)));
+}

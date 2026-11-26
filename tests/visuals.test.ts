@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { compileExpression } from "@/lib/expression";
 import { parseExplanation } from "@/lib/validate";
-import { columnBorrows, columnCarries, longDivision, partialProducts, toDraft, toVisual, visualMismatch, type Visual, type VisualDraft } from "@/lib/visuals";
+import { buildUnits, columnBorrows, columnCarries, longDivision, partialProducts, shownUnits, toDraft, toVisual, visualMismatch, type Visual, type VisualDraft } from "@/lib/visuals";
 import { demoLesson } from "@/lib/demo";
 
 const draft = (patch: Partial<VisualDraft>): VisualDraft => ({
@@ -184,5 +184,35 @@ describe("числовой луч с целыми числами", () => {
     const html = renderToStaticMarkup(createElement(VisualBlock, { visual, labels: getDict("kk").visual }));
     expect(html).toContain(">59<");
     expect(html).not.toMatch(/58[,.]5/);
+  });
+});
+
+describe("схема строится по шагам на слайде", () => {
+  const v = (x: Record<string, unknown>) => ({ caption: "", ...x }) as Visual;
+  it("уголок: одна часть на цифру частного", () => {
+    expect(buildUnits(v({ kind: "long_division", dividend: 864, divisor: 4 }))).toBe(3);
+    expect(buildUnits(v({ kind: "long_division", dividend: 104, divisor: 4 }))).toBe(2);
+    expect(buildUnits(v({ kind: "long_division", dividend: 408, divisor: 4 }))).toBe(3);
+    expect(buildUnits(v({ kind: "long_division", dividend: 3, divisor: 4 }))).toBe(1);
+  });
+  it("столбик: по разрядам, при умножении на многозначное по частичным произведениям и сумма", () => {
+    expect(buildUnits(v({ kind: "column", a: 36, b: 48, op: "+" }))).toBe(2);
+    expect(buildUnits(v({ kind: "column", a: 52, b: 47, op: "-" }))).toBe(2);
+    expect(buildUnits(v({ kind: "column", a: 123, b: 4, op: "×" }))).toBe(3);
+    expect(buildUnits(v({ kind: "column", a: 123, b: 45, op: "×" }))).toBe(3);
+  });
+  it("луч по прыжкам, кучки умножения по одной, остальные схемы сразу целиком", () => {
+    expect(buildUnits(v({ kind: "number_line", from: 30, to: 90, points: [36, 76, 84] }))).toBe(2);
+    expect(buildUnits(v({ kind: "groups", groups: 4, perGroup: 3, op: "×" }))).toBe(4);
+    expect(buildUnits(v({ kind: "groups", groups: 7, perGroup: 2, op: "-" }))).toBe(1);
+    expect(buildUnits(v({ kind: "fraction", numerator: 3, denominator: 4 }))).toBe(0);
+  });
+  it("доля шагов переводится в части: ничего в начале, всё к последнему шагу, без build целиком", () => {
+    // 4 шага примера, 3 цифры частного: 0, 1, 2, 2, 3
+    expect([0, 1, 2, 3, 4].map((n) => shownUnits(3, n / 4))).toEqual([0, 1, 2, 2, 3]);
+    expect(shownUnits(3)).toBe(3);
+    expect(shownUnits(3, 2)).toBe(3);
+    expect(shownUnits(3, -1)).toBe(0);
+    expect(shownUnits(3, Number.NaN)).toBe(3);
   });
 });
