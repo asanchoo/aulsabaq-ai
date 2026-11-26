@@ -10,6 +10,7 @@
 | Продукт | https://aulsabaq-ai.vercel.app |
 | Презентация (2 слайда, PDF) | https://github.com/asanchoo/aulsabaq-ai/blob/main/docs/presentation/AulSabaq-AI.pdf |
 | Видео (60 секунд, MP4, со звуком) | https://github.com/asanchoo/aulsabaq-ai/raw/main/docs/presentation/video/AulSabaq-AI-sound.mp4 |
+| Паспорт и инструкция одним PDF (4 страницы, скриншоты, для рецензентов) | https://github.com/asanchoo/aulsabaq-ai/raw/main/docs/presentation/guide/AulSabaq-AI-instruction.pdf |
 | Инструкция для рецензента (5 шагов) | https://github.com/asanchoo/aulsabaq-ai/blob/main/docs/REVIEWER_GUIDE.md |
 | Паспорт проекта | https://github.com/asanchoo/aulsabaq-ai/blob/main/docs/PROJECT_PASSPORT.md |
 | Журнал проверок | https://github.com/asanchoo/aulsabaq-ai/blob/main/docs/TEST_LOG.md |
