@@ -1,6 +1,6 @@
 import { CardVariantSchema } from "./variant-schema";
 import { z } from "zod";
-import { EXAMPLE_LEVELS, GroupCoreSchema, LangSchema, QuickTaskSchema, TaskCardSchema, TermSchema, type LessonCore } from "./schema";
+import { EXAMPLE_LEVELS, GroupCoreSchema, LangSchema, QuickTaskSchema, RoomsSchema, TaskCardSchema, TermSchema, type LessonCore } from "./schema";
 import { VisualDraftSchema } from "./visuals";
 import { acceptMismatch, inputHintReveals } from "./check-answer";
 import { buildTimeline, MAX_CARDS, MAX_GROUPS, MIN_PRACTICE_CARDS, type Schedule, type StageKind } from "./schedule";
@@ -16,6 +16,8 @@ export const LessonRequestSchema = z.object({
   subject: z.string().trim().min(1).max(100),
   language: LangSchema,
   durationMin: z.number().int().min(30).max(90),
+  /** Где сидят классы: в одном кабинете (по умолчанию) или в разных. В разных нет общего начала и итога. */
+  rooms: RoomsSchema.optional(),
   groups: z.array(z.object({
     grade: z.number().int().min(1).max(11),
     topic: z.string().trim().min(1).max(300),
@@ -120,10 +122,17 @@ export function contentToLesson(
     ...g,
     stageText: (stage: StageKind) => stage === "opening" ? content.opening : stage === "closing" ? content.closing : content.groups[i].stages[stage],
   })));
+  // В разных кабинетах общих этапов нет: что классы делают в начале и как заканчивают сами, модель пишет
+  // в opening и closing, а код переносит это в заметку учителю (в таймлайне этим текстам места нет).
+  const separate = schedule.rooms === "separate";
+  const teacherNotes = separate ? [content.teacherNotes, content.opening, content.closing].map((x) => x.trim()).filter(Boolean).join("\n") : content.teacherNotes;
   return {
     ok: true,
     warnings,
-    plan: { subject: content.subject, language: content.language, durationMin: content.durationMin, groups, timeline, teacherNotes: content.teacherNotes },
+    plan: {
+      subject: content.subject, language: content.language, durationMin: content.durationMin,
+      ...(separate ? { rooms: "separate" as const } : {}), groups, timeline, teacherNotes,
+    },
   };
 }
 

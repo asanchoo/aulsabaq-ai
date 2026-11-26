@@ -18,6 +18,8 @@ export function nextLessonDraft(
     subject: plan.subject,
     language: plan.language,
     durationMin: plan.durationMin,
+    // Урок на завтра для тех же классов в тех же кабинетах.
+    ...(plan.rooms === "separate" ? { rooms: plan.rooms } : {}),
     groups: plan.groups.map((group, i) => {
       const labels = getReportDict(groupLanguage(plan, group));
       const result = report[i];

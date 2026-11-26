@@ -100,6 +100,13 @@ const cases: Case[] = [
   { hypothesis: "H12 тема в своём классе по программе", check: "8 класс получает цели про квадратичную функцию; прогрессия 9 класса без чужих целей",
     request: { subject: "Алгебра", language: ru, durationMin: 45, groups: [
       { grade: 8, topic: "Квадратичная функция" }, { grade: 9, topic: "Арифметическая прогрессия" }] } },
+  // H15. Классы в разных кабинетах (выбор в форме с 26 ноября): нет общего начала и итога
+  { hypothesis: "H15 классы в разных кабинетах", check: "нет общего этапа; тексты этапов не говорят «все вместе», итог урока у каждого класса на его проверке",
+    request: { subject: "Математика", language: ru, durationMin: 45, rooms: "separate", groups: [
+      { grade: 2, topic: "Сложение двузначных чисел с переходом через десяток" }, { grade: 4, topic: "Деление на однозначное число" }] } },
+  { hypothesis: "H15 классы в разных кабинетах", check: "три класса на казахском: нет общего этапа и слов «бәрі бірге», «барлық сынып бірге»",
+    request: { subject: "Математика", language: kk, durationMin: 45, rooms: "separate", groups: [
+      { grade: 1, topic: "10 көлеміндегі сандарды қосу" }, { grade: 2, topic: "Ондықтан аттап қосу" }, { grade: 4, topic: "Көп таңбалы санды бір таңбалы санға көбейту" }] } },
 ];
 
 /** Автоматические проверки, которые не требуют чтения урока. */
@@ -128,7 +135,12 @@ function autoChecks(plan: LessonPlan, request: LessonRequest) {
       return { grade: g.grade, cardsWithVariants: perCard.filter((c) => c.distinct > 1).length, cards: perCard.length, problems: perCard.filter((c) => c.badAnswers || c.hintLeaks) };
     });
   }
-  return { groups, variants };
+  // H15: в разных кабинетах нет общего этапа, и тексты этапов не зовут классы вместе
+  const together = /все классы|вместе|общ(ий|ее|ая) (настрой|итог|начало|рефлекс)|барлық сынып|бәрі бірге|бірге/iu;
+  const rooms = plan.rooms === "separate"
+    ? { joint: plan.timeline.filter((s) => s.mode === "joint").length, togetherTexts: plan.timeline.filter((s) => together.test(s.activity)).map((s) => `${s.groupId} ${s.startMin}–${s.endMin}: ${s.activity}`) }
+    : null;
+  return { groups, variants, rooms };
 }
 
 describe.concurrent("гипотезы", () => {

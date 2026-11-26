@@ -15,6 +15,7 @@ import {
   type PendingLesson,
 } from "@/lib/local";
 import type { JobView, LessonProgress } from "@/lib/progress";
+import type { Rooms } from "@/lib/schema";
 import { initialProgress } from "@/lib/progress";
 import { LessonBuilding } from "./LessonBuilding";
 import { CurriculumPicker } from "./CurriculumPicker";
@@ -97,6 +98,8 @@ export function LessonForm({ lang }: { lang: Locale }) {
   const router = useRouter();
   const [subject, setSubject] = useState("");
   const [duration, setDuration] = useState("45");
+  // Где сидят классы: в одном кабинете (общее начало и итог) или в разных (общих этапов нет).
+  const [rooms, setRooms] = useState<Rooms>("one");
   const [groups, setGroups] = useState<GroupDraft[]>([
     newGroup(1, 2, lang),
     newGroup(2, 4, lang),
@@ -147,6 +150,7 @@ export function LessonForm({ lang }: { lang: Locale }) {
         if (draft.success) {
           setSubject(draft.data.subject);
           setDuration(String(draft.data.durationMin));
+          setRooms(draft.data.rooms ?? "one");
           setGroups(
             draft.data.groups.map((g, i) => ({
               ...newGroup(i + 1, g.grade, g.language ?? draft.data.language),
@@ -172,6 +176,7 @@ export function LessonForm({ lang }: { lang: Locale }) {
     // Форма снова показывает, что собирается: предмет, длительность, классы и темы.
     setSubject(pending.subject);
     setDuration(String(pending.durationMin));
+    setRooms(pending.rooms ?? "one");
     if (pending.draft?.length)
       setGroups(
         pending.draft.map((g, i) => ({
@@ -263,6 +268,8 @@ export function LessonForm({ lang }: { lang: Locale }) {
       // Язык урока — язык первого класса; у каждого класса свой язык в groups[].language.
       language: groups[0].language,
       durationMin: Number(duration),
+      // Выбор кабинета имеет смысл только для двух и больше классов.
+      ...(groups.length > 1 && rooms === "separate" ? { rooms } : {}),
       groups: groups.map((g) => ({
         grade: g.grade,
         topic: g.topic.trim(),
@@ -321,6 +328,7 @@ export function LessonForm({ lang }: { lang: Locale }) {
           grades: input.data.groups.map((g) => g.grade),
           language: input.data.language,
           durationMin: input.data.durationMin,
+          ...(input.data.rooms ? { rooms: input.data.rooms } : {}),
           startedAt: Date.now(),
           draft: groups.map(
             ({ grade, language, topic, count, notes, pages, quarter }) => ({
@@ -494,6 +502,32 @@ export function LessonForm({ lang }: { lang: Locale }) {
                 {d.classCountHint}
               </p>
             </fieldset>
+
+            {groups.length > 1 && (
+              <fieldset className="mt-6">
+                <legend className="field-label">{d.rooms}</legend>
+                <div className="inline-grid grid-cols-2 rounded-btn border border-line-strong p-1">
+                  {(["one", "separate"] as const).map((value) => (
+                    <label key={value} className="relative">
+                      <input
+                        type="radio"
+                        name="rooms"
+                        value={value}
+                        checked={rooms === value}
+                        onChange={() => setRooms(value)}
+                        className="peer sr-only"
+                      />
+                      <span className={segment}>
+                        {value === "one" ? d.roomsOne : d.roomsSeparate}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                <p className="mt-2 max-w-[60ch] text-[0.85rem] leading-snug text-muted" aria-live="polite">
+                  {rooms === "one" ? d.roomsOneHint : d.roomsSeparateHint}
+                </p>
+              </fieldset>
+            )}
 
             <div className="mt-6 grid gap-4">
               {groups.map((group, index) => (
@@ -849,6 +883,7 @@ export function LessonForm({ lang }: { lang: Locale }) {
                 lang={lang}
                 grades={job?.grades ?? groups.map((g) => g.grade)}
                 durationMin={job?.durationMin ?? (Number(duration) || 45)}
+                rooms={job ? job.rooms ?? "one" : groups.length > 1 ? rooms : "one"}
                 progress={
                   progress ??
                   initialProgress(job?.grades.length ?? groups.length)

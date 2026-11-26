@@ -137,10 +137,11 @@ export function LessonScore({ plan, dict, showActivity, initialMinute = 12, auto
   );
 }
 
-export function ModeLegend({ dict }: { dict: Dict }) {
+/** Легенда режимов. modes — только режимы этого урока: в разных кабинетах общего этапа нет, серый не нужен. */
+export function ModeLegend({ dict, modes }: { dict: Dict; modes?: SegmentMode[] }) {
   return (
     <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-[0.82rem] text-muted">
-      {(Object.keys(dict.modes) as SegmentMode[]).map((mode) => (
+      {(Object.keys(dict.modes) as SegmentMode[]).filter((mode) => !modes || modes.includes(mode)).map((mode) => (
         <li key={mode} className="flex items-center gap-1.5">
           <span className={`size-2.5 rounded-[3px] ${modeFill[mode]}`} />
           {dict.modes[mode]}

@@ -148,9 +148,18 @@ export const GroupSchema = z.object({
   trainer: TrainerSkillSchema.optional(),
 });
 
+/**
+ * Где сидят классы. one — в одном кабинете (класс-комплект): урок начинается и заканчивается общим этапом.
+ * separate — в разных кабинетах: общих этапов нет, учитель всё время с одним классом, остальные работают сами.
+ * Нет поля — один кабинет (все уроки до 26 ноября).
+ */
+export const RoomsSchema = z.enum(["one", "separate"]);
+export type Rooms = z.infer<typeof RoomsSchema>;
+
 export const LessonPlanSchema = z.object({
   subject: z.string().min(1),
   numberVariants: z.boolean().optional(),
+  rooms: RoomsSchema.optional(),
   language: LangSchema,
   durationMin: z.number().int(),
   groups: z.array(GroupSchema),

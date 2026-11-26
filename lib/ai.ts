@@ -165,11 +165,11 @@ function explanationBrief(e: Explanation, reviewCards: GeneratedCard[], group: n
 }
 
 function planJob(input: LessonRequest, explained: Explained[]): Job<LessonCore> {
-  const schedule = planSchedule(input.groups.length, input.durationMin);
+  const schedule = planSchedule(input.groups.length, input.durationMin, input.rooms);
   const reviewCards = explained.map((x, i) => (schedule.cards[i].reviewMinutes > 0 ? x.reviewCards : []));
   return {
     name: "plan",
-    instructions: lessonInstructions(input.language, requestLanguages(input)),
+    instructions: lessonInstructions(input.language, requestLanguages(input), schedule.rooms),
     request: {
       request: { ...requestForModel(input), groups: requestForModel(input).groups.map((g, i) => ({ ...g, curriculumGoals: goalsFor(input, i) })) },
       // Сколько минут каждый класс работает сам: карточек должно хватить на это время, с запасом.
@@ -203,7 +203,7 @@ function planJob(input: LessonRequest, explained: Explained[]): Job<LessonCore> 
 
 function explanationJob(input: LessonRequest, index: number): Job<Explained> {
   const group = input.groups[index];
-  const { explainMinutes, reviewMinutes } = planSchedule(input.groups.length, input.durationMin).cards[index];
+  const { explainMinutes, reviewMinutes } = planSchedule(input.groups.length, input.durationMin, input.rooms).cards[index];
   const minReviewCards = minCards(group.grade, reviewMinutes, 0).review;
   return {
     name: `explain-g${index + 1}`,

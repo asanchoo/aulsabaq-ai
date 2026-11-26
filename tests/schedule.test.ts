@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { buildTimeline, planSchedule } from "@/lib/schedule";
-import type { LessonCore, TaskCard } from "@/lib/schema";
+import type { LessonCore, Rooms, TaskCard } from "@/lib/schema";
+import { contentToLesson, type GeneratedContent } from "@/lib/generation-schema";
+import { lessonInstructions } from "@/lib/prompts";
 import { minCards, validateLessonPlan } from "@/lib/validate";
 
 /** Урок с карточками по 3 минуты: сколько нужно, чтобы занять всё время самостоятельной работы, и одна в запас. */
-function lessonFor(groupCount: number, durationMin: number): LessonCore {
-  const schedule = planSchedule(groupCount, durationMin);
+function lessonFor(groupCount: number, durationMin: number, rooms: Rooms = "one"): LessonCore {
+  const schedule = planSchedule(groupCount, durationMin, rooms);
   const groups = schedule.cards.map((plan, g) => {
     // Не больше 16 карточек: на длинном уроке карточки длиннее, как и сделал бы учитель.
     const need = minCards(g + 2, plan.reviewMinutes, plan.practiceMinutes);
@@ -21,7 +23,7 @@ function lessonFor(groupCount: number, durationMin: number): LessonCore {
     return { id: `g${g + 1}`, grade: g + 2, topic: "Тема", learningGoal: "Цель", cards, homework: "Дома" };
   });
   const timeline = buildTimeline(schedule, groups.map((g) => ({ ...g, stageText: (stage) => stage })));
-  return { subject: "Математика", language: "ru", durationMin, groups, timeline, teacherNotes: "" };
+  return { subject: "Математика", language: "ru", durationMin, ...(schedule.rooms === "separate" ? { rooms: "separate" as const } : {}), groups, timeline, teacherNotes: "" };
 }
 
 describe("planSchedule", () => {
@@ -65,5 +67,68 @@ describe("planSchedule", () => {
     const lesson = lessonFor(2, 45);
     const teacher = lesson.timeline.filter((s) => s.mode === "with_teacher").map((s) => `${s.groupId} ${s.startMin}–${s.endMin} ${s.activity}`);
     expect(teacher).toEqual(["g1 5–17 explain", "g2 17–28 explain", "g1 28–34 check", "g2 34–40 check"]);
+  });
+});
+
+describe("классы в разных кабинетах", () => {
+  it("общего начала и итога нет, учитель с первой до последней минуты ровно с одним классом", () => {
+    for (const groups of [2, 3, 4]) {
+      for (let duration = 30; duration <= 90; duration += 5) {
+        const lesson = lessonFor(groups, duration, "separate");
+        expect([groups, duration, validateLessonPlan(lesson)]).toEqual([groups, duration, { ok: true }]);
+        expect(lesson.timeline.some((s) => s.mode === "joint")).toBe(false);
+        for (let minute = 0; minute < duration; minute++) {
+          const withTeacher = lesson.timeline.filter((s) => s.mode === "with_teacher" && s.startMin <= minute && minute < s.endMin);
+          expect([groups, duration, minute, withTeacher.length]).toEqual([groups, duration, minute, 1]);
+        }
+      }
+    }
+  });
+
+  it("первый класс сразу с учителем, второй начинает сам с повторения, проверка второго в конце урока", () => {
+    const { segments, rooms } = planSchedule(2, 45, "separate");
+    expect(rooms).toBe("separate");
+    expect(segments.map((s) => [s.groupIndex, s.stage, s.startMin, s.endMin])).toEqual([
+      [0, "explain", 0, 15], [0, "practice", 15, 29], [0, "check", 29, 37], [0, "practice", 37, 45],
+      [1, "review", 0, 15], [1, "explain", 15, 29], [1, "practice", 29, 37], [1, "check", 37, 45],
+    ]);
+  });
+
+  it("один класс: кабинет ни на что не влияет", () => {
+    expect(planSchedule(1, 45, "separate")).toEqual(planSchedule(1, 45));
+  });
+
+  it("проверка урока не пропускает общий этап, если классы в разных кабинетах", () => {
+    const lesson = { ...lessonFor(2, 45), rooms: "separate" as const };
+    const result = validateLessonPlan(lesson);
+    expect(result.ok).toBe(false);
+    expect(result.ok ? [] : result.errors.join(" ")).toMatch(/INV-2: .*разных кабинетах/u);
+  });
+
+  it("сборка урока: тексты начала и конца уходят в заметку учителю, в таймлайне их нет", () => {
+    const schedule = planSchedule(2, 45, "separate");
+    const card = { type: "open" as const, prompt: "Задание", successCriteria: "Критерий", hint: "Подсказка", difficulty: 1 as const, variant: null, answer: null, accept: [], inputHint: null, minutes: 2 };
+    const content: GeneratedContent = {
+      subject: "Математика", language: "ru", durationMin: 45,
+      opening: "До звонка раздайте карточки обоим классам.", closing: "Кто закончил, сверяет ответы по листу.",
+      groups: [2, 4].map((grade) => ({
+        grade, topic: "Тема", learningGoal: "Цель", homework: "Дома", cards: Array.from({ length: 8 }, () => card),
+        stages: { review: "Повторяют", explain: "Учитель объясняет", practice: "Решают", check: "Учитель проверяет и подводит итог" },
+      })),
+      teacherNotes: "Заметка.",
+    };
+    const built = contentToLesson(content, schedule, [[], Array.from({ length: 6 }, () => card)]);
+    expect(built.ok).toBe(true);
+    if (!built.ok) return;
+    expect(built.plan.rooms).toBe("separate");
+    expect(built.plan.teacherNotes).toBe("Заметка.\nДо звонка раздайте карточки обоим классам.\nКто закончил, сверяет ответы по листу.");
+    expect(built.plan.timeline.some((s) => s.mode === "joint" || s.activity.includes("До звонка"))).toBe(false);
+  });
+
+  it("промпт: в разных кабинетах модель знает, что общих этапов нет", () => {
+    const separate = lessonInstructions("ru", ["ru"], "separate");
+    expect(separate).toContain("РАЗНЫХ кабинетах");
+    expect(separate).not.toContain("общее начало для всех классов");
+    expect(lessonInstructions("ru")).toContain("общее начало для всех классов");
   });
 });
