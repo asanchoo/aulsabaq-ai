@@ -333,8 +333,17 @@ export function buildUnits(v: Visual): number {
   }
 }
 
-/** Сколько частей показать, когда открыта доля шагов build (0…1). Без build схема целиком (страница урока, печать). */
-export function shownUnits(units: number, build?: number): number {
-  if (build === undefined || !Number.isFinite(build)) return units;
-  return Math.min(units, Math.max(0, Math.round(build * units)));
+/** Сколько шагов слайда открыто из скольких. */
+export type BuildProgress = { opened: number; total: number };
+
+/**
+ * Сколько частей схемы показать. Обычно модель пишет шаг на каждую цифру или разряд и в конце проверку
+ * («Делим сотни», «Делим десятки», «Делим единицы», «Проверка»), поэтому, если шагов не меньше частей,
+ * каждый шаг открывает одну часть. Если шагов меньше (4 кучки, 2 шага), части делятся между шагами поровну
+ * и схема достроена к последнему шагу. Без build или без шагов схема целиком (страница урока, печать).
+ */
+export function shownUnits(units: number, build?: BuildProgress): number {
+  if (!build || build.total <= 0 || !Number.isFinite(build.opened)) return units;
+  const opened = Math.min(build.total, Math.max(0, build.opened));
+  return build.total >= units ? Math.min(units, opened) : Math.round((opened / build.total) * units);
 }

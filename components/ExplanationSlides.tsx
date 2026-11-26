@@ -60,7 +60,7 @@ export function ExplanationSlides({ explanation: e, grade, topic, lang, joinCode
             buildUnits). Остальные схемы, как раньше, появляются вместе с ответом. */}
         {x.visual && buildUnits(x.visual) > 0 && (
           <div className="min-w-0">
-            <Visual visual={x.visual} labels={dict.visual} size="slide" build={x.steps.length ? n / x.steps.length : 1} />
+            <Visual visual={x.visual} labels={dict.visual} size="slide" build={{ opened: n, total: x.steps.length }} />
           </div>
         )}
         {x.visual && buildUnits(x.visual) === 0 && (
@@ -159,7 +159,7 @@ export function ExplanationSlides({ explanation: e, grade, topic, lang, joinCode
           {stepsSide && (
             <div className="min-w-0">
               {/* Схема рядом с шагами достраивается вместе с ними; схемы без построения стоят целиком. */}
-              <Visual visual={stepsSide} labels={dict.visual} size="slide" build={e.steps.length ? n / e.steps.length : undefined} />
+              <Visual visual={stepsSide} labels={dict.visual} size="slide" build={{ opened: n, total: e.steps.length }} />
             </div>
           )}
         </div>
