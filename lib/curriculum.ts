@@ -115,7 +115,8 @@ export function curriculumTopics(query: CurriculumQuery): string[] {
   const unit = /^\d\s?[A-ZА-ЯӘ]\s+(.+)$/u;
   const units = labels.map((s) => s.match(unit)?.[1]?.trim()).filter((s): s is string => !!s);
   const subsections = labels.map((s) => s.match(/^\d{1,2}\.\d{1,2}\.?\s+(.+)$/u)?.[1]?.trim()).filter((s): s is string => !!s);
-  return [...new Set(units.length ? units : subsections)].filter((s) => s.length >= 5 && s.length <= 120).slice(0, 12);
+  // Короткие разделы бывают настоящими темами («Доли», «Үлес», «Су», «Жер»), поэтому нижний порог 2 буквы.
+  return [...new Set(units.length ? units : subsections)].filter((s) => s.length >= 2 && s.length <= 120).slice(0, 12);
 }
 
 /** Re-read the trusted text and grade; forged codes or another programme never survive. */
