@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>AulSabaq AI: паспорт проекта и инструкция для проверки</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  /* Те же цвета и шрифт, что на сайте (app/globals.css): белый, графит, мята. A4, печать в PDF: render.mjs */
+  :root {
+    --bg: #ffffff; --surface: #f4f4f2; --ink: #232323; --muted: #5c5c5c; --line: #e2e2de;
+    --mint: #a1ffcb; --mint-soft: #e9fbf1; --help-soft: #fff1e8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  @page { size: A4; margin: 14mm 15mm 14mm; }
+  html { font-family: Manrope, system-ui, sans-serif; color: var(--ink); font-size: 8.4pt; line-height: 1.42; }
+  body { background: var(--bg); }
+  .doc { max-width: 180mm; margin: 0 auto; }
+  h1 { font-size: 23pt; line-height: 1.12; font-weight: 700; letter-spacing: -0.02em; }
+  h2 { font-size: 13.5pt; line-height: 1.25; font-weight: 700; margin: 0 0 2.2mm; break-after: avoid; }
+  h3 { font-size: 10.5pt; font-weight: 700; margin: 0 0 1.2mm; break-after: avoid; }
+  p + p { margin-top: 1.6mm; }
+  section { margin-top: 4.6mm; }
+  .muted { color: var(--muted); }
+  .mono { font-family: "JetBrains Mono", monospace; font-size: 0.92em; }
+  b { font-weight: 700; }
+  a { color: var(--ink); }
+
+  .top { display: flex; justify-content: space-between; align-items: center; gap: 4mm; margin-bottom: 4mm; }
+  .logo { display: inline-flex; align-items: center; gap: 2.4mm; font-weight: 700; font-size: 11pt; }
+  .logo i { width: 7mm; height: 7mm; border-radius: 2mm; background: var(--mint); display: grid; place-items: center; font-style: normal; font-size: 10pt; }
+  .tag { font-size: 8.4pt; color: var(--muted); }
+  .lead { margin-top: 2mm; font-size: 10.4pt; color: var(--muted); max-width: 165mm; }
+
+  .start { margin-top: 5mm; display: grid; grid-template-columns: 1.25fr 1fr; gap: 4mm; align-items: stretch; }
+  .card { border-radius: 3.5mm; padding: 4mm 4.5mm; }
+  .card.mint { background: var(--mint-soft); border: 1px solid #c7f2d9; }
+  .card.line { border: 1px solid var(--line); }
+  .url { font-size: 15pt; font-weight: 800; letter-spacing: -0.01em; margin: 1mm 0 1.6mm; }
+  ul.plain { list-style: none; }
+  ul.plain li { padding-left: 4mm; position: relative; }
+  ul.plain li + li { margin-top: 1mm; }
+  ul.plain li::before { content: ""; position: absolute; left: 0; top: 0.62em; width: 1.6mm; height: 1.6mm; border-radius: 50%; background: var(--ink); }
+  .card.mint ul.plain li::before { background: #2f9e64; }
+
+  table.passport { width: 100%; border-collapse: collapse; margin-top: 1mm; }
+  table.passport th, table.passport td { text-align: left; vertical-align: top; padding: 1.6mm 2.4mm; border-top: 1px solid var(--line); }
+  table.passport tr:last-child th, table.passport tr:last-child td { border-bottom: 1px solid var(--line); }
+  table.passport th { width: 36mm; font-weight: 700; background: var(--surface); }
+  table.passport tr { break-inside: avoid; }
+
+  ol.steps { list-style: none; counter-reset: s; }
+  ol.steps > li { counter-increment: s; position: relative; padding-left: 8.5mm; break-inside: avoid; }
+  ol.steps > li + li { margin-top: 2.2mm; }
+  ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 0.05em; width: 5.6mm; height: 5.6mm; border-radius: 50%; background: var(--mint); font-weight: 700; font-size: 8.6pt; display: grid; place-items: center; }
+
+  figure { break-inside: avoid; }
+  figure img { display: block; width: 100%; border: 1px solid var(--line); border-radius: 2.6mm; }
+  figcaption { font-size: 8.2pt; color: var(--muted); margin-top: 1.2mm; line-height: 1.35; }
+  figcaption b { color: var(--ink); }
+  .shots { display: grid; gap: 4mm; margin-top: 4mm; }
+  .shots.two { grid-template-columns: 1fr 1fr; }
+  .shots.mix { grid-template-columns: 1fr 1fr 38mm; align-items: start; }
+  .shots.phones { grid-template-columns: 34mm 34mm 64mm; align-items: start; }
+
+  .expect { list-style: none; }
+  .expect li { padding: 2mm 0 2mm 17mm; position: relative; border-top: 1px solid var(--line); break-inside: avoid; }
+  .expect li:last-child { border-bottom: 1px solid var(--line); }
+  .expect li > span { position: absolute; left: 0; top: 2mm; font-weight: 700; }
+  dl.task { display: grid; grid-template-columns: 36mm 1fr; gap: 1.6mm 3mm; }
+  dl.task dt { font-weight: 700; }
+
+  .nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; margin: 2.5mm 0 3mm; }
+  .num { background: var(--surface); border-radius: 3mm; padding: 3mm 3.5mm; break-inside: avoid; }
+  .num strong { display: block; font-size: 17pt; line-height: 1.1; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 1mm; }
+  .num.lead-num { background: var(--ink); color: #fff; }
+  .num.lead-num .muted { color: #d4d4d0; }
+  .note { background: var(--help-soft); border: 1px solid #f3d2bd; border-radius: 3mm; padding: 3mm 3.5mm; break-inside: avoid; }
+
+  table.trouble { width: 100%; border-collapse: collapse; margin-top: 1.6mm; }
+  table.trouble td { padding: 1.6mm 2mm; border-top: 1px solid var(--line); vertical-align: top; }
+  table.trouble tr:last-child td { border-bottom: 1px solid var(--line); }
+  table.trouble td:first-child { width: 58mm; font-weight: 600; }
+  .page-break { break-before: page; }
+  .end { margin-top: 4mm; padding-top: 3mm; border-top: 1px solid var(--line); font-size: 8.4pt; color: var(--muted); display: flex; justify-content: space-between; gap: 4mm; }
+</style>
+</head>
+<body>
+<main class="doc">
+
+  <div class="top">
+    <span class="logo"><i>n</i>AulSabaq AI</span>
+    <span class="tag">Codex Challenge 2026 · направление «Школа» · версия сайта от 26 ноября 2026</span>
+  </div>
+  <h1>Паспорт проекта и инструкция для проверки</h1>
+  <p class="lead">Совмещённый урок за пять минут для учителя малокомплектной школы, который ведёт урок сразу
+    для нескольких классов. Все ученики и данные в демо вымышленные.</p>
+
+  <div class="start">
+    <div class="card mint">
+      <h3>Что нужно для проверки</h3>
+      <div class="url">aulsabaq-ai.vercel.app</div>
+      <ul class="plain">
+        <li>Только браузер на компьютере или телефоне. Регистрация, оплата и личные данные не нужны.</li>
+        <li>Демо-урок открывается без вызова ИИ, поэтому работает всегда.</li>
+        <li>Проверка занимает 5 минут. Второй телефон не нужен: хватит второй вкладки.</li>
+      </ul>
+    </div>
+    <div class="card line">
+      <h3>Состав итогового пакета</h3>
+      <ul class="plain">
+        <li><b>Сайт:</b> https://aulsabaq-ai.vercel.app</li>
+        <li><b>Презентация:</b> два слайда, AulSabaq-AI.pdf</li>
+        <li><b>Видео:</b> 60 секунд, кадры с рабочего сайта</li>
+        <li><b>Инструкция:</b> этот документ, паспорт и ответы на пять вопросов</li>
+        <li><b>Код (по желанию):</b> github.com/asanchoo/aulsabaq-ai</li>
+      </ul>
+    </div>
+  </div>
+
+  <section>
+    <h2>Паспорт проекта</h2>
+    <table class="passport">
+      <tr><th>Название и автор</th><td>AulSabaq AI («аул» и «сабақ», по-казахски «урок»). Автор: Асанали Аскаров, Tech Orda, Data Science Academy.</td></tr>
+      <tr><th>Направление</th><td>Школа.</td></tr>
+      <tr><th>Проблема и пользователь</th><td>Учитель малокомплектной сельской школы ведёт урок сразу для двух, трёх или четырёх классов. Пока он объясняет одному классу, остальные должны работать сами, и к каждому уроку ему нужны поминутный план и задания своего уровня для каждого класса. В Казахстане таких школ 2 654, это 51% сельских школ.</td></tr>
+      <tr><th>Основной сценарий</th><td>Учитель вводит предмет, классы и темы → код считает расписание на 45 минут, ИИ пишет объяснения со слайдами и карточки, код проверяет урок по девяти правилам → ученики входят по коду с телефона, решают карточки, получают подсказки без готового ответа и могут позвать учителя → учитель видит на панели, кто застрял, и в конце получает итоги урока.</td></tr>
+      <tr><th>Форма продукта</th><td>Сайт для компьютера и телефона, казахский и русский язык, классы с 1 по 11. Для класса без телефонов карточки и маршрутный лист печатаются на A4.</td></tr>
+      <tr><th>AI-инструменты и вклад</th><td>В продукте: OpenAI API пишет содержание урока и вторую подсказку ученику, ответ строго по JSON-схеме. Расписание, проверку урока, проверку ответов учеников и панель учителя делает код без ИИ. В разработке: итоговый продукт дорабатывал Codex в ChatGPT Edu (24–25 ноября): 20 из 26 слитых PR, около 9 000 строк кода, 93% нового кода после MVP. В Codex сделаны «Кому помочь сейчас», демо-класс и итоги урока из шагов 6–7, а также пульт, свои числа у каждого ученика, цели программы и маршрутный лист. Основу MVP (12–24 ноября) писал Claude Code. Автор: выбор проблемы, требования, дизайн, решения по архитектуре и приёмка каждой правки. Готовое: Next.js, React, Tailwind CSS, Zod, Vitest (MIT). Создан с нуля в ноябре 2026.</td></tr>
+      <tr><th>Среда и зависимости</th><td>Проверяющему нужен только браузер. Сайт на Vercel, база Supabase (Франкфурт), ключ модели только на сервере; всё оплачивает автор, около 9–17 центов за урок. Для проверяющего 0 ₸.</td></tr>
+      <tr><th>Данные и ограничения</th><td>Об ученике хранится только имя или номер в списке, без почты, телефона и пароля; в модель имя не уходит. Не сделано: аккаунт учителя (урок привязан к браузеру), офлайн-режим, оценки. Имитация: демо-класс из шести вымышленных учеников с пометкой «Демо», потому что один проверяющий не может быть целым классом. ИИ иногда ошибается в формулировках, особенно в казахской грамматике, поэтому учитель просматривает урок перед уроком.</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>1. Какую проблему решает проект?</h2>
+    <p>Каждая вторая сельская школа Казахстана малокомплектная: в одном кабинете сидят, например, 2 и 4 класс, и урок
+      у них общий. Учитель должен расписать 45 минут так, чтобы в каждую минуту он был только с одним классом, а
+      остальные в это время решали задания своего уровня и не ждали. На такой план и карточки к каждому уроку
+      уходит много времени, а без них самостоятельная работа превращается в ожидание.</p>
+    <p>AulSabaq AI собирает совмещённый урок за 2–3 минуты: поминутный план для всех классов, объяснение новой темы со
+      слайдами для каждого класса и карточки на всё время без учителя. Во время урока ученики решают карточки с
+      телефона, ИИ подсказывает, но не называет ответ, а учитель видит, кто застрял и на какой карточке. Генераторов
+      обычных уроков много; формата совмещённого урока для нескольких классов среди них нет.</p>
+  </section>
+
+  <section>
+    <h2>2. Как пользоваться проектом?</h2>
+    <p class="muted">Удобнее с компьютера. Ученика можно открыть на телефоне или во второй вкладке того же браузера.</p>
+    <ol class="steps" style="margin-top:2.6mm">
+      <li>Откройте <b>https://aulsabaq-ai.vercel.app</b> и нажмите <b>«Открыть демо-урок»</b>. Это готовый урок математики
+        для 2 класса (сложение в пределах 100) и 4 класса (деление трёхзначного числа на однозначное). Посмотрите
+        <b>«Ход урока»</b>: графит значит «учитель с этим классом», мята значит «класс работает сам».</li>
+      <li>В блоке «Объяснение новой темы» нажмите <b>«Показать на экране»</b> у 4 класса и листайте кнопкой «Дальше» или
+        стрелкой на клавиатуре. Esc закрывает слайды.</li>
+      <li>Нажмите <b>«Получить код для учеников»</b>. Откроется ваша копия урока с шестизначным кодом.</li>
+      <li>Во второй вкладке или на телефоне откройте <b>aulsabaq-ai.vercel.app/join</b>, введите код, нажмите «Дальше»,
+        выберите <b>«4 класс»</b>, впишите имя <b>«Даша»</b> и нажмите «Начать».</li>
+      <li>В карточке 1 введите неверный ответ <span class="mono">1, 2, 3</span> и нажмите «Проверить». Затем два раза
+        <b>«Подсказка»</b> и <b>«Мне нужна помощь учителя»</b>.</li>
+      <li>Вернитесь на вкладку урока и прокрутите к блоку <b>«Ученики на уроке»</b>. Нажмите <b>«Помощь оказана»</b>.</li>
+      <li>Нажмите <b>«Запустить демо-класс»</b>, подождите 30 секунд и откройте <b>«Итоги урока»</b>.</li>
+    </ol>
+
+    <div class="shots two">
+      <figure><img src="img/1-timeline.png" alt="Ход урока: колонки 2 и 4 класса, графитовые и мятные блоки по минутам"><figcaption><b>Шаг 1.</b> Ход урока: напротив графитового блока одного класса у другого мятный.</figcaption></figure>
+      <figure><img src="img/2-slide.png" alt="Слайд 5 из 13: шаги деления и таблица примеров"><figcaption><b>Шаг 2.</b> Слайды 4 класса: шаги открываются по одному.</figcaption></figure>
+    </div>
+    <div class="shots phones">
+      <figure><img src="img/5-student.png" alt="Телефон ученика: Пока не так, две подсказки, сообщение о помощи"><figcaption><b>Шаг 5.</b> Телефон: две подсказки без ответа.</figcaption></figure>
+      <figure><img src="img/5-correct.png" alt="Телефон ученика: Верно! Можно переходить дальше"><figcaption><b>Доп.</b> Верный ответ: «Верно!».</figcaption></figure>
+      <figure><img src="img/3-code.png" alt="Код для учеников из шести цифр"><figcaption><b>Шаг 3.</b> Своя копия урока с кодом для учеников.</figcaption></figure>
+    </div>
+    <div class="shots two" style="align-items:start">
+      <div style="display:grid; gap:4mm">
+        <figure><img src="img/6-panel.png" alt="Панель учителя: Даша просит помощи на карточке 1"><figcaption><b>Шаг 6.</b> Учитель видит просьбу Даши.</figcaption></figure>
+        <figure><img src="img/7-democlass.png" alt="Демо-класс: кому помочь сейчас и строки демо-учеников"><figcaption><b>Шаг 7.</b> Демо-класс: «Кому помочь сейчас» и совет всему классу.</figcaption></figure>
+      </div>
+      <figure><img src="img/7-report.png" alt="Итоги урока: трудные карточки по классам и совет на завтра"><figcaption><b>Шаг 7.</b> Итоги урока: трудные карточки и совет на завтра.</figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>3. Как тестировать проект?</h2>
+    <dl class="task">
+      <dt>Тестовое задание</dt><dd>За 5 минут проверить три вещи: урок для двух классов разведён по минутам, ученик получает подсказки без готового ответа, учитель видит, кто застрял.</dd>
+      <dt>Исходные данные</dt><dd>Демо-урок «Математика, 2 и 4 класс, 45 минут» (кнопка «Открыть демо-урок»). Ученик «Даша», 4 класс. Неверный ответ <span class="mono">1, 2, 3</span>.</dd>
+      <dt>Действия</dt><dd>Шаги 1–7 из ответа на вопрос 2.</dd>
+      <dt>Ожидаемый результат</dt><dd>Признаки правильной работы по шагам:</dd>
+    </dl>
+    <ul class="expect" style="margin-top:2mm">
+      <li><span>Шаг 1</span>В каждую минуту учитель не больше чем с одним классом: напротив графитового блока одного класса у другого мятный. Первые 5 минут общий серый этап «Вместе». У мятных блоков номера карточек.</li>
+      <li><span>Шаг 2</span>13 слайдов, счётчик вверху «5 из 13». На слайдах с примером деление уголком достраивается вместе с шагами, ответ появляется в конце.</li>
+      <li><span>Шаг 3</span>Код из 6 цифр и кнопки «Начать урок», «Пульт урока», «Редактировать». У каждого проверяющего своя копия, чужих учеников вы не увидите.</li>
+      <li><span>Шаг 4</span>Экран ученика «Даша · 4 класс», «Карточка 1 из 12», номера карточек 1–12 и «Памятка» перед карточкой 7.</li>
+      <li><span>Шаг 5</span>«Пока не так. Проверь решение ещё раз или возьми подсказку. Попыток: 1». «Подсказка 1 из 3» из урока, «Подсказка 2 из 3» от ИИ разбирает ваш ответ, но правильных чисел не называет. После просьбы о помощи: «Учитель видит, что тебе нужна помощь».</li>
+      <li><span>Шаг 6</span>Не позже чем через 5 секунд: «Даша: просит помощи на карточке 1», строка «Даша, 4 класс, карточка 1», у Даши «подсказок: 2», в блоке «Где было трудно» карточка 1. После «Помощь оказана» строка исчезает, у ученика сообщение пропадает в течение 10 секунд.</li>
+      <li><span>Шаг 7</span>Через 20–30 секунд появляются вымышленные ученики с пометкой «Демо» и подсказки учителю, например «2 класс: 2 из 3 застряли на карточке 2. Разберите её со всем классом». В «Итогах урока» по каждому классу трудные карточки с долей ошибок и совет, с какого задания начать завтра.</li>
+    </ul>
+    <p style="margin-top:2.6mm"><b>Дополнительно.</b> Введите в карточке 1 правильный ответ к своим числам (у каждого ученика числа могут
+      отличаться; для 36 : 4, 45 : 5, 42 : 6 это <span class="mono">9, 9, 7</span>): «Верно! Можно переходить дальше».
+      Чтобы проверить сборку нового урока с ИИ: «Создать урок» → Математика → 2 класс и 4 класс со своими темами →
+      «Собрать урок». Ход сборки виден на экране, урок готов за 1,5–3 минуты.</p>
+    <p style="margin-top:2.6mm"><b>Самопроверка 26 ноября 2026</b> на рабочем сайте, свежая копия демо, компьютер (1440 px) и
+      телефон (390 px): шаги 1–7 пройдены в браузере Chrome, результаты совпали с ожидаемыми. Скриншоты в этом документе сняты в этот прогон.</p>
+
+    <h3 style="margin-top:4mm">Если что-то пошло не так</h3>
+    <table class="trouble">
+      <tr><td>«Урок с таким кодом не найден»</td><td>Проверьте 6 цифр кода на странице вашей копии урока.</td></tr>
+      <tr><td>Вторая подсказка общая, «Перечитай задание…»</td><td>ИИ был недоступен, сработала запасная подсказка: ученик не остаётся без помощи.</td></tr>
+      <tr><td>«ИИ сейчас перегружен» или «Общий дневной предел исчерпан» при создании урока</td><td>Подождите минуту или проверьте по демо-уроку: он не вызывает ИИ и открывается всегда.</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>4. Какова практическая польза проекта?</h2>
+    <p>Что измерено на рабочем продукте:</p>
+    <div class="nums">
+      <div class="num lead-num"><strong>7 из 10 и 0 из 10</strong><span class="muted">уроков прошли автоматическую проверку расписания и карточек: AulSabaq против одного промпта к той же модели (10 одинаковых запросов, 24 ноября)</span></div>
+      <div class="num"><strong>76–229 с</strong><span class="muted">сборка 21 урока по разным предметам и классам, ru и kk; все прошли проверки кода (26 ноября)</span></div>
+      <div class="num"><strong>9–17 центов</strong><span class="muted">стоимость модели за один урок; учитель и проверяющий не платят</span></div>
+    </div>
+    <p>Код гарантирует то, что одним промптом не получается: в каждую минуту учитель только с одним классом, карточек
+      хватает на всё время без учителя, подсказка не содержит ответа (сервер проверяет каждую подсказку ИИ и отбрасывает
+      ту, где ответ есть). Во время урока продукт делает то, чего не делает текстовый ответ чата: вход учеников по коду,
+      проверку ответов, просьбы о помощи и панель «кто застрял».</p>
+    <p class="note" style="margin-top:2.6mm"><b>Чего ещё нет.</b> Настоящий урок с учителем малокомплектной школы пока не проведён, поэтому время
+      подготовки «было и стало» никто не измерял. Это первая задача пилота: секундомер у 1–2 учителей на их настоящем уроке.</p>
+  </section>
+
+  <section>
+    <h2>5. Как использовать или адаптировать проект в другой организации?</h2>
+    <p>Любая малокомплектная школа начинает сразу: открыть сайт, ввести свои классы и темы, без установки, аккаунтов и
+      оплаты. Подходит любой предмет и классы с 1 по 11; в одном уроке от одного до четырёх классов, в одном кабинете или в
+      соседних; у каждого класса свой язык обучения, казахский или русский. Код подбирает цели обучения из типовой
+      программы (приказ № 399, 128 программ), так что урок привязан к официальной программе Казахстана. Школа без
+      телефонов печатает карточки и маршрутный лист на A4.</p>
+    <p>Так же можно работать везде, где один педагог одновременно ведёт группы разного уровня: кружки,
+      школы с дефицитом учителей, классы-комплекты в соседних странах. Для запуска у себя исходный код открыт на GitHub,
+      нужны Node.js, ключ OpenAI или Gemini и база Supabase. Ограничение: ИИ может ошибиться в содержании, поэтому учитель
+      просматривает урок перед уроком и может исправить любой текст кнопкой «Редактировать».</p>
+  </section>
+
+  <div class="end">
+    <span>AulSabaq AI · Асанали Аскаров · Codex Challenge 2026</span>
+    <span>https://aulsabaq-ai.vercel.app</span>
+  </div>
+</main>
+</body>
+</html>
